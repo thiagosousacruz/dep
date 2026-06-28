@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano 12 Meses — Engenheiro de Dados Especialista</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --surface-0: #f1efec;
+    --surface-1: #f7f6f3;
+    --surface-2: #ffffff;
+    --text-primary: #1a1a18;
+    --text-secondary: #4a4a46;
+    --text-muted: #888780;
+    --border: rgba(0,0,0,0.10);
+    --border-strong: rgba(0,0,0,0.18);
+    --radius: 8px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-0: #111110;
+      --surface-1: #1c1c1a;
+      --surface-2: #242422;
+      --text-primary: #e8e6e0;
+      --text-secondary: #a8a69e;
+      --text-muted: #666460;
+      --border: rgba(255,255,255,0.08);
+      --border-strong: rgba(255,255,255,0.14);
+    }
+  }
+  body { font-family: var(--font-sans); background: var(--surface-0); color: var(--text-primary); padding: 2rem 1rem; min-height: 100vh; }
+  .container { max-width: 960px; margin: 0 auto; }
+  header { margin-bottom: 2rem; }
+  header h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  header p { font-size: 14px; color: var(--text-muted); }
+  .tabs { display: flex; gap: 4px; border-bottom: 0.5px solid var(--border-strong); margin-bottom: 1.5rem; }
+  .tab { font-size: 13px; font-weight: 500; color: var(--text-muted); padding: 8px 14px 12px; cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; }
+  .tab:hover { color: var(--text-secondary); }
+  .tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 0.75rem; }
+  .domains { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-bottom: 0.75rem; }
+  .domain-card { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 14px; }
+  .domain-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .domain-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .domain-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .domain-badge { margin-left: auto; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
+  .skill-list { list-style: none; }
+  .skill-list li { font-size: 12px; color: var(--text-secondary); padding: 4px 0; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; gap: 7px; }
+  .skill-list li:last-child { border-bottom: none; }
+  .skill-list li::before { content: ''; display: block; width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
+  .d-core .domain-dot, .d-core .skill-list li::before { background: #534AB7; } .d-core .domain-card { border-left: 3px solid #534AB7; } .d-core .domain-badge { background: #EEEDFE; color: #3C3489; }
+  .d-cloud .domain-dot, .d-cloud .skill-list li::before { background: #185FA5; } .d-cloud .domain-card { border-left: 3px solid #185FA5; } .d-cloud .domain-badge { background: #E6F1FB; color: #0C447C; }
+  .d-eng .domain-dot, .d-eng .skill-list li::before { background: #0F6E56; } .d-eng .domain-card { border-left: 3px solid #0F6E56; } .d-eng .domain-badge { background: #E1F5EE; color: #085041; }
+  .d-qual .domain-dot, .d-qual .skill-list li::before { background: #854F0B; } .d-qual .domain-card { border-left: 3px solid #854F0B; } .d-qual .domain-badge { background: #FAEEDA; color: #633806; }
+  .d-arch .domain-dot, .d-arch .skill-list li::before { background: #993C1D; } .d-arch .domain-card { border-left: 3px solid #993C1D; } .d-arch .domain-badge { background: #FAECE7; color: #712B13; }
+  .d-local .domain-dot, .d-local .skill-list li::before { background: #993556; } .d-local .domain-card { border-left: 3px solid #993556; } .d-local .domain-badge { background: #FBEAF0; color: #72243E; }
+  .phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+  .phase-card { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .phase-header { padding: 14px 16px 12px; border-bottom: 0.5px solid var(--border); }
+  .phase-label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 3px; }
+  .phase-title { font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+  .phase-sub { font-size: 12px; color: var(--text-muted); }
+  .phase-body { padding: 12px 16px; }
+  .phase-section { margin-bottom: 12px; }
+  .phase-section:last-child { margin-bottom: 0; }
+  .phase-section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 6px; }
+  .phase-item { font-size: 12px; color: var(--text-secondary); padding: 5px 0; border-bottom: 0.5px solid var(--border); display: flex; gap: 8px; align-items: flex-start; line-height: 1.5; }
+  .phase-item:last-child { border-bottom: none; }
+  .tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
+  .p1 .phase-label { color: #3C3489; } .p1 .phase-header { border-top: 3px solid #534AB7; } .p1 .tag { background: #EEEDFE; color: #3C3489; }
+  .p2 .phase-label { color: #085041; } .p2 .phase-header { border-top: 3px solid #0F6E56; } .p2 .tag { background: #E1F5EE; color: #085041; }
+  .p3 .phase-label { color: #712B13; } .p3 .phase-header { border-top: 3px solid #993C1D; } .p3 .tag { background: #FAECE7; color: #712B13; }
+  .deliverables { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+  .deliv-card { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 14px; display: flex; gap: 12px; align-items: flex-start; }
+  .deliv-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+  .deliv-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
+  .deliv-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+  .info-box { background: var(--surface-1); border: 0.5px solid var(--border); border-radius: 12px; padding: 14px; margin-top: 12px; }
+  .info-box p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .info-box strong { font-weight: 500; color: var(--text-primary); }
+  .info-box.accent { border-color: #378ADD; }
+  .info-box.accent strong { color: #185FA5; }
+  footer { margin-top: 2.5rem; font-size: 12px; color: var(--text-muted); text-align: center; }
+</style>
+<script>
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tabId).classList.add('active');
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+</script>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>Engenheiro de Dados Especialista — Plano 12 Meses</h1>
+<p>Mapa técnico, fases e projetos âncora · Foco: Azure Databricks, ADF, Fabric, SQL, PySpark</p>
+</header>
+<div class="tabs">
+<button class="tab active" onclick="switchTab('mapa')">Mapa técnico</button>
+<button class="tab" onclick="switchTab('plano')">Plano 12 meses</button>
+<button class="tab" onclick="switchTab('projetos')">Projetos âncora</button>
+</div>
+<!-- ══ TAB: MAPA ══ -->
+<div class="tab-panel active" id="tab-mapa">
+<p class="section-label">Domínios técnicos — o que o especialista domina</p>
+<div class="domains">
+<div class="d-core">
+<div class="domain-card">
+<div class="domain-header">
+<span class="domain-dot"></span>
+<span class="domain-name">SQL &amp; PySpark</span>
+<span class="domain-badge">Fundação</span>
+</div>
+<ul class="skill-list">
+<li>Window functions avançadas</li>
+<li>CTEs e subqueries complexas</li>
+<li>Otimização de queries (explain plan)</li>
+<li>Delta Lake: merge, upsert, CDC</li>
+<li>Particionamento e Z-Order</li>
+<li>Broadcast, skew, shuffle tuning</li>
+<li>Schema evolution e type coercion</li>
+<li>UDFs e Pandas UDFs</li>
+</ul>
+</div>
+</div>
+<div class="d-cloud">
+<div class="domain-card">
+<div class="domain-header">
+<span class="domain-dot"></span>
+<span class="domain-name">Azure + Databricks</span>
+<span class="domain-badge">Ambiente</span>
+</div>
+<ul class="skill-list">
+<li>ADF: pipelines, triggers, IR</li>
+<li>Databricks Asset Bundles (DAB)</li>
+<li>Delta Live Tables (DLT)</li>
+<li>Unity Catalog: lineage, grants</li>
+<li>Workflows e job orchestration</li>
+<li>Microsoft Fabric (lakehouse)</li>
+<li>ADLS Gen2 e storage patterns</li>
+<li>Cluster config e autoscaling</li>
+</ul>
+</div>
+</div>
+<div class="d-eng">
+<div class="domain-card">
+<div class="domain-header">
+<span class="domain-dot"></span>
+<span class="domain-name">Engenharia de pipelines</span>
+<span class="domain-badge">Ofício</span>
+</div>
+<ul class="skill-list">
+<li>Medallion architecture (B/S/G)</li>
+<li>Idempotência e reprocessamento</li>
+<li>Estratégias full/incremental/CDC</li>
+<li>SCD Type 1, 2, 3</li>
+<li>Template patterns (genérico→específico)</li>
+<li>Parametrização e config tables</li>
+<li>Data contracts básicos</li>
+<li>Documentação técnica clara</li>
+</ul>
+</div>
+</div>
+<div class="d-qual">
+<div class="domain-card">
+<div class="domain-header">
+<span class="domain-dot"></span>
+<span class="domain-name">Qualidade &amp; testes</span>
+<span class="domain-badge">Maturidade</span>
+</div>
+<ul class="skill-list">
+<li>Python local: pytest + fixtures</li>
+<li>DLT expectations</li>
+<li>Great Expectations básico</li>
+<li>Testes de regressão em pipelines</li>
+<li>Data profiling (nulos, duplicatas)</li>
+<li>Monitoramento com alertas</li>
+<li>Logs estruturados</li>
+</ul>
+</div>
+</div>
+<div class="d-arch">
+<div class="domain-card">
+<div class="domain-header">
+<span class="domain-dot"></span>
+<span class="domain-name">Arquitetura &amp; design</span>
+<span class="domain-badge">Senioridade</span>
+</div>
+<ul class="skill-list">
+<li>Trade-offs de modelagem (flat vs star)</li>
+<li>Lakehouse vs data warehouse</li>
+<li>Quando usar DLT vs Workflow</li>
+<li>Custo vs performance decisions</li>
+<li>Observability de pipelines</li>
+<li>Git flow para dados</li>
+<li>CI/CD básico com bundles</li>
+</ul>
+</div>
+</div>
+<div class="d-local">
+<div class="domain-card">
+<div class="domain-header">
+<span class="domain-dot"></span>
+<span class="domain-name">Projeto paralelo (OCI/Garmin)</span>
+<span class="domain-badge">Laboratório</span>
+</div>
+<ul class="skill-list">
+<li>Python intermediário (CLI, scripts)</li>
+<li>Ingestão via API REST</li>
+<li>Docker local básico</li>
+<li>Airflow ou Prefect no OCI</li>
+<li>dbt core (transformações SQL)</li>
+<li>PostgreSQL: índices, explain</li>
+<li>Versionamento e deploy simples</li>
+</ul>
+</div>
+</div>
+</div>
+<p style="font-size:12px;color:var(--text-muted);margin-top:0.5rem;">Domínios ordenados por prioridade. SQL &amp; PySpark são inegociáveis — é onde o especialista se diferencia do mediano.</p>
+</div>
+<!-- ══ TAB: PLANO ══ -->
+<div class="tab-panel" id="tab-plano">
+<p class="section-label">Fases — 12 meses divididos em 3 blocos de 4 meses</p>
+<div class="phases">
+<div class="phase-card p1">
+<div class="phase-header">
+<div class="phase-label">Fase 1 — meses 1–4</div>
+<div class="phase-title">Base sólida</div>
+<div class="phase-sub">Domínio técnico do core + ambiente Renner</div>
+</div>
+<div class="phase-body">
+<div class="phase-section">
+<div class="phase-section-label">SQL &amp; PySpark</div>
+<div class="phase-item"><span class="tag">M1</span> Window functions: rank, lag, lead, dense_rank em problemas reais</div>
+<div class="phase-item"><span class="tag">M1</span> CTEs encadeadas e subqueries: cobrir sem consultar</div>
+<div class="phase-item"><span class="tag">M2</span> Delta Lake: merge strategy, upsert, CDC incremental</div>
+<div class="phase-item"><span class="tag">M2</span> Explain plan: identificar shuffles caros, broadcast joins</div>
+<div class="phase-item"><span class="tag">M3</span> Particionamento, Z-Order, liquid clustering</div>
+<div class="phase-item"><span class="tag">M4</span> UDFs e Pandas UDFs com tipagem correta</div>
+</div>
+<div class="phase-section">
+<div class="phase-section-label">Ambiente Renner</div>
+<div class="phase-item"><span class="tag">M1</span> Dominar o template bronze genérico: entender cada linha</div>
+<div class="phase-item"><span class="tag">M2</span> Criar silver/gold do zero sem copiar: só consultar docs</div>
+<div class="phase-item"><span class="tag">M3</span> ADF: parametrização avançada, dynamic content, triggers</div>
+<div class="phase-item"><span class="tag">M4</span> Asset Bundles: estrutura, environments, CI/CD básico</div>
+</div>
+<div class="phase-section">
+<div class="phase-section-label">Projeto paralelo (início)</div>
+<div class="phase-item"><span class="tag">M3</span> Setup OCI + ingestão dos dados Garmin via API</div>
+<div class="phase-item"><span class="tag">M4</span> Camada bronze no PostgreSQL ou Delta local</div>
+</div>
+</div>
+</div>
+<div class="phase-card p2">
+<div class="phase-header">
+<div class="phase-label">Fase 2 — meses 5–8</div>
+<div class="phase-title">Profundidade técnica</div>
+<div class="phase-sub">Performance, qualidade e padrões avançados</div>
+</div>
+<div class="phase-body">
+<div class="phase-section">
+<div class="phase-section-label">Performance &amp; otimização</div>
+<div class="phase-item"><span class="tag">M5</span> Otimização de jobs: cluster sizing, autoscaling, DBU</div>
+<div class="phase-item"><span class="tag">M5</span> Skew e spill: diagnóstico e correção</div>
+<div class="phase-item"><span class="tag">M6</span> Delta: vacuum, optimize, time travel com critério</div>
+<div class="phase-item"><span class="tag">M6</span> Schema evolution: mergeSchema, overwriteSchema</div>
+</div>
+<div class="phase-section">
+<div class="phase-section-label">Qualidade &amp; testes</div>
+<div class="phase-item"><span class="tag">M5</span> Python: pytest com fixtures para testar lógica PySpark</div>
+<div class="phase-item"><span class="tag">M6</span> DLT expectations: quarantine pattern</div>
+<div class="phase-item"><span class="tag">M7</span> Monitoramento: alertas em pipelines críticos</div>
+<div class="phase-item"><span class="tag">M7</span> Data profiling sistemático: nulos, duplicatas, drift</div>
+</div>
+<div class="phase-section">
+<div class="phase-section-label">DLT &amp; Fabric</div>
+<div class="phase-item"><span class="tag">M6</span> DLT: tabelas streaming vs batch, expectations, lineage</div>
+<div class="phase-item"><span class="tag">M7</span> Unity Catalog: lineage na prática, grants, tags</div>
+<div class="phase-item"><span class="tag">M8</span> Microsoft Fabric: lakehouse, Spark notebooks, pipelines</div>
+</div>
+<div class="phase-section">
+<div class="phase-section-label">Projeto paralelo</div>
+<div class="phase-item"><span class="tag">M5</span> Silver Garmin: transformações, métricas de corrida</div>
+<div class="phase-item"><span class="tag">M7</span> Orquestração com Airflow ou Prefect no OCI</div>
+<div class="phase-item"><span class="tag">M8</span> dbt para camada gold: testes, docs, lineage</div>
+</div>
+</div>
+</div>
+<div class="phase-card p3">
+<div class="phase-header">
+<div class="phase-label">Fase 3 — meses 9–12</div>
+<div class="phase-title">Pensamento de especialista</div>
+<div class="phase-sub">Arquitetura, trade-offs e autonomia total</div>
+</div>
+<div class="phase-body">
+<div class="phase-section">
+<div class="phase-section-label">Arquitetura &amp; decisões</div>
+<div class="phase-item"><span class="tag">M9</span> Modelagem: quando usar flat, star schema ou vault</div>
+<div class="phase-item"><span class="tag">M9</span> SCD Type 2 do zero: lógica completa sem auxílio</div>
+<div class="phase-item"><span class="tag">M10</span> Design de pipeline idempotente e resiliente</div>
+<div class="phase-item"><span class="tag">M10</span> Custo vs performance: saber justificar decisões</div>
+</div>
+<div class="phase-section">
+<div class="phase-section-label">Consolidação avançada</div>
+<div class="phase-item"><span class="tag">M9</span> CI/CD completo com Asset Bundles: dev → prod</div>
+<div class="phase-item"><span class="tag">M10</span> Observability: end-to-end lineage, SLA tracking</div>
+<div class="phase-item"><span class="tag">M11</span> Fabric: integração com Power BI semantic layer</div>
+<div class="phase-item"><span class="tag">M11</span> Code review: conseguir revisar código de outros com rigor</div>
+</div>
+<div class="phase-section">
+<div class="phase-section-label">Especialização &amp; projeto</div>
+<div class="phase-item"><span class="tag">M9</span> Revisitar o projeto Garmin: refatorar com o que aprendeu</div>
+<div class="phase-item"><span class="tag">M10</span> Documentar decisões técnicas (ADRs simples)</div>
+<div class="phase-item"><span class="tag">M11</span> Apresentar soluções para o time: ensinar é evidência</div>
+<div class="phase-item"><span class="tag">M12</span> Auditoria pessoal: o que ainda falta? Próximo ciclo.</div>
+</div>
+</div>
+</div>
+</div>
+<div class="info-box" style="margin-top:12px;">
+<p><strong>Metodologia de estudo</strong> — Para cada tópico: tente escrever do zero → consulte documentação → use Claude só para revisar ou destravar. Anki para conceitos que precisam ficar automáticos (window functions, explain plan, Delta configs). Não avance de fase sem conseguir executar o tópico anterior sem consultar.</p>
+</div>
+</div>
+<!-- ══ TAB: PROJETOS ══ -->
+<div class="tab-panel" id="tab-projetos">
+<p class="section-label">Projetos âncora — onde o aprendizado vira prova</p>
+<div class="deliverables">
+<div class="deliv-card">
+<div class="deliv-icon" style="background:#EEEDFE;">🏪</div>
+<div>
+<div class="deliv-title">Renner — silver/gold autoral</div>
+<div class="deliv-desc">Criar uma camada silver e gold do zero, sem template — só você e a documentação. Escolha uma métrica real do seu vertical (cobertura de estoque, mix de categoria). O código vai para revisão do time.</div>
+</div>
+</div>
+<div class="deliv-card">
+<div class="deliv-icon" style="background:#E1F5EE;">🏃</div>
+<div>
+<div class="deliv-title">Garmin pipeline completo</div>
+<div class="deliv-desc">Pipeline Bronze→Silver→Gold com dados reais de corrida. Inclui ingestão via API, orquestração, qualidade de dados e camada analítica. Você decide a arquitetura — sem copiar padrão pronto.</div>
+</div>
+</div>
+<div class="deliv-card">
+<div class="deliv-icon" style="background:#FAEEDA;">🧪</div>
+<div>
+<div class="deliv-title">Suite de testes para pipeline</div>
+<div class="deliv-desc">pytest cobrindo a lógica de transformação de pelo menos uma camada silver. Inclui fixtures com dados sintéticos, testes de borda (nulos, duplicatas, schema), e integração com CI.</div>
+</div>
+</div>
+<div class="deliv-card">
+<div class="deliv-icon" style="background:#FAECE7;">📄</div>
+<div>
+<div class="deliv-title">ADRs de decisão técnica</div>
+<div class="deliv-desc">Documento de decisões arquiteturais das escolhas que você fez nos projetos. "Por que usamos DLT aqui e não Workflow?", "Por que incremental e não full?". Especialista explica o porquê.</div>
+</div>
+</div>
+<div class="deliv-card">
+<div class="deliv-icon" style="background:#E6F1FB;">📊</div>
+<div>
+<div class="deliv-title">Sessão técnica no time</div>
+<div class="deliv-desc">Apresentar algo que você aprendeu profundamente para o time — window functions avançadas, otimização de Delta, padrões de pipeline. Ensinar é o maior teste de domínio real.</div>
+</div>
+</div>
+<div class="deliv-card">
+<div class="deliv-icon" style="background:#FBEAF0;">🔄</div>
+<div>
+<div class="deliv-title">Refatoração com critério (mês 12)</div>
+<div class="deliv-desc">Pegar algo que você escreveu no mês 1–2 e reescrever com o que aprendeu. Ver a diferença entre o "você de antes" e o especialista que você se tornou. Isso é evidência real de evolução.</div>
+</div>
+</div>
+</div>
+<div class="info-box accent" style="margin-top:12px;">
+<p><strong>Princípio central</strong> — O projeto paralelo (Garmin/OCI) existe para você tomar decisões que na Renner já estão definidas: governança, acesso, arquitetura, ferramentas. Lá você projeta, escolhe, erra e aprende o que o ambiente protegido não deixa. O que você aprende lá alimenta o pensamento que você traz para cá.</p>
+</div>
+</div>
+</div>\n</body>\n</html>
