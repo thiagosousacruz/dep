@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano 12 Semanas — Especialista Técnico</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0D0F14;
+    --surface:  #13161D;
+    --border:   #1E2330;
+    --muted:    #3A3F52;
+    --text-dim: #6B7280;
+    --text:     #C9D1E0;
+    --white:    #EEF2F8;
+    --accent:   #4F8EF7;
+    --accent2:  #1A3A6B;
+    --green:    #2ECC71;
+    --yellow:   #F5A623;
+    --red:      #E74C3C;
+
+    --phase1: #4F8EF7;
+    --phase2: #9B59B6;
+    --phase3: #2ECC71;
+    --phase4: #F5A623;
+    --phase5: #E74C3C;
+    --phase6: #1ABC9C;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 80px 40px 60px;
+    max-width: 900px;
+    margin: 0 auto;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 32px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 600;
+    color: var(--white);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+
+  h1 em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--text-dim);
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: var(--text-dim);
+    max-width: 560px;
+    font-weight: 300;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 40px;
+    margin-top: 48px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--white);
+  }
+
+  .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+  }
+
+  /* ── PRINCIPLE BANNER ── */
+  .principle {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 40px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .principle-icon {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    padding-top: 3px;
+    white-space: nowrap;
+  }
+
+  .principle p {
+    font-size: 14px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .principle strong {
+    color: var(--text);
+    font-style: normal;
+  }
+
+  /* ── TIMELINE ── */
+  .timeline {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 40px 80px;
+  }
+
+  .phase {
+    margin-top: 64px;
+  }
+
+  .phase-header {
+    display: grid;
+    grid-template-columns: 3px 1fr;
+    gap: 0 24px;
+    align-items: start;
+    margin-bottom: 32px;
+  }
+
+  .phase-bar {
+    width: 3px;
+    height: 100%;
+    grid-row: 1 / 3;
+    border-radius: 2px;
+  }
+
+  .phase-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 6px;
+  }
+
+  .phase-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--white);
+    line-height: 1.2;
+  }
+
+  .phase-tagline {
+    grid-column: 2;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    font-weight: 300;
+  }
+
+  /* ── WEEK CARDS ── */
+  .weeks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 640px) {
+    .weeks { grid-template-columns: 1fr; }
+    header, .principle, .timeline { padding-left: 24px; padding-right: 24px; }
+    .stats-row { gap: 24px; }
+  }
+
+  .week-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .week-card:hover {
+    border-color: var(--muted);
+  }
+
+  .week-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .week-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 10px;
+  }
+
+  .week-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 16px;
+    line-height: 1.3;
+  }
+
+  .topics {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .topics li {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    padding-left: 16px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .topics li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+  }
+
+  /* ── CRITERIA ── */
+  .criteria {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .criteria-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  .criteria p {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  /* ── PRACTICE BOX ── */
+  .practice-box {
+    margin-top: 20px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 20px;
+  }
+
+  .practice-box .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .practice-box p {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+
+  /* ── SUMMARY TABLE ── */
+  .summary {
+    max-width: 900px;
+    margin: 0 auto 80px;
+    padding: 0 40px;
+  }
+
+  .summary h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead tr {
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-align: left;
+    padding: 10px 16px;
+    font-weight: 400;
+  }
+
+  td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  td.highlight {
+    color: var(--white);
+    font-weight: 400;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  /* phase colors applied via JS / inline style */
+  .p1 { color: var(--phase1); }
+  .p2 { color: var(--phase2); }
+  .p3 { color: var(--phase3); }
+  .p4 { color: var(--phase4); }
+  .p5 { color: var(--phase5); }
+  .p6 { color: var(--phase6); }
+
+  .card-p1::before, .bar-p1 { background: var(--phase1); }
+  .card-p2::before, .bar-p2 { background: var(--phase2); }
+  .card-p3::before, .bar-p3 { background: var(--phase3); }
+  .card-p4::before, .bar-p4 { background: var(--phase4); }
+  .card-p5::before, .bar-p5 { background: var(--phase5); }
+  .card-p6::before, .bar-p6 { background: var(--phase6); }
+
+  /* footer */
+  footer {
+    text-align: center;
+    padding: 40px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.08em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);text-decoration:none;text-transform:uppercase;letter-spacing:0.1em;transition:color 0.2s;display:inline-block;margin-bottom:32px;">← Voltar ao Hub</a>
+  <div class="eyebrow">Plano de Desenvolvimento Técnico</div>
+  <h1>Do executor<br><em>ao especialista.</em></h1>
+  <p class="subtitle">12 semanas para dominar SQL, PySpark, Databricks e ADF — resolvendo problemas reais de negócio, de ponta a ponta.</p>
+  <div class="stats-row">
+    <div class="stat">
+      <span class="stat-num">12</span>
+      <span class="stat-label">Semanas</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">6</span>
+      <span class="stat-label">Fases</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">1</span>
+      <span class="stat-label">Objetivo</span>
+    </div>
+  </div>
+</header>
+
+<div class="principle">
+  <span class="principle-icon">// PRINCÍPIO</span>
+  <p><strong>Cada coisa que você aprende precisa aparecer em algo real na Renner na semana seguinte.</strong> Isso é o que transforma conhecimento em competência. Não separe estudo de trabalho.</p>
+</div>
+
+<div class="timeline">
+
+  <!-- FASE 1 -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-bar bar-p1" style="height:auto;"></div>
+      <div>
+        <div class="phase-meta p1">Fase 01 · Semanas 1–2</div>
+        <div class="phase-title">SQL — Fundação Sólida</div>
+      </div>
+      <div class="phase-tagline">Você aprende a linguagem que vai usar todo dia, para sempre.</div>
+    </div>
+    <div class="weeks">
+      <div class="week-card card-p1">
+        <div class="week-num">Semana 01</div>
+        <div class="week-title">Leitura e filtros</div>
+        <ul class="topics">
+          <li>SELECT, FROM, WHERE, ORDER BY, LIMIT</li>
+          <li>Operadores: =, !=, >, <, BETWEEN, IN, LIKE</li>
+          <li>Lógica booleana: AND, OR, NOT</li>
+          <li>Aliases com AS</li>
+        </ul>
+        <div class="criteria">
+          <div class="criteria-label">Critério de avanço</div>
+          <p>Consultar qualquer tabela, filtrar e ordenar sem olhar documentação.</p>
+        </div>
+      </div>
+      <div class="week-card card-p1">
+        <div class="week-num">Semana 02</div>
+        <div class="week-title">Agregações e JOINs</div>
+        <ul class="topics">
+          <li>GROUP BY + COUNT, SUM, AVG, MAX, MIN</li>
+          <li>HAVING para filtrar grupos</li>
+          <li>INNER JOIN e LEFT JOIN — quando usar cada um</li>
+          <li>RIGHT JOIN e FULL OUTER JOIN</li>
+          <li>JOINs com múltiplas condições</li>
+        </ul>
+        <div class="criteria">
+          <div class="criteria-label">Critério de avanço</div>
+          <p>Cruzar duas tabelas e agregar o resultado com confiança.</p>
+        </div>
+      </div>
+    </div>
+    <div class="practice-box">
+      <div class="label">// como praticar</div>
+      <p>Use dados reais da Renner ou o ambiente NovaMed. Escreva queries que respondam perguntas de negócio reais — "quais categorias venderam mais essa semana?" — não exercícios artificiais.</p>
+    </div>
+  </div>
+
+  <!-- FASE 2 -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-bar bar-p2" style="height:auto;"></div>
+      <div>
+        <div class="phase-meta p2">Fase 02 · Semanas 3–4</div>
+        <div class="phase-title">SQL — Intermediário + Pensamento Analítico</div>
+      </div>
+      <div class="phase-tagline">Você começa a resolver problemas que seu gestor resolve hoje.</div>
+    </div>
+    <div class="weeks">
+      <div class="week-card card-p2">
+        <div class="week-num">Semana 03</div>
+        <div class="week-title">Subqueries e lógica condicional</div>
+        <ul class="topics">
+          <li>Subqueries no WHERE e no FROM</li>
+          <li>CTEs com WITH ... AS — organizar queries longas</li>
+          <li>CASE WHEN para lógica condicional</li>
+          <li>Tratamento de nulos: COALESCE, NULLIF, IS NULL</li>
+        </ul>
+        <div class="criteria">
+          <div class="criteria-label">Critério de avanço</div>
+          <p>Escrever uma query com CTE e CASE WHEN sem consultar nada.</p>
+        </div>
+      </div>
+      <div class="week-card card-p2">
+        <div class="week-num">Semana 04</div>
+        <div class="week-title">Window functions</div>
+        <ul class="topics">
+          <li>ROW_NUMBER, RANK, DENSE_RANK</li>
+          <li>LAG e LEAD — comparar linha com anterior/próxima</li>
+          <li>SUM OVER e AVG OVER — acumulados e médias móveis</li>
+          <li>PARTITION BY — janelas por grupo</li>
+          <li>Datas: DATEDIFF, DATEADD, FORMAT</li>
+        </ul>
+        <div class="criteria">
+          <div class="criteria-label">Critério de avanço</div>
+          <p>Calcular variação percentual, ranking por categoria e média móvel sem ajuda.</p>
+        </div>
+      </div>
+    </div>
+    <div class="practice-box">
+      <div class="label">// como praticar</div>
+      <p>Pegue relatórios que existem hoje na Renner e tente recriá-los do zero em SQL. Não peça a query — entregue o resultado e valide com o original.</p>
+    </div>
+  </div>
+
+  <!-- FASE 3 -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-bar bar-p3" style="height:auto;"></div>
+      <div>
+        <div class="phase-meta p3">Fase 03 · Semanas 5–6</div>
+        <div class="phase-title">Databricks na prática + leitura de notebooks</div>
+      </div>
+      <div class="phase-tagline">Você para de ter medo do ambiente e começa a se sentir em casa.</div>
+    </div>
+    <div class="weeks">
+      <div class="week-card card-p3">
+        <div class="week-num">Semana 05</div>
+        <div class="week-title">Orientação no ambiente</div>
+        <ul class="topics">
+          <li>Como o Databricks funciona: clusters, notebooks, células</li>
+          <li>Spark SQL dentro do Databricks com spark.sql()</li>
+          <li>Leitura de Delta Tables: spark.read.format("delta")</li>
+          <li>Entender a arquitetura bronze/silver/gold sem precisar construir</li>
+        </ul>
+        <div class="criteria">
+          <div class="criteria-label">Critério de avanço</div>
+          <p>Rodar uma query Spark SQL em um notebook existente sem erros.</p>
+        </div>
+      </div>
+      <div class="week-card card-p3">
+        <div class="week-num">Semana 06</div>
+        <div class="week-title">PySpark básico — leitura e inspeção</div>
+        <ul class="topics">
+          <li>df.select(), df.filter(), df.groupBy(), df.withColumn()</li>
+          <li>Como inspecionar dados: df.show(), df.printSchema(), df.describe()</li>
+          <li>Como salvar resultado: df.write.format("delta").save()</li>
+          <li>Leitura de notebooks existentes: entender bloco por bloco</li>
+        </ul>
+        <div class="criteria">
+          <div class="criteria-label">Critério de avanço</div>
+          <p>Abrir um notebook desconhecido e comentar o que cada bloco faz.</p>
+        </div>
+      </div>
+    </div>
+    <div class="practice-box">
+      <div class="label">// como praticar</div>
+      <p>Pegue notebooks existentes no ambiente da Renner, leia linha por linha e escreva em comentário o que cada bloco faz. Depois tente reescrever partes menores do zero.</p>
+    </div>
+  </div>
+
+  <!-- FASE 4 -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-bar bar-p4" style="height:auto;"></div>
+      <div>
+        <div class="phase-meta p4">Fase 04 · Semanas 7–8</div>
+        <div class="phase-title">PySpark intermediário + resolução de problemas reais</div>
+      </div>
+      <div class="phase-tagline">Você começa a entregar de ponta a ponta, não só executar.</div>
+    </div>
+    <div class="weeks">
+      <div class="week-card card-p4">
+        <div class="week-num">Semana 07</div>
+        <div class="week-title">Transformações e joins</div>
+        <ul class="topics">
+          <li>Joins no PySpark: df.join(other, on=..., how=...)</li>
+          <li>Funções úteis: F.when(), F.coalesce(), F.lit()</li>
+          <li>Tratamento de dados sujos: nulos, tipos errados, duplicatas</li>
+          <li>Como ler arquivos externos: CSV, Parquet, Excel</li>
+        </ul>
+        <div class="criteria">
+          <div class="criteria-label">Critério de avanço</div>
+          <p>Cruzar duas tabelas Delta e salvar o resultado transformado.</p>
+        </div>
+      </div>
+      <div class="week-card card-p4">
+        <div class="week-num">Semana 08</div>
+        <div class="week-title">Window functions no PySpark</div>
+        <ul class="topics">
+          <li>Window.partitionBy() e Window.orderBy()</li>
+          <li>F.lag(), F.lead(), F.rank(), F.row_number()</li>
+          <li>SUM e AVG acumulados com janela</li>
+          <li>Combinando PySpark com Spark SQL no mesmo notebook</li>
+        </ul>
+        <div class="criteria">
+          <div class="criteria-label">Critério de avanço</div>
+          <p>Entregar uma tabela final correta explicando as decisões tomadas no caminho.</p>
+        </div>
+      </div>
+    </div>
+    <div class="practice-box">
+      <div class="label">// como praticar</div>
+      <p>Pegue uma demanda real, mesmo que pequena, e proponha ao seu gestor que você faz a entrega. Mostre o resultado antes de mostrar o código.</p>
+    </div>
+  </div>
+
+  <!-- FASE 5 -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-bar bar-p5" style="height:auto;"></div>
+      <div>
+        <div class="phase-meta p5">Fase 05 · Semanas 9–10</div>
+        <div class="phase-title">ADF + ingestões como seu gestor faz</div>
+      </div>
+      <div class="phase-tagline">Você entende como os dados chegam e consegue criar ou adaptar pipelines.</div>
+    </div>
+    <div class="weeks">
+      <div class="week-card card-p5">
+        <div class="week-num">Semana 09</div>
+        <div class="week-title">ADF — fundação e ingestões básicas</div>
+        <ul class="topics">
+          <li>Como um pipeline no ADF funciona: atividades, fluxo, parâmetros</li>
+          <li>Ingestão de arquivos flat: CSV, Excel do SharePoint para bronze</li>
+          <li>Como parametrizar pipelines para reusar em múltiplos contextos</li>
+          <li>Tratamento de erros básico: If Condition, On Failure</li>
+        </ul>
+        <div class="criteria">
+          <div class="criteria-label">Critério de avanço</div>
+          <p>Ler e entender qualquer pipeline existente na Renner sem ajuda.</p>
+        </div>
+      </div>
+      <div class="week-card card-p5">
+        <div class="week-num">Semana 10</div>
+        <div class="week-title">Ingestões via API e SFTP</div>
+        <ul class="topics">
+          <li>Ingestão via API REST: linked service, headers, autenticação</li>
+          <li>Ingestão via SFTP: configurar, pegar arquivo, mover para Data Lake</li>
+          <li>Criar um pipeline novo do zero — mesmo que cópia de existente</li>
+          <li>Debug e monitoramento de execuções no ADF</li>
+        </ul>
+        <div class="criteria">
+          <div class="criteria-label">Critério de avanço</div>
+          <p>Criar uma ingestão nova sem precisar que o gestor configure do zero pra você.</p>
+        </div>
+      </div>
+    </div>
+    <div class="practice-box">
+      <div class="label">// como praticar</div>
+      <p>Olhe os pipelines existentes na Renner com objetivo de entender, não de mudar. Depois proponha criar um pipeline simples do zero — mesmo que seja uma cópia de algo que já existe.</p>
+    </div>
+  </div>
+
+  <!-- FASE 6 -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-bar bar-p6" style="height:auto;"></div>
+      <div>
+        <div class="phase-meta p6">Fase 06 · Semanas 11–12</div>
+        <div class="phase-title">Domínio de negócio + entregas autônomas</div>
+      </div>
+      <div class="phase-tagline">Você vira referência nos problemas que importam para a Renner.</div>
+    </div>
+    <div class="weeks">
+      <div class="week-card card-p6">
+        <div class="week-num">Semana 11</div>
+        <div class="week-title">Mapeamento dos problemas recorrentes</div>
+        <ul class="topics">
+          <li>Identificar os 5–6 problemas que mais aparecem no time</li>
+          <li>Cobertura de estoque, vendas por categoria, ruptura, giro de produto</li>
+          <li>Entender a lógica de negócio por trás de cada problema, não só a query</li>
+          <li>Construir repositório pessoal de queries e notebooks comentados</li>
+        </ul>
+        <div class="criteria">
+          <div class="criteria-label">Critério de avanço</div>
+          <p>Ter pelo menos 3 soluções documentadas para problemas reais do time.</p>
+        </div>
+      </div>
+      <div class="week-card card-p6">
+        <div class="week-num">Semana 12</div>
+        <div class="week-title">Autonomia total — do pedido à entrega</div>
+        <ul class="topics">
+          <li>Receber o pedido, entender a dor, entregar a tabela</li>
+          <li>Documentar o que foi feito: um parágrafo explicando a lógica</li>
+          <li>Propor soluções para problemas que o gestor ainda não resolveu</li>
+          <li>Ser a referência técnica que outros consultam</li>
+        </ul>
+        <div class="criteria">
+          <div class="criteria-label">Critério de avanço</div>
+          <p>Seu gestor te passa um problema novo e você volta com uma proposta de solução, não com uma pergunta.</p>
+        </div>
+      </div>
+    </div>
+    <div class="practice-box">
+      <div class="label">// como praticar</div>
+      <p>Pegue demandas de ponta a ponta. Documente tudo que você fez — um parágrafo explicando a lógica é o que separa um executor de um especialista.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- SUMMARY TABLE -->
+<div class="summary">
+  <h2>Visão geral — 12 semanas</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Período</th>
+        <th>Foco</th>
+        <th>O que você ganha</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="dot" style="background:var(--phase1)"></span>Sem 1–2</td>
+        <td class="highlight">SQL fundação</td>
+        <td>Confiança na linguagem base</td>
+      </tr>
+      <tr>
+        <td><span class="dot" style="background:var(--phase2)"></span>Sem 3–4</td>
+        <td class="highlight">SQL intermediário</td>
+        <td>Resolve problemas analíticos reais</td>
+      </tr>
+      <tr>
+        <td><span class="dot" style="background:var(--phase3)"></span>Sem 5–6</td>
+        <td class="highlight">Databricks + leitura</td>
+        <td>Para de ter medo do ambiente</td>
+      </tr>
+      <tr>
+        <td><span class="dot" style="background:var(--phase4)"></span>Sem 7–8</td>
+        <td class="highlight">PySpark intermediário</td>
+        <td>Entrega de ponta a ponta</td>
+      </tr>
+      <tr>
+        <td><span class="dot" style="background:var(--phase5)"></span>Sem 9–10</td>
+        <td class="highlight">ADF + ingestões</td>
+        <td>Entende e cria pipelines</td>
+      </tr>
+      <tr>
+        <td><span class="dot" style="background:var(--phase6)"></span>Sem 11–12</td>
+        <td class="highlight">Negócio + autonomia</td>
+        <td>Vira referência no time</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>
+  Plano gerado em junho 2026 · Thiago × Claude · Lojas Renner — Engenharia de Dados
+</footer>
+
+</body>
+</html>

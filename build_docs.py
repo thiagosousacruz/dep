@@ -4,7 +4,7 @@ import markdown
 from bs4 import BeautifulSoup
 
 TEMPLATE_PATH = 'template.html'
-OUTPUT_PATH = 'index.html'
+OUTPUT_PATH = 'cheatsheets.html'
 
 def process_markdown_file(filepath, index, prefix, color_class, file_to_id_map):
     with open(filepath, 'r', encoding='utf-8') as f:
@@ -138,7 +138,7 @@ def build():
     with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
         f.write(template)
         
-    print("Build successful. index.html has been generated with mapped internal links.")
+    print("Build successful. cheatsheets.html has been generated with mapped internal links.")
 
 if __name__ == '__main__':
     build()
