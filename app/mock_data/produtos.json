@@ -1,0 +1,62 @@
+[
+  {
+    "id_produto": 101,
+    "nome_produto": "Notebook Pro",
+    "categoria": "Tecnologia",
+    "preco_unitario": 4500.0
+  },
+  {
+    "id_produto": 102,
+    "nome_produto": "Mouse Sem Fio",
+    "categoria": "Tecnologia",
+    "preco_unitario": 120.0
+  },
+  {
+    "id_produto": 103,
+    "nome_produto": "Monitor 27'",
+    "categoria": "Tecnologia",
+    "preco_unitario": 1350.0
+  },
+  {
+    "id_produto": 104,
+    "nome_produto": "Teclado Mecânico",
+    "categoria": "Tecnologia",
+    "preco_unitario": 350.0
+  },
+  {
+    "id_produto": 105,
+    "nome_produto": "Cadeira Ergonômica",
+    "categoria": "Mobiliário",
+    "preco_unitario": 980.0
+  },
+  {
+    "id_produto": 106,
+    "nome_produto": "Mesa Regulável",
+    "categoria": "Mobiliário",
+    "preco_unitario": 1500.0
+  },
+  {
+    "id_produto": 107,
+    "nome_produto": "Smartphone 5G",
+    "categoria": "Tecnologia",
+    "preco_unitario": 2800.0
+  },
+  {
+    "id_produto": 108,
+    "nome_produto": "Cafeteira Expressa",
+    "categoria": "Eletrodomésticos",
+    "preco_unitario": 450.0
+  },
+  {
+    "id_produto": 109,
+    "nome_produto": "Aspirador Robô",
+    "categoria": "Eletrodomésticos",
+    "preco_unitario": 1200.0
+  },
+  {
+    "id_produto": 110,
+    "nome_produto": "Luminária Smart",
+    "categoria": "Mobiliário",
+    "preco_unitario": 180.0
+  }
+]

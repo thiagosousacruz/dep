@@ -1,0 +1,802 @@
+[
+  {
+    "id_venda": 1,
+    "data_venda": "2025-06-28",
+    "id_cliente": 8,
+    "id_produto": 101,
+    "quantidade": 2,
+    "valor": 9000.0,
+    "regiao": "Centro-Oeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 2,
+    "data_venda": "2025-06-05",
+    "id_cliente": 1,
+    "id_produto": 103,
+    "quantidade": 2,
+    "valor": 2700.0,
+    "regiao": "Nordeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 3,
+    "data_venda": "2025-03-12",
+    "id_cliente": 1,
+    "id_produto": 107,
+    "quantidade": 3,
+    "valor": 8400.0,
+    "regiao": "Sudeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 4,
+    "data_venda": "2025-01-21",
+    "id_cliente": 15,
+    "id_produto": 101,
+    "quantidade": 1,
+    "valor": 4500.0,
+    "regiao": "Norte",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 5,
+    "data_venda": "2025-04-25",
+    "id_cliente": 13,
+    "id_produto": 103,
+    "quantidade": 2,
+    "valor": 2700.0,
+    "regiao": "Sudeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 6,
+    "data_venda": "2025-05-08",
+    "id_cliente": 5,
+    "id_produto": 103,
+    "quantidade": 5,
+    "valor": 6750.0,
+    "regiao": "Sudeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 7,
+    "data_venda": "2025-02-25",
+    "id_cliente": 4,
+    "id_produto": 102,
+    "quantidade": 4,
+    "valor": 480.0,
+    "regiao": "Norte",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 8,
+    "data_venda": "2025-04-17",
+    "id_cliente": 2,
+    "id_produto": 110,
+    "quantidade": 2,
+    "valor": 360.0,
+    "regiao": "Sul",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 9,
+    "data_venda": "2025-02-15",
+    "id_cliente": 3,
+    "id_produto": 103,
+    "quantidade": 4,
+    "valor": 5400.0,
+    "regiao": "Norte",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 10,
+    "data_venda": "2025-04-27",
+    "id_cliente": 15,
+    "id_produto": 110,
+    "quantidade": 2,
+    "valor": 360.0,
+    "regiao": "Nordeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 11,
+    "data_venda": "2025-06-01",
+    "id_cliente": 10,
+    "id_produto": 106,
+    "quantidade": 3,
+    "valor": 4500.0,
+    "regiao": "Centro-Oeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 12,
+    "data_venda": "2025-03-16",
+    "id_cliente": 5,
+    "id_produto": 101,
+    "quantidade": 5,
+    "valor": 22500.0,
+    "regiao": "Norte",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 13,
+    "data_venda": "2025-02-25",
+    "id_cliente": 5,
+    "id_produto": 104,
+    "quantidade": 4,
+    "valor": 1400.0,
+    "regiao": "Norte",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 14,
+    "data_venda": "2025-03-31",
+    "id_cliente": 14,
+    "id_produto": 106,
+    "quantidade": 1,
+    "valor": 1500.0,
+    "regiao": null,
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 15,
+    "data_venda": "2025-01-29",
+    "id_cliente": 9,
+    "id_produto": 101,
+    "quantidade": 2,
+    "valor": 9000.0,
+    "regiao": "Centro-Oeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 16,
+    "data_venda": "2025-05-03",
+    "id_cliente": 15,
+    "id_produto": 106,
+    "quantidade": 5,
+    "valor": 7500.0,
+    "regiao": "Norte",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 17,
+    "data_venda": "2025-02-02",
+    "id_cliente": 1,
+    "id_produto": 101,
+    "quantidade": 5,
+    "valor": 22500.0,
+    "regiao": "Sul",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 18,
+    "data_venda": "2025-02-06",
+    "id_cliente": 10,
+    "id_produto": 103,
+    "quantidade": 5,
+    "valor": 6750.0,
+    "regiao": "Sudeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 19,
+    "data_venda": "2025-03-23",
+    "id_cliente": 5,
+    "id_produto": 105,
+    "quantidade": 3,
+    "valor": 2940.0,
+    "regiao": "Sul",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 20,
+    "data_venda": "2025-02-14",
+    "id_cliente": 10,
+    "id_produto": 105,
+    "quantidade": 1,
+    "valor": 980.0,
+    "regiao": "Centro-Oeste",
+    "status": "Cancelado"
+  },
+  {
+    "id_venda": 21,
+    "data_venda": "2025-06-14",
+    "id_cliente": 15,
+    "id_produto": 102,
+    "quantidade": 4,
+    "valor": 480.0,
+    "regiao": "Centro-Oeste",
+    "status": "Cancelado"
+  },
+  {
+    "id_venda": 22,
+    "data_venda": "2025-02-08",
+    "id_cliente": 6,
+    "id_produto": 101,
+    "quantidade": 1,
+    "valor": 4500.0,
+    "regiao": "Centro-Oeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 23,
+    "data_venda": "2025-01-28",
+    "id_cliente": 3,
+    "id_produto": 102,
+    "quantidade": 4,
+    "valor": 480.0,
+    "regiao": "Norte",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 24,
+    "data_venda": "2025-05-10",
+    "id_cliente": 6,
+    "id_produto": 104,
+    "quantidade": 4,
+    "valor": 1400.0,
+    "regiao": null,
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 25,
+    "data_venda": "2025-04-02",
+    "id_cliente": 3,
+    "id_produto": 106,
+    "quantidade": 1,
+    "valor": 1500.0,
+    "regiao": "Sul",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 26,
+    "data_venda": "2025-03-09",
+    "id_cliente": 5,
+    "id_produto": 102,
+    "quantidade": 1,
+    "valor": 120.0,
+    "regiao": null,
+    "status": "Cancelado"
+  },
+  {
+    "id_venda": 27,
+    "data_venda": "2025-01-03",
+    "id_cliente": 4,
+    "id_produto": 105,
+    "quantidade": 2,
+    "valor": 1960.0,
+    "regiao": "Sudeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 28,
+    "data_venda": "2025-04-18",
+    "id_cliente": 4,
+    "id_produto": 108,
+    "quantidade": 5,
+    "valor": 2250.0,
+    "regiao": "Centro-Oeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 29,
+    "data_venda": "2025-03-23",
+    "id_cliente": 5,
+    "id_produto": 109,
+    "quantidade": 3,
+    "valor": 3600.0,
+    "regiao": "Sudeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 30,
+    "data_venda": "2025-04-06",
+    "id_cliente": 8,
+    "id_produto": 103,
+    "quantidade": 4,
+    "valor": 5400.0,
+    "regiao": "Sudeste",
+    "status": null
+  },
+  {
+    "id_venda": 31,
+    "data_venda": "2025-05-21",
+    "id_cliente": 12,
+    "id_produto": 106,
+    "quantidade": 3,
+    "valor": 4500.0,
+    "regiao": "Norte",
+    "status": "Cancelado"
+  },
+  {
+    "id_venda": 32,
+    "data_venda": "2025-01-30",
+    "id_cliente": 14,
+    "id_produto": 101,
+    "quantidade": 2,
+    "valor": 9000.0,
+    "regiao": "Sudeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 33,
+    "data_venda": "2025-02-19",
+    "id_cliente": 2,
+    "id_produto": 110,
+    "quantidade": 1,
+    "valor": 180.0,
+    "regiao": "Nordeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 34,
+    "data_venda": "2025-04-03",
+    "id_cliente": 8,
+    "id_produto": 109,
+    "quantidade": 4,
+    "valor": 4800.0,
+    "regiao": "Nordeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 35,
+    "data_venda": "2025-05-21",
+    "id_cliente": 2,
+    "id_produto": 109,
+    "quantidade": 3,
+    "valor": 3600.0,
+    "regiao": "Sudeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 36,
+    "data_venda": "2025-04-24",
+    "id_cliente": 7,
+    "id_produto": 102,
+    "quantidade": 3,
+    "valor": 360.0,
+    "regiao": "Sul",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 37,
+    "data_venda": "2025-06-19",
+    "id_cliente": 4,
+    "id_produto": 106,
+    "quantidade": 1,
+    "valor": 1500.0,
+    "regiao": "Sul",
+    "status": "Cancelado"
+  },
+  {
+    "id_venda": 38,
+    "data_venda": "2025-05-30",
+    "id_cliente": 2,
+    "id_produto": 102,
+    "quantidade": 3,
+    "valor": 360.0,
+    "regiao": "Norte",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 39,
+    "data_venda": "2025-06-28",
+    "id_cliente": 14,
+    "id_produto": 108,
+    "quantidade": 5,
+    "valor": 2250.0,
+    "regiao": null,
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 40,
+    "data_venda": "2025-06-07",
+    "id_cliente": 3,
+    "id_produto": 104,
+    "quantidade": 2,
+    "valor": 700.0,
+    "regiao": "Sul",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 41,
+    "data_venda": "2025-06-18",
+    "id_cliente": 10,
+    "id_produto": 102,
+    "quantidade": 1,
+    "valor": 120.0,
+    "regiao": "Norte",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 42,
+    "data_venda": "2025-01-23",
+    "id_cliente": 1,
+    "id_produto": 105,
+    "quantidade": 2,
+    "valor": 1960.0,
+    "regiao": "Sudeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 43,
+    "data_venda": "2025-01-14",
+    "id_cliente": 13,
+    "id_produto": 107,
+    "quantidade": 2,
+    "valor": 5600.0,
+    "regiao": "Sul",
+    "status": "Cancelado"
+  },
+  {
+    "id_venda": 44,
+    "data_venda": "2025-04-15",
+    "id_cliente": 1,
+    "id_produto": 101,
+    "quantidade": 4,
+    "valor": 18000.0,
+    "regiao": "Sudeste",
+    "status": "Cancelado"
+  },
+  {
+    "id_venda": 45,
+    "data_venda": "2025-02-21",
+    "id_cliente": 3,
+    "id_produto": 103,
+    "quantidade": 1,
+    "valor": 1350.0,
+    "regiao": "Norte",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 46,
+    "data_venda": "2025-04-02",
+    "id_cliente": 15,
+    "id_produto": 104,
+    "quantidade": 2,
+    "valor": 700.0,
+    "regiao": "Sudeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 47,
+    "data_venda": "2025-05-04",
+    "id_cliente": 6,
+    "id_produto": 110,
+    "quantidade": 4,
+    "valor": 720.0,
+    "regiao": "Centro-Oeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 48,
+    "data_venda": "2025-06-09",
+    "id_cliente": 8,
+    "id_produto": 110,
+    "quantidade": 1,
+    "valor": 180.0,
+    "regiao": "Centro-Oeste",
+    "status": "Cancelado"
+  },
+  {
+    "id_venda": 49,
+    "data_venda": "2025-04-05",
+    "id_cliente": 1,
+    "id_produto": 101,
+    "quantidade": 4,
+    "valor": 18000.0,
+    "regiao": "Sudeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 50,
+    "data_venda": "2025-03-07",
+    "id_cliente": 8,
+    "id_produto": 101,
+    "quantidade": 3,
+    "valor": 13500.0,
+    "regiao": "Norte",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 51,
+    "data_venda": "2025-03-14",
+    "id_cliente": 15,
+    "id_produto": 103,
+    "quantidade": 1,
+    "valor": 1350.0,
+    "regiao": "Nordeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 52,
+    "data_venda": "2025-04-28",
+    "id_cliente": 13,
+    "id_produto": 109,
+    "quantidade": 1,
+    "valor": 1200.0,
+    "regiao": "Nordeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 53,
+    "data_venda": "2025-02-08",
+    "id_cliente": 11,
+    "id_produto": 110,
+    "quantidade": 1,
+    "valor": 180.0,
+    "regiao": "Nordeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 54,
+    "data_venda": "2025-03-10",
+    "id_cliente": 9,
+    "id_produto": 105,
+    "quantidade": 4,
+    "valor": 3920.0,
+    "regiao": "Centro-Oeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 55,
+    "data_venda": "2025-03-29",
+    "id_cliente": 13,
+    "id_produto": 105,
+    "quantidade": 4,
+    "valor": 3920.0,
+    "regiao": "Sudeste",
+    "status": "Cancelado"
+  },
+  {
+    "id_venda": 56,
+    "data_venda": "2025-03-11",
+    "id_cliente": 4,
+    "id_produto": 104,
+    "quantidade": 2,
+    "valor": 700.0,
+    "regiao": "Sul",
+    "status": null
+  },
+  {
+    "id_venda": 57,
+    "data_venda": "2025-04-01",
+    "id_cliente": 3,
+    "id_produto": 104,
+    "quantidade": 5,
+    "valor": 1750.0,
+    "regiao": "Sul",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 58,
+    "data_venda": "2025-03-25",
+    "id_cliente": 5,
+    "id_produto": 103,
+    "quantidade": 2,
+    "valor": 2700.0,
+    "regiao": "Norte",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 59,
+    "data_venda": "2025-06-10",
+    "id_cliente": 10,
+    "id_produto": 104,
+    "quantidade": 5,
+    "valor": 1750.0,
+    "regiao": "Sudeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 60,
+    "data_venda": "2025-01-01",
+    "id_cliente": 9,
+    "id_produto": 107,
+    "quantidade": 3,
+    "valor": 8400.0,
+    "regiao": "Sudeste",
+    "status": "Cancelado"
+  },
+  {
+    "id_venda": 61,
+    "data_venda": "2025-02-16",
+    "id_cliente": 10,
+    "id_produto": 106,
+    "quantidade": 1,
+    "valor": 1500.0,
+    "regiao": "Sul",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 62,
+    "data_venda": "2025-01-30",
+    "id_cliente": 10,
+    "id_produto": 101,
+    "quantidade": 2,
+    "valor": 9000.0,
+    "regiao": "Norte",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 63,
+    "data_venda": "2025-01-20",
+    "id_cliente": 11,
+    "id_produto": 109,
+    "quantidade": 3,
+    "valor": 3600.0,
+    "regiao": null,
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 64,
+    "data_venda": "2025-04-16",
+    "id_cliente": 3,
+    "id_produto": 103,
+    "quantidade": 3,
+    "valor": 4050.0,
+    "regiao": "Norte",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 65,
+    "data_venda": "2025-04-17",
+    "id_cliente": 13,
+    "id_produto": 108,
+    "quantidade": 5,
+    "valor": 2250.0,
+    "regiao": "Nordeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 66,
+    "data_venda": "2025-06-07",
+    "id_cliente": 9,
+    "id_produto": 106,
+    "quantidade": 4,
+    "valor": 6000.0,
+    "regiao": "Sudeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 67,
+    "data_venda": "2025-01-17",
+    "id_cliente": 14,
+    "id_produto": 103,
+    "quantidade": 5,
+    "valor": 6750.0,
+    "regiao": "Nordeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 68,
+    "data_venda": "2025-03-13",
+    "id_cliente": 11,
+    "id_produto": 106,
+    "quantidade": 1,
+    "valor": 1500.0,
+    "regiao": "Nordeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 69,
+    "data_venda": "2025-06-04",
+    "id_cliente": 12,
+    "id_produto": 101,
+    "quantidade": 5,
+    "valor": 22500.0,
+    "regiao": "Nordeste",
+    "status": "Cancelado"
+  },
+  {
+    "id_venda": 70,
+    "data_venda": "2025-02-20",
+    "id_cliente": 14,
+    "id_produto": 108,
+    "quantidade": 1,
+    "valor": 450.0,
+    "regiao": "Centro-Oeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 71,
+    "data_venda": "2025-06-04",
+    "id_cliente": 1,
+    "id_produto": 108,
+    "quantidade": 4,
+    "valor": 1800.0,
+    "regiao": "Nordeste",
+    "status": "Cancelado"
+  },
+  {
+    "id_venda": 72,
+    "data_venda": "2025-03-10",
+    "id_cliente": 13,
+    "id_produto": 109,
+    "quantidade": 2,
+    "valor": 2400.0,
+    "regiao": "Nordeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 73,
+    "data_venda": "2025-01-05",
+    "id_cliente": 6,
+    "id_produto": 101,
+    "quantidade": 4,
+    "valor": 18000.0,
+    "regiao": "Centro-Oeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 74,
+    "data_venda": "2025-06-02",
+    "id_cliente": 10,
+    "id_produto": 110,
+    "quantidade": 3,
+    "valor": 540.0,
+    "regiao": "Nordeste",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 75,
+    "data_venda": "2025-05-04",
+    "id_cliente": 12,
+    "id_produto": 104,
+    "quantidade": 5,
+    "valor": 1750.0,
+    "regiao": "Sudeste",
+    "status": null
+  },
+  {
+    "id_venda": 76,
+    "data_venda": "2025-01-09",
+    "id_cliente": 9,
+    "id_produto": 103,
+    "quantidade": 2,
+    "valor": 2700.0,
+    "regiao": "Norte",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 77,
+    "data_venda": "2025-01-27",
+    "id_cliente": 9,
+    "id_produto": 102,
+    "quantidade": 1,
+    "valor": 120.0,
+    "regiao": "Sul",
+    "status": "Entregue"
+  },
+  {
+    "id_venda": 78,
+    "data_venda": "2025-06-26",
+    "id_cliente": 10,
+    "id_produto": 105,
+    "quantidade": 5,
+    "valor": 4900.0,
+    "regiao": "Nordeste",
+    "status": "Pendente"
+  },
+  {
+    "id_venda": 79,
+    "data_venda": "2025-05-15",
+    "id_cliente": 12,
+    "id_produto": 109,
+    "quantidade": 1,
+    "valor": 1200.0,
+    "regiao": "Sudeste",
+    "status": null
+  },
+  {
+    "id_venda": 80,
+    "data_venda": "2025-05-11",
+    "id_cliente": 12,
+    "id_produto": 105,
+    "quantidade": 4,
+    "valor": 3920.0,
+    "regiao": "Sudeste",
+    "status": "Entregue"
+  }
+]

@@ -1,0 +1,101 @@
+[
+  {
+    "id": "pyspark_6.1.1",
+    "titulo": "Seleção Simples de Colunas",
+    "template": "Carregue o dataset 'vendas' e crie um DataFrame chamado 'result' selecionando apenas as colunas 'id_venda', 'valor' e 'regiao', filtrando onde a regiao seja '{regiao}'.",
+    "gabarito_template": "df = spark.read.json('vendas')\nresult = df.select('id_venda', 'valor', 'regiao').filter(col('regiao') == '{regiao}')",
+    "parameters": {
+      "regiao": ["Norte", "Nordeste", "Sudeste", "Sul", "Centro-Oeste"]
+    },
+    "enforce_order": false
+  },
+  {
+    "id": "pyspark_6.1.2",
+    "titulo": "Renomeando Colunas com Alias",
+    "template": "A partir da tabela 'produtos', selecione as colunas 'id_produto' com o alias 'codigo' e 'nome_produto' com o alias 'descricao'. Filtre apenas produtos da categoria '{categoria}'. Defina o DataFrame final em 'result'.",
+    "gabarito_template": "df = spark.read.json('produtos')\nresult = df.select(col('id_produto').alias('codigo'), col('nome_produto').alias('descricao')).filter(col('categoria') == '{categoria}')",
+    "parameters": {
+      "categoria": ["Tecnologia", "Mobiliário", "Eletrodomésticos"]
+    },
+    "enforce_order": false
+  },
+  {
+    "id": "pyspark_6.2.1",
+    "titulo": "Filtro com Operadores Lógicos",
+    "template": "Selecione as colunas 'id_venda', 'id_cliente', 'quantidade' e 'valor' da tabela 'vendas'. Filtre onde a quantidade seja superior a {qtd} e o valor seja superior a {valor_min}. Salve no DataFrame 'result'.",
+    "gabarito_template": "df = spark.read.json('vendas')\nresult = df.select('id_venda', 'id_cliente', 'quantidade', 'valor').filter((col('quantidade') > {qtd}) & (col('valor') > {valor_min}))",
+    "parameters": {
+      "qtd": [1, 2, 3],
+      "valor_min": [100.0, 500.0, 1000.0]
+    },
+    "enforce_order": false
+  },
+  {
+    "id": "pyspark_6.2.2",
+    "titulo": "Filtro de Texto Simples (where)",
+    "template": "Selecione as colunas 'nome', 'email' e 'pais' da tabela 'clientes'. Use a função `.where()` para filtrar onde o pais seja '{pais}' e o status_assinatura seja 'Ativo'. Defina em 'result'.",
+    "gabarito_template": "df = spark.read.json('clientes')\nresult = df.select('nome', 'email', 'pais').where((col('pais') == '{pais}') & (col('status_assinatura') == 'Ativo'))",
+    "parameters": {
+      "pais": ["Brasil", "Portugal"]
+    },
+    "enforce_order": false
+  },
+  {
+    "id": "pyspark_6.3.1",
+    "titulo": "Criação de Colunas com lit()",
+    "template": "Selecione 'id_venda' e 'valor' da tabela 'vendas'. Crie uma nova coluna chamada 'moeda' contendo o valor literal '{moeda}' e outra coluna chamada 'processado' contendo o booleano True. Salve em 'result'.",
+    "gabarito_template": "df = spark.read.json('vendas')\nresult = df.select('id_venda', 'valor').withColumn('moeda', lit('{moeda}')).withColumn('processado', lit(True))",
+    "parameters": {
+      "moeda": ["BRL", "EUR", "USD"]
+    },
+    "enforce_order": false
+  },
+  {
+    "id": "pyspark_6.3.2",
+    "titulo": "withColumnRenamed e drop",
+    "template": "A partir da tabela 'clientes', crie um DataFrame 'result' onde você renomeia a coluna 'nome' para 'nome_completo', adiciona uma coluna 'origem' com a string '{origem}' e remove as colunas 'data_cadastro' e 'email'.",
+    "gabarito_template": "df = spark.read.json('clientes')\nresult = df.withColumnRenamed('nome', 'nome_completo').withColumn('origem', lit('{origem}')).drop('data_cadastro', 'email')",
+    "parameters": {
+      "origem": ["Databricks", "Playbook", "WASM"]
+    },
+    "enforce_order": false
+  },
+  {
+    "id": "pyspark_6.4.1",
+    "titulo": "Remoção de Duplicidades (distinct)",
+    "template": "A partir da tabela 'vendas', projete apenas a coluna 'regiao' e retorne um conjunto de regiões únicas (removendo duplicados). Salve o resultado final em 'result'.",
+    "gabarito_template": "df = spark.read.json('vendas')\nresult = df.select('regiao').distinct()",
+    "parameters": {},
+    "enforce_order": false
+  },
+  {
+    "id": "pyspark_6.4.2",
+    "titulo": "Deduplicação Dinâmica por Chave",
+    "template": "Selecione as colunas 'id_cliente' e 'status_assinatura' da tabela 'clientes', filtre apenas os clientes do país '{pais}' e remova registros duplicados baseando-se apenas na chave 'status_assinatura'. Defina o DataFrame final em 'result'.",
+    "gabarito_template": "df = spark.read.json('clientes')\nresult = df.select('id_cliente', 'status_assinatura').filter(col('pais') == '{pais}').dropDuplicates(subset=['status_assinatura'])",
+    "parameters": {
+      "pais": ["Brasil", "Portugal"]
+    },
+    "enforce_order": false
+  },
+  {
+    "id": "pyspark_6.5.1",
+    "titulo": "Ordenação de Registros",
+    "template": "A partir da tabela 'produtos', projete 'nome_produto' e 'preco_unitario'. Ordene os produtos pelo preço unitário de forma DECRESCENTE (use a ordenação padrão do PySpark) e limite a {limite} registros. Salve em 'result'.",
+    "gabarito_template": "df = spark.read.json('produtos')\nresult = df.select('nome_produto', 'preco_unitario').orderBy(col('preco_unitario'), ascending=False).limit({limite})",
+    "parameters": {
+      "limite": [3, 5]
+    },
+    "enforce_order": true
+  },
+  {
+    "id": "pyspark_6.5.2",
+    "titulo": "Expressões com selectExpr",
+    "template": "Selecione as colunas 'id_venda' e execute uma expressão SQL para criar uma nova coluna contendo o valor triplicado da coluna 'valor' com o nome 'valor_triplicado'. Filtre onde a região seja '{regiao}' usando selectExpr. Defina em 'result'.",
+    "gabarito_template": "df = spark.read.json('vendas')\nresult = df.filter(col('regiao') == '{regiao}').selectExpr('id_venda', 'valor * 3 AS valor_triplicado')",
+    "parameters": {
+      "regiao": ["Sudeste", "Sul", "Nordeste"]
+    },
+    "enforce_order": false
+  }
+]
