@@ -1,0 +1,412 @@
+{
+  "desafios": [
+    {
+      "id": "spk-01-transformacoes-acoes",
+      "ref": "02_pyspark/01_fundamentos-dags-sql.md#transformacoes-e-acoes",
+      "ferramenta": "Lazy evaluation: transformações × ações",
+      "niveis": {
+        "basico": {
+          "enunciado": "Filtre pessoas com nome preenchido e crie `idade_ajustada = idade + 1`. Indique no código qual linha dispara a execução.",
+          "dados": [{"tabela": "pessoas", "colunas": ["nome", "idade"], "tipos": ["STRING", "INT"], "linhas": [["Ana", 30], [null, 40], ["Bia", 25]]}],
+          "solucao": "resultado = (\n    pessoas\n    .filter(F.col(\"nome\").isNotNull())\n    .withColumn(\"idade_ajustada\", F.col(\"idade\") + 1)\n)  # transformações: nada executou ainda\n\nresultado.count()  # ação: executa o plano"
+        },
+        "intermediario": {
+          "enunciado": "O código abaixo chama três ações sobre o mesmo DataFrame caro. Quantas vezes o plano é executado? Reescreva para calcular as três métricas em uma única ação.\n`total = df.count(); maior = df.agg(F.max('valor')).first()[0]; menor = df.agg(F.min('valor')).first()[0]`",
+          "dados": [{"tabela": "df", "colunas": ["id", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 50], [3, 30]]}],
+          "solucao": "# Três ações = três execuções do plano desde a origem.\nresultado = df.agg(\n    F.count(\"*\").alias(\"total\"),\n    F.max(\"valor\").alias(\"maior\"),\n    F.min(\"valor\").alias(\"menor\"),\n)\nmetricas = resultado.first()   # uma única ação"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, abra um notebook de produção e liste todas as ações (`count`, `show`, `display`, `collect`, `toPandas`, `write`). Classifique cada uma como necessária ou de depuração e estime quantas execuções extras do plano as de depuração causam.",
+          "dados": null,
+          "solucao": "# Busca rápida no notebook exportado:\n#   grep -nE '\\.(count|show|collect|toPandas)\\(|display\\(' notebook.py\n# Para cada ocorrência: é parte do resultado (write, métrica publicada) ou depuração?\n# Remova ou proteja depuração com uma flag (if DEBUG:) e meça a duração antes/depois."
+        }
+      }
+    },
+    {
+      "id": "spk-01-dataframe-rdd",
+      "ref": "02_pyspark/01_fundamentos-dags-sql.md#dataframe-api-vs-rdd",
+      "ferramenta": "DataFrame API e explain",
+      "niveis": {
+        "basico": {
+          "enunciado": "Filtre as vendas FECHADO e mostre o plano físico com `explain`.",
+          "dados": [{"tabela": "vendas", "colunas": ["id", "status", "valor"], "tipos": ["INT", "STRING", "INT"], "linhas": [[1, "FECHADO", 10], [2, "ABERTO", 20]]}],
+          "solucao": "resultado = vendas.filter(F.col(\"status\") == \"FECHADO\")\nresultado.explain(\"formatted\")"
+        },
+        "intermediario": {
+          "enunciado": "Converta para DataFrame API o código RDD abaixo, que soma valor por status:\n`rdd.map(lambda r: (r.status, r.valor)).reduceByKey(lambda a, b: a + b)`",
+          "dados": [{"tabela": "vendas", "colunas": ["id", "status", "valor"], "tipos": ["INT", "STRING", "INT"], "linhas": [[1, "FECHADO", 10], [2, "ABERTO", 20], [3, "FECHADO", 5]]}],
+          "solucao": "resultado = vendas.groupBy(\"status\").agg(F.sum(\"valor\").alias(\"valor\"))\n# Vantagem: o Catalyst enxerga as colunas e pode podar leitura e escolher a agregação."
+        },
+        "avancado": {
+          "enunciado": "Na sua base, procure usos de `.rdd`, `sparkContext` ou `parallelize`. Verifique quais quebrariam em computação serverless (Spark Connect) e reescreva um deles com DataFrame API.",
+          "dados": null,
+          "solucao": "# Busca: grep -nE '\\.rdd\\b|sparkContext|parallelize' *.py\n# Exemplos de troca:\n#   sc.parallelize(lista).toDF(cols)  ->  spark.createDataFrame(lista, cols)\n#   df.rdd.map(f).toDF()              ->  df.select(<expressões nativas>)\n#   df.rdd.getNumPartitions()         ->  não disponível no Spark Connect; avalie pela Spark UI"
+        }
+      }
+    },
+    {
+      "id": "spk-01-spark-sql-views",
+      "ref": "02_pyspark/01_fundamentos-dags-sql.md#spark-sql-e-temp-views",
+      "ferramenta": "createOrReplaceTempView e spark.sql com args",
+      "niveis": {
+        "basico": {
+          "enunciado": "Registre o DataFrame como temp view e calcule em SQL a receita por região.",
+          "dados": [{"tabela": "vendas", "colunas": ["regiao", "valor"], "tipos": ["STRING", "INT"], "linhas": [["SUL", 10], ["SUL", 20], ["NORTE", 5]]}],
+          "solucao": "vendas.createOrReplaceTempView(\"vw_vendas\")\nresultado = spark.sql(\"\"\"\n    SELECT regiao, SUM(valor) AS receita\n    FROM vw_vendas\n    GROUP BY regiao\n\"\"\")"
+        },
+        "intermediario": {
+          "enunciado": "Filtre a região recebida em uma variável Python sem concatenar strings no SQL.",
+          "dados": [{"tabela": "vendas", "colunas": ["regiao", "valor"], "tipos": ["STRING", "INT"], "linhas": [["SUL", 10], ["SUL", 20], ["NORTE", 5]]}],
+          "solucao": "regiao_param = \"SUL\"\nvendas.createOrReplaceTempView(\"vw_vendas\")\nresultado = spark.sql(\n    \"SELECT * FROM vw_vendas WHERE regiao = :regiao\",\n    args={\"regiao\": regiao_param},\n)"
+        },
+        "avancado": {
+          "enunciado": "Combine as duas APIs: calcule em SQL o total por cliente e, em PySpark, junte com o DataFrame de clientes para trazer o nome. Explique por que os dois caminhos geram um único plano.",
+          "dados": [
+            {"tabela": "vendas", "colunas": ["id_cliente", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [1, 30], [2, 5]]},
+            {"tabela": "clientes", "colunas": ["id_cliente", "nome"], "tipos": ["INT", "STRING"], "linhas": [[1, "Ana"], [2, "Bruno"]]}
+          ],
+          "solucao": "vendas.createOrReplaceTempView(\"vw_vendas\")\ntotais = spark.sql(\"SELECT id_cliente, SUM(valor) AS total FROM vw_vendas GROUP BY id_cliente\")\nresultado = totais.join(clientes, \"id_cliente\")\nresultado.explain()\n# spark.sql devolve um DataFrame: as duas partes viram um único plano lógico otimizado pelo Catalyst."
+        }
+      }
+    },
+    {
+      "id": "spk-02-schema-explicito",
+      "ref": "02_pyspark/02_leitura-escrita-io.md#arquivos-com-schema-explicito",
+      "ferramenta": "spark.read com schema, mode e columnNameOfCorruptRecord",
+      "niveis": {
+        "basico": {
+          "enunciado": "Declare um schema com `id` (inteiro, obrigatório) e `cidade` (texto) e leia CSVs separados por `;` com cabeçalho, de um Volume.",
+          "dados": null,
+          "solucao": "schema_lote = T.StructType([\n    T.StructField(\"id\", T.IntegerType(), False),\n    T.StructField(\"cidade\", T.StringType(), True),\n])\n\ndf = (\n    spark.read\n    .schema(schema_lote)\n    .option(\"header\", \"true\")\n    .option(\"sep\", \";\")\n    .csv(\"/Volumes/main/bronze/landing/lotes/\")\n)"
+        },
+        "intermediario": {
+          "enunciado": "Leia o mesmo CSV guardando as linhas inválidas em uma coluna `_corrupt` e conte quantas foram rejeitadas.",
+          "dados": null,
+          "solucao": "schema_com_corrupt = T.StructType([\n    T.StructField(\"id\", T.IntegerType(), True),\n    T.StructField(\"cidade\", T.StringType(), True),\n    T.StructField(\"_corrupt\", T.StringType(), True),\n])\n\ndf = (\n    spark.read.schema(schema_com_corrupt)\n    .option(\"header\", \"true\").option(\"sep\", \";\")\n    .option(\"mode\", \"PERMISSIVE\")\n    .option(\"columnNameOfCorruptRecord\", \"_corrupt\")\n    .csv(\"/Volumes/main/bronze/landing/lotes/\")\n    .cache()   # recomendado antes de filtrar só pela coluna corrompida (clusters clássicos)\n)\nrejeitadas = df.filter(F.col(\"_corrupt\").isNotNull()).count()"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha uma ingestão de arquivos que usa `inferSchema`. Gere o schema inferido uma vez, fixe-o no código (como DDL), e compare tempo de leitura e estabilidade de tipos entre duas cargas.",
+          "dados": null,
+          "solucao": "inferido = spark.read.option(\"header\", \"true\").option(\"inferSchema\", \"true\").csv(caminho).schema\nprint(inferido.simpleString())   # copie e revise -> DDL fixo\nschema_fixo = \"id INT, cidade STRING, valor DECIMAL(12,2)\"\ndf = spark.read.schema(schema_fixo).option(\"header\", \"true\").csv(caminho)\n# Compare duração (sem a passada de inferência) e tipos entre cargas."
+        }
+      }
+    },
+    {
+      "id": "spk-02-tabelas",
+      "ref": "02_pyspark/02_leitura-escrita-io.md#tabelas",
+      "ferramenta": "read.table, saveAsTable, replaceWhere",
+      "niveis": {
+        "basico": {
+          "enunciado": "Leia `main.silver.clientes`, filtre os ativos e grave em `main.gold.clientes_ativos` substituindo o conteúdo.",
+          "dados": null,
+          "solucao": "(\n    spark.read.table(\"main.silver.clientes\")\n    .filter(F.col(\"status\") == \"ATIVO\")\n    .write.mode(\"overwrite\")\n    .saveAsTable(\"main.gold.clientes_ativos\")\n)"
+        },
+        "intermediario": {
+          "enunciado": "Reprocesse apenas o mês 2025-10 da tabela `main.gold.vendas_mensal`, sem apagar os outros meses.",
+          "dados": null,
+          "solucao": "(\n    df_outubro\n    .write.mode(\"overwrite\")\n    .option(\"replaceWhere\", \"mes = '2025-10'\")\n    .saveAsTable(\"main.gold.vendas_mensal\")\n)\n# Todas as linhas de df_outubro precisam satisfazer a condição, senão a escrita falha."
+        },
+        "avancado": {
+          "enunciado": "Na sua base, encontre um job que faz `overwrite` total para reprocessar só um período. Reescreva com `replaceWhere`, rode duas vezes seguidas e confirme pelo `DESCRIBE HISTORY` que o resultado é idempotente e que os outros períodos não mudaram.",
+          "dados": null,
+          "solucao": "spark.sql(\"DESCRIBE HISTORY main.gold.vendas_mensal LIMIT 2\").select(\"version\", \"operation\", \"operationParameters\", \"operationMetrics\").show(truncate=False)\n# Compare contagem por período antes e depois:\nspark.read.table(\"main.gold.vendas_mensal\").groupBy(\"mes\").count().orderBy(\"mes\").show()"
+        }
+      }
+    },
+    {
+      "id": "spk-02-jdbc",
+      "ref": "02_pyspark/02_leitura-escrita-io.md#jdbc-paralelizado",
+      "ferramenta": "spark.read.jdbc com particionamento",
+      "niveis": {
+        "basico": {
+          "enunciado": "Leia a tabela `vendas.faturamento` via JDBC em 8 partições pela coluna `id_venda` (1 a 4.000.000), com credenciais vindas de secrets.",
+          "dados": null,
+          "solucao": "df = spark.read.jdbc(\n    url=\"jdbc:sqlserver://servidor:1433;database=DB\",\n    table=\"vendas.faturamento\",\n    column=\"id_venda\",\n    lowerBound=1,\n    upperBound=4_000_000,\n    numPartitions=8,\n    properties={\n        \"user\": dbutils.secrets.get(\"erp\", \"usuario\"),\n        \"password\": dbutils.secrets.get(\"erp\", \"senha\"),\n    },\n)"
+        },
+        "intermediario": {
+          "enunciado": "Com `lowerBound=1`, `upperBound=4.000.000` e `numPartitions=4`, qual faixa de `id_venda` cada partição lê? Para onde vão os ids acima de 4.000.000?",
+          "dados": null,
+          "solucao": "# Passo = (4.000.000 - 1) / 4 ≈ 1.000.000\n# p0: id < 1.000.001 (inclui nulos e valores abaixo do lowerBound)\n# p1: 1.000.001 <= id < 2.000.001\n# p2: 2.000.001 <= id < 3.000.001\n# p3: id >= 3.000.001 (inclui tudo acima do upperBound)\n# Os limites não filtram: ids > 4.000.000 vão para a última partição."
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha uma leitura JDBC lenta. Meça a distribuição da coluna de particionamento (min, max, quantis) na origem e proponha limites e número de partições que equilibrem as tarefas sem sobrecarregar o banco.",
+          "dados": null,
+          "solucao": "limites = spark.read.jdbc(url, \"(SELECT MIN(id) mn, MAX(id) mx, COUNT(*) n FROM vendas.faturamento) t\", properties=props).first()\n# Se a distribuição for desigual, use 'predicates' com faixas definidas por quantis:\npredicados = [\"id < 100000\", \"id >= 100000 AND id < 500000\", \"id >= 500000\"]\ndf = spark.read.jdbc(url, \"vendas.faturamento\", predicates=predicados, properties=props)\n# Combine o número de conexões simultâneas com o DBA."
+        }
+      }
+    },
+    {
+      "id": "spk-02-particionamento",
+      "ref": "02_pyspark/02_leitura-escrita-io.md#particionamento-fisico-e-arquivos-pequenos",
+      "ferramenta": "partitionBy e arquivos pequenos",
+      "niveis": {
+        "basico": {
+          "enunciado": "Grave o DataFrame mensal particionado por ano e mês em `main.gold.vendas_mensal`.",
+          "dados": null,
+          "solucao": "(\n    df_resultado.write\n    .mode(\"overwrite\")\n    .partitionBy(\"ano\", \"mes\")\n    .saveAsTable(\"main.gold.vendas_mensal\")\n)"
+        },
+        "intermediario": {
+          "enunciado": "Antes de escolher a coluna de partição, calcule para cada candidata o número de valores distintos e o tamanho médio que cada partição teria (linhas por valor).",
+          "dados": [{"tabela": "vendas", "colunas": ["id", "id_cliente", "mes", "uf"], "tipos": ["INT", "INT", "STRING", "STRING"], "linhas": [[1, 100, "2025-01", "SP"], [2, 101, "2025-01", "SP"], [3, 102, "2025-02", "RJ"], [4, 103, "2025-02", "SP"]]}],
+          "solucao": "total = vendas.count()\nresultado = vendas.agg(*[\n    F.count_distinct(c).alias(c) for c in [\"id_cliente\", \"mes\", \"uf\"]\n])\ndistintos = resultado.first().asDict()\nlinhas_por_particao = {c: total / n for c, n in distintos.items()}\n# id_cliente: 1 linha por partição -> péssima escolha (arquivos minúsculos)."
+        },
+        "avancado": {
+          "enunciado": "Na sua base, encontre uma tabela particionada. Calcule o tamanho médio dos arquivos e o número de arquivos por partição (`DESCRIBE DETAIL`) e decida se ela deveria migrar para liquid clustering.",
+          "dados": null,
+          "solucao": "detalhe = spark.sql(\"DESCRIBE DETAIL main.gold.vendas_mensal\").first()\nprint(detalhe[\"numFiles\"], detalhe[\"sizeInBytes\"] / max(detalhe[\"numFiles\"], 1) / 1024**2, \"MB por arquivo\")\nprint(detalhe[\"partitionColumns\"])\n# Muitos arquivos pequenos ou tabela < 1 TB -> candidata a CLUSTER BY."
+        }
+      }
+    },
+    {
+      "id": "spk-03-inspecao",
+      "ref": "02_pyspark/03_exploracao-e-tipagem.md#inspecao-rapida",
+      "ferramenta": "printSchema, describe, summary",
+      "niveis": {
+        "basico": {
+          "enunciado": "Mostre o schema e as estatísticas básicas (count, média, min, max) de idade e faturamento.",
+          "dados": [{"tabela": "df", "colunas": ["nome", "idade", "faturamento"], "tipos": ["STRING", "INT", "DOUBLE"], "linhas": [["Ana", 30, 1000.0], ["Bia", 45, 2500.5], ["Caio", null, 800.0]]}],
+          "solucao": "df.printSchema()\nresultado = df.select(\"idade\", \"faturamento\").describe()"
+        },
+        "intermediario": {
+          "enunciado": "Mostre os quartis (25%, 50%, 75%) de faturamento com `summary`, e liste os nomes e tipos das colunas como dicionário.",
+          "dados": [{"tabela": "df", "colunas": ["nome", "idade", "faturamento"], "tipos": ["STRING", "INT", "DOUBLE"], "linhas": [["Ana", 30, 1000.0], ["Bia", 45, 2500.5], ["Caio", 22, 800.0], ["Duda", 51, 4000.0]]}],
+          "solucao": "resultado = df.select(\"faturamento\").summary(\"count\", \"min\", \"25%\", \"50%\", \"75%\", \"max\")\ntipos = dict(df.dtypes)"
+        },
+        "avancado": {
+          "enunciado": "Escreva uma função que valide o schema de um DataFrame contra um contrato (nome → tipo) e retorne colunas faltantes, sobrando e com tipo diferente.",
+          "dados": [{"tabela": "df", "colunas": ["id", "valor", "extra"], "tipos": ["STRING", "DOUBLE", "STRING"], "linhas": [["1", 10.0, "x"]]}],
+          "solucao": "def validar_schema(df, contrato):\n    atual = dict(df.dtypes)\n    return {\n        \"faltando\": sorted(set(contrato) - set(atual)),\n        \"sobrando\": sorted(set(atual) - set(contrato)),\n        \"tipo_diferente\": {c: (atual[c], t) for c, t in contrato.items() if c in atual and atual[c] != t},\n    }\n\nresultado = validar_schema(df, {\"id\": \"bigint\", \"valor\": \"double\", \"dt\": \"date\"})"
+        }
+      }
+    },
+    {
+      "id": "spk-03-casts",
+      "ref": "02_pyspark/03_exploracao-e-tipagem.md#casts-explicitos",
+      "ferramenta": "cast, DecimalType e perdas de conversão",
+      "niveis": {
+        "basico": {
+          "enunciado": "Converta `id` para long e `faturamento` (texto) para decimal(18,2).",
+          "dados": [{"tabela": "df", "colunas": ["id", "faturamento"], "tipos": ["STRING", "STRING"], "linhas": [["1", "1500.10"], ["2", "300"]]}],
+          "solucao": "resultado = df.select(\n    F.col(\"id\").cast(T.LongType()).alias(\"id\"),\n    F.col(\"faturamento\").cast(T.DecimalType(18, 2)).alias(\"vl_faturamento\"),\n)"
+        },
+        "intermediario": {
+          "enunciado": "Alguns faturamentos são inválidos. Converta sem falhar (ANSI ligado) e conte os valores presentes que se perderam.",
+          "dados": [{"tabela": "df", "colunas": ["id", "faturamento"], "tipos": ["STRING", "STRING"], "linhas": [["1", "1500.10"], ["2", "abc"], ["3", null], ["4", "1.2.3"]]}],
+          "solucao": "convertido = df.withColumn(\"vl_faturamento\", F.expr(\"try_cast(faturamento AS DECIMAL(18,2))\"))\nresultado = convertido.agg(\n    F.count_if(F.col(\"faturamento\").isNotNull() & F.col(\"vl_faturamento\").isNull()).alias(\"perdidos\")\n)"
+        },
+        "avancado": {
+          "enunciado": "Converta várias colunas de uma vez a partir de um dicionário `coluna -> tipo`, usando conversão segura, e produza um relatório com quantos valores cada coluna perdeu.",
+          "dados": [{"tabela": "df", "colunas": ["idade", "valor", "dt"], "tipos": ["STRING", "STRING", "STRING"], "linhas": [["30", "10.5", "2025-01-01"], ["x", "7", "2025-13-01"], [null, "abc", null]]}],
+          "solucao": "contrato = {\"idade\": \"INT\", \"valor\": \"DECIMAL(10,2)\", \"dt\": \"DATE\"}\nconvertido = df.select(\n    *[F.expr(f\"try_cast({c} AS {t})\").alias(c) for c, t in contrato.items()],\n    *[F.col(c).alias(f\"{c}_original\") for c in contrato],\n)\nresultado = convertido.agg(*[\n    F.count_if(F.col(f\"{c}_original\").isNotNull() & F.col(c).isNull()).alias(c)\n    for c in contrato\n])"
+        }
+      }
+    },
+    {
+      "id": "spk-03-datas-timezone",
+      "ref": "02_pyspark/03_exploracao-e-tipagem.md#datas-e-timezone",
+      "ferramenta": "to_date, from_utc_timestamp, date_trunc",
+      "niveis": {
+        "basico": {
+          "enunciado": "Converta a data de nascimento no formato `dd/MM/yyyy` para `DATE`.",
+          "dados": [{"tabela": "df", "colunas": ["id", "dt_txt"], "tipos": ["INT", "STRING"], "linhas": [[1, "25/12/1990"], [2, "01/02/2001"]]}],
+          "solucao": "resultado = df.withColumn(\"dt_nascimento\", F.to_date(\"dt_txt\", \"dd/MM/yyyy\"))"
+        },
+        "intermediario": {
+          "enunciado": "Os eventos estão em UTC. Crie a coluna com horário de São Paulo e conte eventos por mês local com `date_trunc`.",
+          "dados": [{"tabela": "eventos", "colunas": ["id", "ts_utc"], "tipos": ["INT", "TIMESTAMP"], "linhas": [[1, "2025-02-01T01:00:00"], [2, "2025-02-15T12:00:00"], [3, "2025-03-01T02:00:00"]]}],
+          "solucao": "resultado = (\n    eventos\n    .withColumn(\"ts_br\", F.from_utc_timestamp(\"ts_utc\", \"America/Sao_Paulo\"))\n    .groupBy(F.date_trunc(\"month\", \"ts_br\").alias(\"mes_local\"))\n    .count()\n    .orderBy(\"mes_local\")\n)\n# Eventos 1 e 3 pertencem ao mês anterior no horário local."
+        },
+        "avancado": {
+          "enunciado": "Calcule a idade em anos completos na data de referência 2025-06-30, a partir de `dt_nascimento`. Teste com quem faz aniversário exatamente nesse dia.",
+          "dados": [{"tabela": "pessoas", "colunas": ["nome", "dt_nascimento"], "tipos": ["STRING", "DATE"], "linhas": [["Ana", "1990-06-30"], ["Bia", "1990-07-01"], ["Caio", "2000-01-15"]]}],
+          "solucao": "ref = F.lit(\"2025-06-30\").cast(\"date\")\nresultado = pessoas.withColumn(\n    \"idade\",\n    F.floor(F.months_between(ref, F.col(\"dt_nascimento\")) / 12).cast(\"int\"),\n)\n# Ana: 35; Bia: 34; Caio: 25"
+        }
+      }
+    },
+    {
+      "id": "spk-04-projecao-colunas",
+      "ref": "02_pyspark/04_transformacoes-e-df-api.md#projecao-novas-colunas-e-renomeacao",
+      "ferramenta": "select, withColumns, withColumnsRenamed, selectExpr",
+      "niveis": {
+        "basico": {
+          "enunciado": "Selecione id, nome e faturamento, renomeie `cliente_id` para `id_cliente` e adicione a coluna constante `sistema_origem = 'CRM'`.",
+          "dados": [{"tabela": "clientes", "colunas": ["cliente_id", "nome", "celular", "faturamento"], "tipos": ["INT", "STRING", "STRING", "INT"], "linhas": [[1, " ana ", "999", 1500], [2, "BIA", null, 500]]}],
+          "solucao": "resultado = (\n    clientes\n    .select(\"cliente_id\", \"nome\", \"faturamento\")\n    .withColumnsRenamed({\"cliente_id\": \"id_cliente\"})\n    .withColumn(\"sistema_origem\", F.lit(\"CRM\"))\n)"
+        },
+        "intermediario": {
+          "enunciado": "Em um único passo, padronize o nome (trim + maiúsculas) e crie a faixa de faturamento (ALTA acima de 1000, senão BAIXA).",
+          "dados": [{"tabela": "clientes", "colunas": ["cliente_id", "nome", "faturamento"], "tipos": ["INT", "STRING", "INT"], "linhas": [[1, " ana ", 1500], [2, "BIA", 500]]}],
+          "solucao": "resultado = clientes.withColumns({\n    \"nome\": F.trim(F.upper(\"nome\")),\n    \"faixa\": F.when(F.col(\"faturamento\") > 1000, \"ALTA\").otherwise(\"BAIXA\"),\n})"
+        },
+        "avancado": {
+          "enunciado": "Converta todos os nomes de coluna para `snake_case` minúsculo (ex.: `Data Venda` → `data_venda`, `ValorTotal` → `valor_total`) sem escrever cada nome à mão.",
+          "dados": [{"tabela": "origem", "colunas": ["Data Venda", "ValorTotal", "ID"], "tipos": ["STRING", "INT", "INT"], "linhas": [["2025-01-01", 10, 1]]}],
+          "solucao": "import re\n\ndef snake(nome):\n    nome = re.sub(r\"(?<=[a-z0-9])(?=[A-Z])\", \"_\", nome.strip())\n    return re.sub(r\"[^0-9a-zA-Z]+\", \"_\", nome).strip(\"_\").lower()\n\nresultado = origem.withColumnsRenamed({c: snake(c) for c in origem.columns})"
+        }
+      }
+    },
+    {
+      "id": "spk-04-filtros",
+      "ref": "02_pyspark/04_transformacoes-e-df-api.md#filtros",
+      "ferramenta": "filter com &, |, ~ e isin",
+      "niveis": {
+        "basico": {
+          "enunciado": "Filtre clientes VIP ou GOLD que não estejam banidos.",
+          "dados": [{"tabela": "clientes", "colunas": ["id", "status", "banido"], "tipos": ["INT", "STRING", "BOOLEAN"], "linhas": [[1, "VIP", false], [2, "GOLD", true], [3, "BASIC", false]]}],
+          "solucao": "resultado = clientes.filter(\n    F.col(\"status\").isin(\"VIP\", \"GOLD\") & ~F.col(\"banido\")\n)"
+        },
+        "intermediario": {
+          "enunciado": "Regra: (nome preenchido E celular não vazio) OU status VIP. Escreva o filtro e mostre que, sem os parênteses de agrupamento, `A & B | C` e `A & (B | C)` dão resultados diferentes.",
+          "dados": [{"tabela": "clientes", "colunas": ["id", "nome", "celular", "status"], "tipos": ["INT", "STRING", "STRING", "STRING"], "linhas": [[1, "Ana", "999", "BASIC"], [2, null, "", "VIP"], [3, "Bia", "", "BASIC"]]}],
+          "solucao": "A = F.col(\"nome\").isNotNull()\nB = F.col(\"celular\") != \"\"\nC = F.col(\"status\") == \"VIP\"\n\nresultado = clientes.filter((A & B) | C)        # ids 1 e 2\noutra_regra = clientes.filter(A & (B | C))     # só id 1"
+        },
+        "avancado": {
+          "enunciado": "Construa o filtro a partir de uma lista de regras em dicionário (`coluna`, `operador`, `valor`), combinando-as com E. Suporte `==`, `>`, e `in`.",
+          "dados": [{"tabela": "vendas", "colunas": ["id", "uf", "valor"], "tipos": ["INT", "STRING", "INT"], "linhas": [[1, "SP", 100], [2, "RJ", 50], [3, "SP", 10]]}],
+          "solucao": "from functools import reduce\n\nregras = [\n    {\"coluna\": \"uf\", \"operador\": \"in\", \"valor\": [\"SP\", \"MG\"]},\n    {\"coluna\": \"valor\", \"operador\": \">\", \"valor\": 20},\n]\nops = {\n    \"==\": lambda c, v: c == v,\n    \">\": lambda c, v: c > v,\n    \"in\": lambda c, v: c.isin(v),\n}\ncondicao = reduce(lambda a, b: a & b, [ops[r[\"operador\"]](F.col(r[\"coluna\"]), r[\"valor\"]) for r in regras])\nresultado = vendas.filter(condicao)"
+        }
+      }
+    },
+    {
+      "id": "spk-04-deduplicacao",
+      "ref": "02_pyspark/04_transformacoes-e-df-api.md#deduplicacao",
+      "ferramenta": "dropDuplicates × row_number",
+      "niveis": {
+        "basico": {
+          "enunciado": "Remova as linhas duplicadas idênticas pela chave (`id_pk`, `documento`).",
+          "dados": [{"tabela": "df", "colunas": ["id_pk", "documento", "valor"], "tipos": ["INT", "STRING", "INT"], "linhas": [[1, "A", 10], [1, "A", 10], [2, "B", 20]]}],
+          "solucao": "resultado = df.dropDuplicates([\"id_pk\", \"documento\"])"
+        },
+        "intermediario": {
+          "enunciado": "Mantenha a versão mais recente de cada `id_pk`. Por que `orderBy(...).dropDuplicates(...)` não garante isso?",
+          "dados": [{"tabela": "df", "colunas": ["id_pk", "valor", "atualizado_em"], "tipos": ["INT", "INT", "TIMESTAMP"], "linhas": [[1, 10, "2025-01-01T00:00:00"], [1, 15, "2025-02-01T00:00:00"], [2, 20, "2025-01-01T00:00:00"]]}],
+          "solucao": "# dropDuplicates mantém uma linha qualquer: a ordem anterior não é preservada após o shuffle.\nultima = Window.partitionBy(\"id_pk\").orderBy(F.col(\"atualizado_em\").desc())\nresultado = (\n    df.withColumn(\"rn\", F.row_number().over(ultima))\n      .filter(\"rn = 1\")\n      .drop(\"rn\")\n)"
+        },
+        "avancado": {
+          "enunciado": "Há empate de `atualizado_em` para o id 1. Mantenha a mais recente com desempate pela maior `versao` e produza também a lista de ids que tinham duplicidade para auditoria.",
+          "dados": [{"tabela": "df", "colunas": ["id_pk", "valor", "atualizado_em", "versao"], "tipos": ["INT", "INT", "TIMESTAMP", "INT"], "linhas": [[1, 10, "2025-02-01T00:00:00", 1], [1, 15, "2025-02-01T00:00:00", 2], [2, 20, "2025-01-01T00:00:00", 1]]}],
+          "solucao": "ultima = Window.partitionBy(\"id_pk\").orderBy(F.col(\"atualizado_em\").desc(), F.col(\"versao\").desc())\ncom_rn = df.withColumns({\n    \"rn\": F.row_number().over(ultima),\n    \"qtd\": F.count(\"*\").over(Window.partitionBy(\"id_pk\")),\n})\nresultado = com_rn.filter(\"rn = 1\").drop(\"rn\", \"qtd\")\nauditoria = com_rn.filter(\"qtd > 1\").select(\"id_pk\").distinct()"
+        }
+      }
+    },
+    {
+      "id": "spk-04-union-sample",
+      "ref": "02_pyspark/04_transformacoes-e-df-api.md#empilhamento-e-amostragem",
+      "ferramenta": "unionByName e sample",
+      "niveis": {
+        "basico": {
+          "enunciado": "Empilhe janeiro e fevereiro. As colunas estão em ordem diferente nos dois DataFrames.",
+          "dados": [
+            {"tabela": "janeiro", "colunas": ["id", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10]]},
+            {"tabela": "fevereiro", "colunas": ["valor", "id"], "tipos": ["INT", "INT"], "linhas": [[20, 2]]}
+          ],
+          "solucao": "resultado = janeiro.unionByName(fevereiro)"
+        },
+        "intermediario": {
+          "enunciado": "Fevereiro ganhou a coluna `canal`. Empilhe os dois meses preenchendo `canal` como nulo em janeiro. Mostre o que `union` (por posição) faria de errado.",
+          "dados": [
+            {"tabela": "janeiro", "colunas": ["id", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10]]},
+            {"tabela": "fevereiro", "colunas": ["valor", "id", "canal"], "tipos": ["INT", "INT", "STRING"], "linhas": [[20, 2, "SITE"]]}
+          ],
+          "solucao": "resultado = janeiro.unionByName(fevereiro, allowMissingColumns=True)\n# union por posição colocaria 20 em 'id' e 2 em 'valor' (e falharia pelo nº de colunas)."
+        },
+        "avancado": {
+          "enunciado": "Extraia uma amostra de ~10% reprodutível para testes e verifique que ela preserva aproximadamente a proporção por UF. Depois gere uma amostra estratificada com frações por UF.",
+          "dados": [{"tabela": "vendas", "colunas": ["id", "uf"], "tipos": ["INT", "STRING"], "linhas": [[1, "SP"], [2, "SP"], [3, "SP"], [4, "SP"], [5, "RJ"], [6, "RJ"], [7, "MG"], [8, "SP"], [9, "RJ"], [10, "SP"]]}],
+          "solucao": "amostra = vendas.sample(withReplacement=False, fraction=0.1, seed=42)\n\ndef proporcao(df):\n    total = df.count()\n    return df.groupBy(\"uf\").agg(F.try_divide(F.count(\"*\"), F.lit(total)).alias(\"pct\"))\n\nproporcao(vendas).show()\nproporcao(amostra).show()   # em amostras pequenas a proporção oscila bastante\n\nresultado = vendas.sampleBy(\"uf\", fractions={\"SP\": 0.5, \"RJ\": 0.5, \"MG\": 1.0}, seed=42)\n# sample/sampleBy são aproximados: o tamanho exato varia."
+        }
+      }
+    },
+    {
+      "id": "spk-04-textos-datas",
+      "ref": "02_pyspark/04_transformacoes-e-df-api.md#textos-e-datas-com-funcoes-nativas",
+      "ferramenta": "date_add, datediff, regexp_replace, translate",
+      "niveis": {
+        "basico": {
+          "enunciado": "Calcule a data limite (compra + 15 dias) e o nome padronizado (trim + maiúsculas).",
+          "dados": [{"tabela": "compras", "colunas": ["id", "nome", "data_compra"], "tipos": ["INT", "STRING", "DATE"], "linhas": [[1, " ana ", "2025-01-10"], [2, "Bia", "2025-02-20"]]}],
+          "solucao": "resultado = compras.withColumns({\n    \"data_limite\": F.date_add(\"data_compra\", 15),\n    \"nome_padrao\": F.trim(F.upper(\"nome\")),\n})"
+        },
+        "intermediario": {
+          "enunciado": "Limpe o token deixando só letras e números e gere a versão sem acentos do nome.",
+          "dados": [{"tabela": "cadastro", "colunas": ["nome", "token"], "tipos": ["STRING", "STRING"], "linhas": [["João Ávila", "ab-12_cd!"], ["Márcia", "X 9.9"]]}],
+          "solucao": "resultado = cadastro.withColumns({\n    \"token_limpo\": F.regexp_replace(\"token\", r\"[^A-Za-z0-9]\", \"\"),\n    \"nome_sem_acento\": F.translate(\"nome\", \"áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÉÊÍÓÔÕÚÇ\", \"aaaaaeeeeiiiiooooouuuucAAAAEEIOOOUC\"),\n})"
+        },
+        "avancado": {
+          "enunciado": "Substitua a UDF Python abaixo por funções nativas e confirme o mesmo resultado:\n`@udf('int') def dias_atraso(prazo, entrega): return max((entrega - prazo).days, 0) if prazo and entrega else None`",
+          "dados": [{"tabela": "entregas", "colunas": ["id", "prazo", "entrega"], "tipos": ["INT", "DATE", "DATE"], "linhas": [[1, "2025-01-10", "2025-01-15"], [2, "2025-01-10", "2025-01-05"], [3, "2025-01-10", null]]}],
+          "solucao": "resultado = entregas.withColumn(\n    \"dias_atraso\",\n    F.greatest(F.datediff(\"entrega\", \"prazo\"), F.lit(0)),\n)\n# datediff com entrega nula devolve null, e greatest(null, 0) = 0!\n# Para manter null como na UDF:\nresultado = entregas.withColumn(\n    \"dias_atraso\",\n    F.when(F.col(\"entrega\").isNotNull() & F.col(\"prazo\").isNotNull(),\n           F.greatest(F.datediff(\"entrega\", \"prazo\"), F.lit(0))),\n)"
+        }
+      }
+    },
+    {
+      "id": "spk-05-when-coalesce",
+      "ref": "02_pyspark/05_nulos-e-condicionais.md#when-otherwise-e-coalesce",
+      "ferramenta": "when/otherwise, coalesce, eqNullSafe",
+      "niveis": {
+        "basico": {
+          "enunciado": "Classifique a entrega: até 3 dias EXPRESSA, senão PADRAO. Substitua categoria nula por -1.",
+          "dados": [{"tabela": "vendas", "colunas": ["id", "prazo_dias", "id_categoria"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 2, 10], [2, 5, null], [3, null, 20]]}],
+          "solucao": "resultado = vendas.withColumns({\n    \"tipo_entrega\": F.when(F.col(\"prazo_dias\") <= 3, \"EXPRESSA\").otherwise(\"PADRAO\"),\n    \"id_categoria\": F.coalesce(F.col(\"id_categoria\"), F.lit(-1)),\n})"
+        },
+        "intermediario": {
+          "enunciado": "Repita a classificação, mas prazo nulo deve virar 'SEM_PRAZO' (hoje ele cai em PADRAO). Por que isso acontece?",
+          "dados": [{"tabela": "vendas", "colunas": ["id", "prazo_dias"], "tipos": ["INT", "INT"], "linhas": [[1, 2], [2, 5], [3, null]]}],
+          "solucao": "# null <= 3 é null (não verdadeiro): a linha cai no otherwise.\nresultado = vendas.withColumn(\n    \"tipo_entrega\",\n    F.when(F.col(\"prazo_dias\").isNull(), \"SEM_PRAZO\")\n     .when(F.col(\"prazo_dias\") <= 3, \"EXPRESSA\")\n     .otherwise(\"PADRAO\"),\n)"
+        },
+        "avancado": {
+          "enunciado": "Compare duas versões de cadastro e marque as linhas em que o e-mail mudou, considerando nulo → valor e valor → nulo como mudança.",
+          "dados": [
+            {"tabela": "v1", "colunas": ["id", "email"], "tipos": ["INT", "STRING"], "linhas": [[1, "a@x"], [2, null], [3, "c@x"], [4, null]]},
+            {"tabela": "v2", "colunas": ["id", "email"], "tipos": ["INT", "STRING"], "linhas": [[1, "a@x"], [2, "b@x"], [3, null], [4, null]]}
+          ],
+          "solucao": "a, b = v1.alias(\"a\"), v2.alias(\"b\")\nresultado = (\n    a.join(b, \"id\")\n    .withColumn(\"mudou\", ~F.col(\"a.email\").eqNullSafe(F.col(\"b.email\")))\n    .filter(\"mudou\")\n    .select(\"id\", F.col(\"a.email\").alias(\"antes\"), F.col(\"b.email\").alias(\"depois\"))\n)"
+        }
+      }
+    },
+    {
+      "id": "spk-05-dropna-fillna",
+      "ref": "02_pyspark/05_nulos-e-condicionais.md#dropna-fillna-e-replace",
+      "ferramenta": "dropna, fillna, replace",
+      "niveis": {
+        "basico": {
+          "enunciado": "Remova as linhas sem idade ou sem CPF e conte quantas foram removidas.",
+          "dados": [{"tabela": "pessoas", "colunas": ["nome", "idade", "cpf"], "tipos": ["STRING", "INT", "STRING"], "linhas": [["Ana", 30, "1"], ["Bia", null, "2"], ["Caio", 40, null], [null, 50, "4"]]}],
+          "solucao": "resultado = pessoas.dropna(how=\"any\", subset=[\"idade\", \"cpf\"])\nremovidas = pessoas.count() - resultado.count()"
+        },
+        "intermediario": {
+          "enunciado": "Normalize marcadores de ausência (`''`, `'N/A'`, `'NA'`) para nulo em e-mail e telefone e depois preencha o e-mail nulo com 'desconhecido@exemplo.com'.",
+          "dados": [{"tabela": "contatos", "colunas": ["id", "email", "telefone"], "tipos": ["INT", "STRING", "STRING"], "linhas": [[1, "a@x", "N/A"], [2, "", "999"], [3, "NA", ""], [4, null, null]]}],
+          "solucao": "resultado = (\n    contatos\n    .replace([\"N/A\", \"NA\", \"\"], None, subset=[\"email\", \"telefone\"])\n    .fillna({\"email\": \"desconhecido@exemplo.com\"})\n)"
+        },
+        "avancado": {
+          "enunciado": "`fillna({'idade': 0, 'nome': 'X'})` não preencheu a idade. Investigue o tipo da coluna, explique o comportamento e corrija preservando a regra.",
+          "dados": [{"tabela": "pessoas", "colunas": ["nome", "idade"], "tipos": ["STRING", "STRING"], "linhas": [["Ana", "30"], [null, null]]}],
+          "solucao": "pessoas.printSchema()   # idade é string\n# fillna ignora colunas cujo tipo não combina com o valor (0 é int, idade é string).\nresultado = (\n    pessoas\n    .withColumn(\"idade\", F.col(\"idade\").cast(\"int\"))\n    .fillna({\"idade\": 0, \"nome\": \"X\"})\n)"
+        }
+      }
+    },
+    {
+      "id": "spk-05-divisao-zero",
+      "ref": "02_pyspark/05_nulos-e-condicionais.md#divisao-por-zero",
+      "ferramenta": "try_divide e when",
+      "niveis": {
+        "basico": {
+          "enunciado": "Calcule `receita / custo` devolvendo nulo quando o custo for zero.",
+          "dados": [{"tabela": "df", "colunas": ["id", "receita", "custo"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 100, 50], [2, 80, 0]]}],
+          "solucao": "resultado = df.withColumn(\"rentabilidade\", F.try_divide(\"receita\", \"custo\"))"
+        },
+        "intermediario": {
+          "enunciado": "Implemente a mesma regra com `when` (para versões sem `try_divide`) e adicione uma flag `is_custo_zero`.",
+          "dados": [{"tabela": "df", "colunas": ["id", "receita", "custo"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 100, 50], [2, 80, 0], [3, 10, null]]}],
+          "solucao": "resultado = df.withColumns({\n    \"rentabilidade\": F.when(F.col(\"custo\") == 0, None).otherwise(F.col(\"receita\") / F.col(\"custo\")),\n    \"is_custo_zero\": (F.col(\"custo\") == 0).cast(\"int\"),\n})"
+        },
+        "avancado": {
+          "enunciado": "Calcule o ticket médio por loja (receita total / pedidos) e uma métrica com o percentual de lojas sem ticket. Use uma única agregação final.",
+          "dados": [{"tabela": "vendas", "colunas": ["loja", "receita", "pedidos"], "tipos": ["STRING", "DECIMAL(10,2)", "INT"], "linhas": [["A", 1000.0, 10], ["B", 0.0, 0], ["C", 300.0, 3], ["D", 50.0, 0]]}],
+          "solucao": "com_ticket = vendas.withColumn(\"ticket\", F.try_divide(\"receita\", \"pedidos\"))\nresultado = com_ticket.agg(\n    F.avg(\"ticket\").alias(\"ticket_medio_lojas\"),\n    (100 * F.avg(F.col(\"ticket\").isNull().cast(\"int\"))).alias(\"pct_sem_ticket\"),\n)"
+        }
+      }
+    }
+  ]
+}

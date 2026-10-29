@@ -1,11 +1,14 @@
-"""Gera o cheatsheets.html a partir dos Markdown de SQL e PySpark.
+"""Gera cheatsheets.html e desafio.html a partir dos Markdown e do banco de desafios.
 
-Os arquivos Markdown sao a fonte de verdade. Nao edite cheatsheets.html.
+Os arquivos Markdown e 02_desafios/*.json sao a fonte de verdade. Nao edite os HTML gerados.
 """
 
 from __future__ import annotations
 
+import json
 import re
+import sys
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -18,6 +21,14 @@ ROOT = Path(__file__).resolve().parent
 TEMPLATE_PATH = ROOT / "template.html"
 OUTPUT_PATH = ROOT / "cheatsheets.html"
 PLACEHOLDERS = ("{{ SIDEBAR_SQL }}", "{{ SIDEBAR_PYSPARK }}", "{{ CONTENT_INJECT }}")
+
+CHALLENGES_DIR = ROOT / "02_desafios"
+CHALLENGE_TEMPLATE_PATH = ROOT / "desafio_template.html"
+CHALLENGE_OUTPUT_PATH = ROOT / "desafio.html"
+CHALLENGE_PLACEHOLDER = "{{ DESAFIOS_JSON }}"
+LEVELS = ("basico", "intermediario", "avancado")
+# Secoes conceituais ou de revisao nao viram desafio.
+NON_TRAINABLE = re.compile(r"^(o que (e|sao)|checklist|cuidados.*|principio|fontes)$")
 
 
 @dataclass(frozen=True)
@@ -48,6 +59,23 @@ def title_from(markdown_text: str, path: Path) -> str:
 
 def search_text(title: str) -> str:
     return re.sub(r"[^\w\s-]", " ", title, flags=re.UNICODE).casefold()
+
+
+def slugify(text: str) -> str:
+    ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", ascii_text.casefold()).strip("-")
+
+
+def h2_titles(markdown_text: str) -> list[str]:
+    """Titulos '## ' fora de blocos de codigo, na ordem do arquivo."""
+    titles: list[str] = []
+    in_fence = False
+    for line in markdown_text.splitlines():
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+        elif not in_fence and line.startswith("## "):
+            titles.append(line[3:].strip())
+    return titles
 
 
 def validate_inputs(files_by_area: dict[Area, list[Path]], template: str) -> None:
@@ -102,7 +130,11 @@ def render_section(
     )
     soup = BeautifulSoup(rendered, "html.parser")
 
+    section_id = id_map[path.resolve()].removeprefix("#")
     heading = soup.find(["h1", "h2"])
+    for subheading in soup.find_all("h2"):
+        if subheading is not heading:
+            subheading["id"] = f"{section_id}-{slugify(subheading.get_text())}"
     if heading:
         heading.name = "h2"
         heading.clear()
@@ -132,7 +164,6 @@ def render_section(
         wrapper.insert(0, label)
         wrapper.insert(1, button)
 
-    section_id = id_map[path.resolve()].removeprefix("#")
     section = f'<section id="{section_id}" class="cheat-section">\n{soup}\n</section>'
     nav = (
         f'<a class="nav-item {area.css_class}-item" href="#{section_id}" '
@@ -201,5 +232,119 @@ def build() -> str:
     return f"Build concluido: {len(navigation['sql'])} SQL + {len(navigation['pyspark'])} PySpark."
 
 
+def trainable_sections(files_by_area: dict[Area, list[Path]], id_map: dict[Path, str]) -> dict[str, dict]:
+    """Mapeia 'pasta/arquivo.md#slug' para os dados da secao treinavel."""
+    sections: dict[str, dict] = {}
+    for area, files in files_by_area.items():
+        for path in files:
+            text = path.read_text(encoding="utf-8")
+            anchor = id_map[path.resolve()]
+            for title in h2_titles(text):
+                slug = slugify(title)
+                if NON_TRAINABLE.match(slug.replace("-", " ")):
+                    continue
+                ref = f"{area.directory.name}/{path.name}#{slug}"
+                sections[ref] = {
+                    "area": area.css_class,
+                    "arquivo": title_from(text, path),
+                    "secao": title,
+                    "link": f"cheatsheets.html{anchor}-{slug}",
+                }
+    return sections
+
+
+def load_challenges() -> tuple[list[dict], set[str], dict[str, int]]:
+    challenges: list[dict] = []
+    skipped: set[str] = set()
+    weeks: dict[str, int] = {}
+    for path in sorted(CHALLENGES_DIR.glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        challenges.extend(data.get("desafios", []))
+        skipped.update(data.get("secoes_sem_desafio", []))
+        weeks.update(data.get("semanas_por_arquivo", {}))
+    return challenges, skipped, weeks
+
+
+def validate_challenges(
+    challenges: list[dict],
+    skipped: set[str],
+    weeks: dict[str, int],
+    sections: dict[str, dict],
+) -> tuple[list[str], list[str]]:
+    errors: list[str] = []
+    seen: set[str] = set()
+    covered: set[str] = set()
+    for item in challenges:
+        cid = item.get("id", "<sem id>")
+        if cid in seen:
+            errors.append(f"{cid}: id duplicado")
+        seen.add(cid)
+        ref = item.get("ref", "")
+        if ref not in sections:
+            errors.append(f"{cid}: ref inexistente ou nao treinavel: {ref}")
+        covered.add(ref)
+        if not item.get("ferramenta"):
+            errors.append(f"{cid}: ferramenta vazia")
+        week = item.get("semana", weeks.get(ref.split("#")[0]))
+        if week is not None and not (isinstance(week, int) and 1 <= week <= 12):
+            errors.append(f"{cid}: semana fora de 1..12: {week}")
+        levels = item.get("niveis", {})
+        for level in LEVELS:
+            body = levels.get(level)
+            if not body or not body.get("enunciado") or not body.get("solucao"):
+                errors.append(f"{cid}: nivel '{level}' sem enunciado ou solucao")
+                continue
+            for table in body.get("dados") or []:
+                width = len(table.get("colunas", []))
+                rows = table.get("linhas", [])
+                types = table.get("tipos")
+                if not table.get("tabela") or not width or not rows or any(len(row) != width for row in rows):
+                    errors.append(f"{cid}/{level}: tabela sem nome ou com colunas e linhas inconsistentes")
+                if types is not None and len(types) != width:
+                    errors.append(f"{cid}/{level}: 'tipos' com tamanho diferente de 'colunas'")
+        extra = set(levels) - set(LEVELS)
+        if extra:
+            errors.append(f"{cid}: niveis desconhecidos {sorted(extra)}")
+    for ref in sorted(skipped - set(sections)):
+        errors.append(f"secoes_sem_desafio aponta para secao inexistente: {ref}")
+    missing = sorted(set(sections) - covered - skipped)
+    return errors, missing
+
+
+def build_challenges(allow_incomplete: bool = False) -> str:
+    files_by_area = {area: markdown_files(area) for area in AREAS}
+    id_map = build_id_map(files_by_area)
+    sections = trainable_sections(files_by_area, id_map)
+    challenges, skipped, weeks = load_challenges()
+    errors, missing = validate_challenges(challenges, skipped, weeks, sections)
+    if missing and not allow_incomplete:
+        errors.append("Secoes sem desafio:\n  " + "\n  ".join(missing))
+    if errors:
+        raise RuntimeError("Falha na validacao dos desafios:\n- " + "\n- ".join(errors))
+
+    catalog = []
+    for item in sorted(challenges, key=lambda c: c["id"]):
+        meta = sections[item["ref"]]
+        catalog.append({
+            **item,
+            **meta,
+            "semana": item.get("semana", weeks.get(item["ref"].split("#")[0])),
+        })
+    payload = json.dumps(catalog, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+
+    template = CHALLENGE_TEMPLATE_PATH.read_text(encoding="utf-8")
+    if template.count(CHALLENGE_PLACEHOLDER) != 1:
+        raise RuntimeError(f"Placeholder {CHALLENGE_PLACEHOLDER!r}: esperado 1 em {CHALLENGE_TEMPLATE_PATH.name}")
+    CHALLENGE_OUTPUT_PATH.write_text(template.replace(CHALLENGE_PLACEHOLDER, payload), encoding="utf-8", newline="\n")
+
+    trainable = len(sections) - len(skipped)
+    coverage = 100 * (trainable - len(missing)) / trainable if trainable else 100
+    message = f"Desafios: {len(catalog)} itens, cobertura {coverage:.0f}% de {trainable} secoes treinaveis."
+    if missing:
+        message += f"\nAviso: {len(missing)} secoes sem desafio:\n  " + "\n  ".join(missing)
+    return message
+
+
 if __name__ == "__main__":
     print(build())
+    print(build_challenges(allow_incomplete="--allow-incomplete" in sys.argv[1:]))

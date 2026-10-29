@@ -1,0 +1,336 @@
+{
+  "desafios": [
+    {
+      "id": "sql-01-ordem-logica",
+      "ref": "01_sql/01_sintaxe-basica.md#ordem-logica-de-avaliacao",
+      "ferramenta": "WHERE × HAVING × ordem lógica",
+      "niveis": {
+        "basico": {
+          "enunciado": "Some o valor das vendas `FECHADA` por categoria e mostre só as categorias com receita acima de 100, da maior para a menor.",
+          "dados": [{"tabela": "vendas", "colunas": ["id", "categoria", "status", "valor"], "tipos": ["INT", "STRING", "STRING", "INT"], "linhas": [[1, "A", "FECHADA", 80], [2, "A", "FECHADA", 50], [3, "B", "ABERTA", 300], [4, "B", "FECHADA", 90], [5, "C", "FECHADA", 200]]}],
+          "solucao": "SELECT categoria, SUM(valor) AS receita\nFROM vendas\nWHERE status = 'FECHADA'\nGROUP BY categoria\nHAVING SUM(valor) > 100\nORDER BY receita DESC;"
+        },
+        "intermediario": {
+          "enunciado": "A consulta abaixo falha. Explique por que e corrija-a sem repetir a expressão inteira:\n`SELECT valor * 0.9 AS valor_liquido FROM vendas WHERE valor_liquido > 50`",
+          "dados": [{"tabela": "vendas", "colunas": ["id", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 40], [2, 60], [3, 100]]}],
+          "solucao": "-- WHERE é avaliado antes da projeção: o alias ainda não existe.\nWITH base AS (\n    SELECT id, valor * 0.9 AS valor_liquido FROM vendas\n)\nSELECT * FROM base WHERE valor_liquido > 50;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha uma consulta com `GROUP BY` e um filtro no `HAVING` que **não** usa agregado (ex.: `HAVING regiao = 'SUL'`). Mova o filtro para o lugar correto e compare no `EXPLAIN FORMATTED` onde o filtro é aplicado em cada versão.",
+          "dados": null,
+          "solucao": "-- Antes\nSELECT regiao, SUM(valor) FROM vendas GROUP BY regiao HAVING regiao = 'SUL';\n-- Depois: filtra linhas antes de agregar\nSELECT regiao, SUM(valor) FROM vendas WHERE regiao = 'SUL' GROUP BY regiao;\n-- No plano, o otimizador costuma empurrar o filtro do HAVING para antes do Aggregate,\n-- mas escrever no WHERE deixa a intenção explícita e não depende dessa otimização."
+        }
+      }
+    },
+    {
+      "id": "sql-01-filtros-in-between-like",
+      "ref": "01_sql/01_sintaxe-basica.md#filtros-in-between-e-like",
+      "ferramenta": "IN, BETWEEN, ILIKE e NOT IN com NULL",
+      "niveis": {
+        "basico": {
+          "enunciado": "Liste os clientes de SP ou RJ cujo nome começa com 'ana', sem diferenciar maiúsculas e minúsculas.",
+          "dados": [{"tabela": "clientes", "colunas": ["id", "nome", "uf"], "tipos": ["INT", "STRING", "STRING"], "linhas": [[1, "Ana Paula", "SP"], [2, "ANA Clara", "RJ"], [3, "Mariana", "SP"], [4, "ana", "MG"]]}],
+          "solucao": "SELECT *\nFROM clientes\nWHERE uf IN ('SP', 'RJ')\n  AND nome ILIKE 'ana%';"
+        },
+        "intermediario": {
+          "enunciado": "Retorne os eventos do dia 2025-01-31 inteiro. Por que `ts BETWEEN DATE '2025-01-31' AND DATE '2025-01-31'` não funciona?",
+          "dados": [{"tabela": "eventos", "colunas": ["id", "ts"], "tipos": ["INT", "TIMESTAMP"], "linhas": [[1, "2025-01-30T23:59:00"], [2, "2025-01-31T00:00:00"], [3, "2025-01-31T18:30:00"], [4, "2025-02-01T00:00:00"]]}],
+          "solucao": "-- O DATE vira TIMESTAMP 00:00:00: o BETWEEN só pega o instante da meia-noite.\nSELECT *\nFROM eventos\nWHERE ts >= TIMESTAMP '2025-01-31 00:00:00'\n  AND ts <  TIMESTAMP '2025-02-01 00:00:00';"
+        },
+        "avancado": {
+          "enunciado": "Liste os clientes que **não** estão bloqueados. A tabela `bloqueados` tem um `id_cliente` nulo. Mostre por que `NOT IN` retorna zero linhas e escreva a versão correta.",
+          "dados": [
+            {"tabela": "clientes", "colunas": ["id_cliente", "nome"], "tipos": ["INT", "STRING"], "linhas": [[1, "Ana"], [2, "Bruno"], [3, "Carla"]]},
+            {"tabela": "bloqueados", "colunas": ["id_cliente"], "tipos": ["INT"], "linhas": [[2], [null]]}
+          ],
+          "solucao": "-- NOT IN (2, NULL) vira id <> 2 AND id <> NULL -> desconhecido para todas as linhas.\nSELECT c.*\nFROM clientes AS c\nWHERE NOT EXISTS (\n    SELECT 1 FROM bloqueados AS b WHERE b.id_cliente = c.id_cliente\n);"
+        }
+      }
+    },
+    {
+      "id": "sql-01-distinct",
+      "ref": "01_sql/01_sintaxe-basica.md#distinct-com-proposito",
+      "ferramenta": "DISTINCT",
+      "niveis": {
+        "basico": {
+          "enunciado": "Obtenha a lista de clientes distintos que compraram, ignorando registros sem cliente.",
+          "dados": [{"tabela": "pedidos", "colunas": ["id_pedido", "id_cliente"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 10], [3, 20], [4, null]]}],
+          "solucao": "SELECT DISTINCT id_cliente\nFROM pedidos\nWHERE id_cliente IS NOT NULL;"
+        },
+        "intermediario": {
+          "enunciado": "Um colega resolveu linhas duplicadas com `SELECT DISTINCT *` depois de um join entre pedidos e endereços. Descubra qual lado multiplicou as linhas e corrija na origem.",
+          "dados": [
+            {"tabela": "pedidos", "colunas": ["id_pedido", "id_cliente", "valor"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 10, 100], [2, 20, 50]]},
+            {"tabela": "enderecos", "colunas": ["id_cliente", "cidade", "principal"], "tipos": ["INT", "STRING", "BOOLEAN"], "linhas": [[10, "Recife", true], [10, "Olinda", false], [20, "Natal", true]]}
+          ],
+          "solucao": "-- Diagnóstico: o cliente 10 tem 2 endereços\nSELECT id_cliente, COUNT(*) FROM enderecos GROUP BY id_cliente HAVING COUNT(*) > 1;\n-- Correção: definir a regra (endereço principal) antes do join\nSELECT p.id_pedido, p.valor, e.cidade\nFROM pedidos AS p\nLEFT JOIN enderecos AS e\n  ON p.id_cliente = e.id_cliente AND e.principal;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, encontre uma consulta ou view com `SELECT DISTINCT` sobre muitas colunas. Meça o número de linhas antes e depois do `DISTINCT` e identifique a causa da duplicidade (join, carga duplicada ou grão mal definido). Documente se o `DISTINCT` pode ser removido.",
+          "dados": null,
+          "solucao": "SELECT COUNT(*) AS linhas, COUNT(DISTINCT chave_do_grao) AS chaves FROM (<consulta sem DISTINCT>);\n-- Se linhas > chaves, investigue cada join com:\nSELECT chave, COUNT(*) FROM <tabela_do_join> GROUP BY chave HAVING COUNT(*) > 1;\n-- Remova o DISTINCT só depois de corrigir a regra que gera a duplicidade."
+        }
+      }
+    },
+    {
+      "id": "sql-01-operadores-conjunto",
+      "ref": "01_sql/01_sintaxe-basica.md#operadores-de-conjunto",
+      "ferramenta": "UNION ALL, EXCEPT, INTERSECT",
+      "niveis": {
+        "basico": {
+          "enunciado": "Empilhe as vendas da loja física e do site em um único resultado, mantendo todas as linhas.",
+          "dados": [
+            {"tabela": "vendas_loja", "colunas": ["id", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20]]},
+            {"tabela": "vendas_site", "colunas": ["id", "valor"], "tipos": ["INT", "INT"], "linhas": [[2, 20], [3, 30]]}
+          ],
+          "solucao": "SELECT id, valor, 'LOJA' AS canal FROM vendas_loja\nUNION ALL\nSELECT id, valor, 'SITE' AS canal FROM vendas_site;"
+        },
+        "intermediario": {
+          "enunciado": "Concilie o extrato do banco com a base interna: liste as transações que estão no extrato e não estão na base, e as que estão nos dois.",
+          "dados": [
+            {"tabela": "extrato", "colunas": ["id_transacao"], "tipos": ["INT"], "linhas": [[1], [2], [3], [4]]},
+            {"tabela": "base_interna", "colunas": ["id_transacao"], "tipos": ["INT"], "linhas": [[2], [4], [5]]}
+          ],
+          "solucao": "SELECT id_transacao, 'FALTANDO_NA_BASE' AS situacao FROM (\n    SELECT id_transacao FROM extrato\n    EXCEPT\n    SELECT id_transacao FROM base_interna\n)\nUNION ALL\nSELECT id_transacao, 'CONCILIADA' FROM (\n    SELECT id_transacao FROM extrato\n    INTERSECT\n    SELECT id_transacao FROM base_interna\n);"
+        },
+        "avancado": {
+          "enunciado": "Compare duas versões de uma tabela migrada linha a linha, inclusive duplicatas. `EXCEPT` comum diz que são iguais; mostre a diferença real.",
+          "dados": [
+            {"tabela": "origem", "colunas": ["id", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [1, 10], [2, 20]]},
+            {"tabela": "destino", "colunas": ["id", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20]]}
+          ],
+          "solucao": "-- EXCEPT remove duplicatas; EXCEPT ALL preserva a multiplicidade\nSELECT 'so_na_origem' AS lado, * FROM (SELECT * FROM origem EXCEPT ALL SELECT * FROM destino)\nUNION ALL\nSELECT 'so_no_destino', * FROM (SELECT * FROM destino EXCEPT ALL SELECT * FROM origem);"
+        }
+      }
+    },
+    {
+      "id": "sql-02-cast-try-cast",
+      "ref": "01_sql/02_tipos-e-formatos.md#cast-try-cast-e-modo-ansi",
+      "ferramenta": "CAST × TRY_CAST",
+      "niveis": {
+        "basico": {
+          "enunciado": "Converta `idade_txt` para inteiro sem derrubar a consulta quando houver texto inválido.",
+          "dados": [{"tabela": "cadastro", "colunas": ["id", "idade_txt"], "tipos": ["INT", "STRING"], "linhas": [[1, "34"], [2, "abc"], [3, null], [4, " 27"]]}],
+          "solucao": "SELECT id, idade_txt, TRY_CAST(idade_txt AS INT) AS idade\nFROM cadastro;"
+        },
+        "intermediario": {
+          "enunciado": "Conte quantos valores **presentes** foram perdidos na conversão (texto não nulo que virou `NULL`) e liste-os para análise.",
+          "dados": [{"tabela": "cadastro", "colunas": ["id", "idade_txt"], "tipos": ["INT", "STRING"], "linhas": [[1, "34"], [2, "abc"], [3, null], [4, "2x"], [5, "40"]]}],
+          "solucao": "SELECT\n    count_if(idade_txt IS NOT NULL AND TRY_CAST(idade_txt AS INT) IS NULL) AS perdidos,\n    collect_list(CASE WHEN idade_txt IS NOT NULL AND TRY_CAST(idade_txt AS INT) IS NULL THEN idade_txt END) AS exemplos\nFROM cadastro;"
+        },
+        "avancado": {
+          "enunciado": "No seu ambiente, descubra se o modo ANSI está ligado e prove o efeito: rode um `CAST` inválido com ANSI ligado e desligado (na sessão). Depois decida, para uma coluna real da Bronze, se ela deve usar `CAST` (falhar) ou `TRY_CAST` (medir) e justifique.",
+          "dados": null,
+          "solucao": "SET ansi_mode;                      -- Databricks SQL (ou SET spark.sql.ansi.enabled; em clusters)\nSELECT CAST('abc' AS INT);          -- ANSI ligado: erro CAST_INVALID_INPUT\nSET spark.sql.ansi.enabled = false; -- só para o teste, na sessão\nSELECT CAST('abc' AS INT);          -- devolve NULL silenciosamente\n-- Regra: chave e campos de contrato -> CAST (parar é melhor que publicar errado);\n-- campos descritivos de origem instável -> TRY_CAST + contagem de perdas."
+        }
+      }
+    },
+    {
+      "id": "sql-02-decimal",
+      "ref": "01_sql/02_tipos-e-formatos.md#decimal-para-valores-financeiros",
+      "ferramenta": "DECIMAL(p, s)",
+      "niveis": {
+        "basico": {
+          "enunciado": "Converta `valor_txt` para um tipo adequado a dinheiro com 2 casas decimais e some o total.",
+          "dados": [{"tabela": "pagamentos", "colunas": ["id", "valor_txt"], "tipos": ["INT", "STRING"], "linhas": [[1, "10.10"], [2, "20.20"], [3, "0.70"]]}],
+          "solucao": "SELECT SUM(CAST(valor_txt AS DECIMAL(18, 2))) AS total\nFROM pagamentos;"
+        },
+        "intermediario": {
+          "enunciado": "Compare a soma de 0.1 + 0.2 em `DOUBLE` e em `DECIMAL`. Qual delas passa no teste `= 0.3`?",
+          "dados": [{"tabela": "parcelas", "colunas": ["valor"], "tipos": ["DOUBLE"], "linhas": [[0.1], [0.2]]}],
+          "solucao": "SELECT\n    SUM(valor)                         AS soma_double,\n    SUM(valor) = 0.3                   AS double_igual,\n    SUM(CAST(valor AS DECIMAL(10, 2))) AS soma_decimal,\n    SUM(CAST(valor AS DECIMAL(10, 2))) = 0.3 AS decimal_igual\nFROM parcelas;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, encontre uma coluna monetária armazenada como `DOUBLE` ou `FLOAT`. Compare a soma mensal dela com a soma convertida para `DECIMAL` e meça a divergência. Proponha a precisão e escala adequadas ao maior valor observado.",
+          "dados": null,
+          "solucao": "SELECT date_trunc('MONTH', dt) AS mes,\n       SUM(valor_double) AS soma_double,\n       SUM(CAST(valor_double AS DECIMAL(18, 2))) AS soma_decimal,\n       SUM(valor_double) - SUM(CAST(valor_double AS DECIMAL(18, 2))) AS diferenca,\n       MAX(abs(valor_double)) AS maior_valor\nFROM <tabela>\nGROUP BY 1 ORDER BY 1;\n-- p = dígitos do maior valor + casas + folga para somas; s = casas exigidas pela regra."
+        }
+      }
+    },
+    {
+      "id": "sql-02-datas-timezone",
+      "ref": "01_sql/02_tipos-e-formatos.md#datas-formatos-e-timezone",
+      "ferramenta": "to_date, to_timestamp, from_utc_timestamp",
+      "niveis": {
+        "basico": {
+          "enunciado": "Converta `data_txt` no formato `dd/MM/yyyy` para `DATE` e calcule os dias até 31/12/2025.",
+          "dados": [{"tabela": "contratos", "colunas": ["id", "data_txt"], "tipos": ["INT", "STRING"], "linhas": [[1, "01/12/2025"], [2, "15/06/2025"]]}],
+          "solucao": "SELECT id,\n       to_date(data_txt, 'dd/MM/yyyy') AS data_inicio,\n       datediff(DATE '2025-12-31', to_date(data_txt, 'dd/MM/yyyy')) AS dias_ate_fim_do_ano\nFROM contratos;"
+        },
+        "intermediario": {
+          "enunciado": "Os eventos estão em UTC. Mostre o horário de Brasília e conte os eventos por dia **local**. Algum evento muda de dia?",
+          "dados": [{"tabela": "eventos", "colunas": ["id", "ts_utc"], "tipos": ["INT", "TIMESTAMP"], "linhas": [[1, "2025-03-01T01:30:00"], [2, "2025-03-01T12:00:00"], [3, "2025-03-02T02:59:00"]]}],
+          "solucao": "SELECT to_date(from_utc_timestamp(ts_utc, 'America/Sao_Paulo')) AS dia_local,\n       COUNT(*) AS eventos\nFROM eventos\nGROUP BY 1\nORDER BY 1;\n-- Os eventos 1 e 3 caem no dia anterior em horário local (UTC-3)."
+        },
+        "avancado": {
+          "enunciado": "A coluna `data_hora_txt` mistura formatos `dd-MM-yyyy HH:mm:ss` e `yyyy-MM-dd HH:mm:ss`, além de lixo. Converta para `TIMESTAMP` aceitando os dois formatos e conte o que não foi possível converter.",
+          "dados": [{"tabela": "logs", "colunas": ["id", "data_hora_txt"], "tipos": ["INT", "STRING"], "linhas": [[1, "31-01-2025 10:00:00"], [2, "2025-01-31 11:00:00"], [3, "ontem"], [4, null]]}],
+          "solucao": "WITH conv AS (\n    SELECT id, data_hora_txt,\n           coalesce(try_to_timestamp(data_hora_txt, 'dd-MM-yyyy HH:mm:ss'),\n                    try_to_timestamp(data_hora_txt, 'yyyy-MM-dd HH:mm:ss')) AS ts\n    FROM logs\n)\nSELECT *, count_if(data_hora_txt IS NOT NULL AND ts IS NULL) OVER () AS nao_convertidos\nFROM conv;"
+        }
+      }
+    },
+    {
+      "id": "sql-03-limpeza-aliases",
+      "ref": "01_sql/03_sanitizacao-e-nomenclatura.md#limpeza-basica-e-aliases",
+      "ferramenta": "TRIM, UPPER, LOWER e aliases",
+      "niveis": {
+        "basico": {
+          "enunciado": "Padronize cidade (maiúsculas, sem espaços nas pontas) e e-mail (minúsculas) e renomeie as colunas para o padrão `nm_`, `ds_`.",
+          "dados": [{"tabela": "lojas", "colunas": ["cidade", "email"], "tipos": ["STRING", "STRING"], "linhas": [["  sao paulo ", "Contato@Loja.COM "], ["Recife", " vendas@loja.com"]]}],
+          "solucao": "SELECT UPPER(TRIM(cidade)) AS nm_cidade,\n       LOWER(TRIM(email))  AS ds_email\nFROM lojas;"
+        },
+        "intermediario": {
+          "enunciado": "A tabela de origem tem colunas com espaço e acento (`Data Venda`, `Valor Líquido`) e uma flag `FlgAtv`. Publique-as com nomes no padrão `snake_case` e prefixo `is_` para o booleano.",
+          "dados": [{"tabela": "origem", "colunas": ["Data Venda", "Valor Líquido", "FlgAtv"], "tipos": ["STRING", "DOUBLE", "BOOLEAN"], "linhas": [["2025-01-01", 10.5, true]]}],
+          "solucao": "SELECT `Data Venda`    AS dt_venda,\n       `Valor Líquido` AS vl_liquido,\n       FlgAtv          AS is_ativo\nFROM origem;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, encontre uma chave textual usada em join (ex.: código de loja, e-mail) e meça quantos valores só casam depois de `TRIM`/`UPPER`. Proponha onde (Bronze → Silver) essa padronização deve acontecer e como preservar o valor original.",
+          "dados": null,
+          "solucao": "SELECT\n    count_if(a.chave = b.chave) AS casam_sem_limpeza,\n    count_if(UPPER(TRIM(a.chave)) = UPPER(TRIM(b.chave))) AS casam_com_limpeza\nFROM <tabela_a> a JOIN <tabela_b> b ON UPPER(TRIM(a.chave)) = UPPER(TRIM(b.chave));\n-- Padronize na Silver em uma coluna nova (chave_norm) e mantenha a original para auditoria."
+        }
+      }
+    },
+    {
+      "id": "sql-03-regex",
+      "ref": "01_sql/03_sanitizacao-e-nomenclatura.md#expressoes-regulares",
+      "ferramenta": "REGEXP_REPLACE, REGEXP_EXTRACT, RLIKE",
+      "niveis": {
+        "basico": {
+          "enunciado": "Remova a máscara do CPF, deixando só os dígitos.",
+          "dados": [{"tabela": "clientes", "colunas": ["id", "cpf"], "tipos": ["INT", "STRING"], "linhas": [[1, "123.456.789-09"], [2, "987 654 321 00"]]}],
+          "solucao": "SELECT id, REGEXP_REPLACE(cpf, '[^0-9]', '') AS cpf_digitos\nFROM clientes;"
+        },
+        "intermediario": {
+          "enunciado": "Extraia o domínio de cada e-mail e marque quais e-mails têm formato válido (algo@algo.algo).",
+          "dados": [{"tabela": "usuarios", "colunas": ["email"], "tipos": ["STRING"], "linhas": [["ana@empresa.com.br"], ["bruno@@x.com"], ["carla@site"], ["d@e.io"]]}],
+          "solucao": "SELECT email,\n       REGEXP_EXTRACT(email, '@(.+)$', 1) AS dominio,\n       email RLIKE '^[^@\\\\s]+@[^@\\\\s]+\\\\.[^@\\\\s]+$' AS formato_valido\nFROM usuarios;"
+        },
+        "avancado": {
+          "enunciado": "Normalize descrições com espaços duplicados, tabulações e quebras de linha para um único espaço, e extraia o primeiro número de pedido no formato `PED-` seguido de 6 dígitos.",
+          "dados": [{"tabela": "chamados", "colunas": ["id", "descricao"], "tipos": ["INT", "STRING"], "linhas": [[1, "Cliente   reclama\tdo PED-123456  e PED-654321"], [2, "Sem   pedido\ninformado"]]}],
+          "solucao": "SELECT id,\n       TRIM(REGEXP_REPLACE(descricao, '\\\\s+', ' ')) AS descricao_normalizada,\n       NULLIF(REGEXP_EXTRACT(descricao, '(PED-[0-9]{6})', 1), '') AS primeiro_pedido\nFROM chamados;"
+        }
+      }
+    },
+    {
+      "id": "sql-03-translate",
+      "ref": "01_sql/03_sanitizacao-e-nomenclatura.md#remocao-de-acentos-com-translate",
+      "ferramenta": "TRANSLATE",
+      "niveis": {
+        "basico": {
+          "enunciado": "Gere uma chave de comparação sem acentos e em minúsculas para os nomes.",
+          "dados": [{"tabela": "pdvs", "colunas": ["nome"], "tipos": ["STRING"], "linhas": [["João do Caminhão"], ["Joao do Caminhao"], ["Açaí da Praça"]]}],
+          "solucao": "SELECT nome,\n       TRANSLATE(LOWER(nome), 'áàâãäéèêëíìîïóòôõöúùûüç', 'aaaaaeeeeiiiiooooouuuuc') AS nome_chave\nFROM pdvs;"
+        },
+        "intermediario": {
+          "enunciado": "Junte os cadastros do CRM e do ERP pelo nome, tolerando diferenças de acento e caixa. Quantos pares casam com e sem a normalização?",
+          "dados": [
+            {"tabela": "crm", "colunas": ["id_crm", "nome"], "tipos": ["INT", "STRING"], "linhas": [[1, "João Silva"], [2, "Márcia Lima"], [3, "Pedro"]]},
+            {"tabela": "erp", "colunas": ["id_erp", "nome"], "tipos": ["INT", "STRING"], "linhas": [[10, "JOAO SILVA"], [20, "Marcia Lima"], [30, "Paulo"]]}
+          ],
+          "solucao": "WITH c AS (SELECT id_crm, nome, TRANSLATE(LOWER(nome), 'áàâãäéèêëíìîïóòôõöúùûüç', 'aaaaaeeeeiiiiooooouuuuc') AS chave FROM crm),\n     e AS (SELECT id_erp, nome, TRANSLATE(LOWER(nome), 'áàâãäéèêëíìîïóòôõöúùûüç', 'aaaaaeeeeiiiiooooouuuuc') AS chave FROM erp)\nSELECT\n    (SELECT COUNT(*) FROM crm JOIN erp ON crm.nome = erp.nome) AS casam_sem_normalizar,\n    (SELECT COUNT(*) FROM c JOIN e ON c.chave = e.chave)       AS casam_normalizado;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, descubra quais caracteres acentuados ou especiais aparecem em uma coluna de nomes e não estão cobertos pela lista do `TRANSLATE` do cheatsheet. Amplie a lista e documente os casos que exigem outra estratégia.",
+          "dados": null,
+          "solucao": "SELECT c AS caractere, COUNT(*) AS ocorrencias\nFROM <tabela>\nLATERAL VIEW explode(split(nome, '')) t AS c\nWHERE c RLIKE '[^A-Za-z0-9 ]'\n  AND NOT instr('áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ', c) > 0\nGROUP BY c ORDER BY ocorrencias DESC;"
+        }
+      }
+    },
+    {
+      "id": "sql-03-rename-column",
+      "ref": "01_sql/03_sanitizacao-e-nomenclatura.md#renomear-colunas-em-tabelas-delta",
+      "ferramenta": "ALTER TABLE RENAME COLUMN + column mapping",
+      "niveis": {
+        "basico": {
+          "enunciado": "Escreva os comandos para renomear a coluna `id_prod` para `id_produto` na tabela Delta `silver.vendas`, que ainda não tem column mapping.",
+          "dados": null,
+          "solucao": "ALTER TABLE silver.vendas SET TBLPROPERTIES ('delta.columnMapping.mode' = 'name');\nALTER TABLE silver.vendas RENAME COLUMN id_prod TO id_produto;"
+        },
+        "intermediario": {
+          "enunciado": "Antes de renomear uma coluna em uma tabela publicada, liste o que precisa ser verificado. Escreva a consulta que mostra as propriedades atuais da tabela (protocolo e column mapping).",
+          "dados": null,
+          "solucao": "SHOW TBLPROPERTIES silver.vendas;\nDESCRIBE DETAIL silver.vendas;   -- minReaderVersion / minWriterVersion\n-- Verificar: leitores externos suportam o protocolo novo? Há streaming ou Change Data Feed\n-- lendo a tabela? Quais views, jobs e dashboards citam o nome antigo?"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha uma tabela com nome de coluna fora do padrão. Planeje a renomeação sem quebrar consumidores: crie uma view de compatibilidade com o nome antigo, defina prazo de descontinuação e descreva a ordem dos passos.",
+          "dados": null,
+          "solucao": "-- 1. Habilitar column mapping e renomear\nALTER TABLE silver.t SET TBLPROPERTIES ('delta.columnMapping.mode' = 'name');\nALTER TABLE silver.t RENAME COLUMN nomeAntigo TO nome_novo;\n-- 2. View de compatibilidade temporária\nCREATE OR REPLACE VIEW silver.t_compat AS SELECT *, nome_novo AS nomeAntigo FROM silver.t;\n-- 3. Migrar consumidores, monitorar uso da view e removê-la no prazo combinado."
+        }
+      }
+    },
+    {
+      "id": "sql-04-coalesce-case",
+      "ref": "01_sql/04_nulos-e-condicionais.md#coalesce-e-case-when",
+      "ferramenta": "COALESCE e CASE WHEN",
+      "niveis": {
+        "basico": {
+          "enunciado": "Substitua o nome nulo por 'SEM NOME' e a categoria nula por -1.",
+          "dados": [{"tabela": "produtos", "colunas": ["id", "nome", "id_categoria"], "tipos": ["INT", "STRING", "INT"], "linhas": [[1, "Caneta", 10], [2, null, null], [3, "Lápis", null]]}],
+          "solucao": "SELECT id,\n       COALESCE(nome, 'SEM NOME') AS nome,\n       COALESCE(id_categoria, -1) AS id_categoria\nFROM produtos;"
+        },
+        "intermediario": {
+          "enunciado": "Classifique o risco: status 'A' → ALTO; status 'M' e ativo → MEDIO; o resto → BAIXO. O que acontece com status nulo?",
+          "dados": [{"tabela": "contas", "colunas": ["id", "status", "is_ativo"], "tipos": ["INT", "STRING", "BOOLEAN"], "linhas": [[1, "A", true], [2, "M", true], [3, "M", false], [4, null, true]]}],
+          "solucao": "SELECT id,\n       CASE\n           WHEN status = 'A'                THEN 'ALTO'\n           WHEN status = 'M' AND is_ativo   THEN 'MEDIO'\n           ELSE 'BAIXO'\n       END AS risco\nFROM contas;\n-- status NULL não satisfaz nenhum WHEN e cai no ELSE (BAIXO). Se isso não for a regra,\n-- trate explicitamente: WHEN status IS NULL THEN 'DESCONHECIDO'."
+        },
+        "avancado": {
+          "enunciado": "Use a chave substituta -1 para vendas sem categoria e garanta que o join com a dimensão não perca linhas. A dimensão ainda não tem o membro desconhecido.",
+          "dados": [
+            {"tabela": "vendas", "colunas": ["id_venda", "id_categoria", "valor"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 10, 100], [2, null, 50]]},
+            {"tabela": "dim_categoria", "colunas": ["id_categoria", "nome"], "tipos": ["INT", "STRING"], "linhas": [[10, "Papelaria"]]}
+          ],
+          "solucao": "WITH dim AS (\n    SELECT id_categoria, nome FROM dim_categoria\n    UNION ALL\n    SELECT -1, 'Desconhecido'\n)\nSELECT v.id_venda, v.valor, d.nome AS categoria\nFROM vendas AS v\nJOIN dim AS d ON COALESCE(v.id_categoria, -1) = d.id_categoria;"
+        }
+      }
+    },
+    {
+      "id": "sql-04-null-agregacoes",
+      "ref": "01_sql/04_nulos-e-condicionais.md#null-em-agregacoes-e-comparacoes",
+      "ferramenta": "COUNT(col), AVG com NULL, <=>",
+      "niveis": {
+        "basico": {
+          "enunciado": "Conte o total de envios e quantos têm telefone preenchido.",
+          "dados": [{"tabela": "envios", "colunas": ["id", "telefone"], "tipos": ["INT", "STRING"], "linhas": [[1, "9999"], [2, null], [3, null], [4, "8888"]]}],
+          "solucao": "SELECT COUNT(*) AS total, COUNT(telefone) AS com_telefone\nFROM envios;"
+        },
+        "intermediario": {
+          "enunciado": "Calcule a média das notas ignorando nulos e tratando nulos como zero. Qual a diferença e quando cada uma é correta?",
+          "dados": [{"tabela": "avaliacoes", "colunas": ["id", "nota"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 8], [3, null], [4, null]]}],
+          "solucao": "SELECT AVG(nota)              AS media_respondentes,   -- 9.0\n       AVG(COALESCE(nota, 0)) AS media_todos            -- 4.5\nFROM avaliacoes;\n-- Ignorar nulos: média de quem respondeu. Zero: só se 'não respondeu' significar nota 0."
+        },
+        "avancado": {
+          "enunciado": "Compare duas versões de cadastro e liste as linhas cujo e-mail mudou, inclusive de valor para nulo e de nulo para valor. Por que `a.email <> b.email` não basta?",
+          "dados": [
+            {"tabela": "v1", "colunas": ["id", "email"], "tipos": ["INT", "STRING"], "linhas": [[1, "a@x.com"], [2, null], [3, "c@x.com"], [4, null]]},
+            {"tabela": "v2", "colunas": ["id", "email"], "tipos": ["INT", "STRING"], "linhas": [[1, "a@x.com"], [2, "b@x.com"], [3, null], [4, null]]}
+          ],
+          "solucao": "-- <> com NULL resulta em desconhecido e descarta os ids 2 e 3.\nSELECT v1.id, v1.email AS antes, v2.email AS depois\nFROM v1 JOIN v2 USING (id)\nWHERE NOT (v1.email <=> v2.email);"
+        }
+      }
+    },
+    {
+      "id": "sql-04-divisao-por-zero",
+      "ref": "01_sql/04_nulos-e-condicionais.md#divisao-por-zero-nullif-e-funcoes-try",
+      "ferramenta": "NULLIF e try_divide",
+      "niveis": {
+        "basico": {
+          "enunciado": "Calcule `receita / custo` sem erro quando o custo for zero.",
+          "dados": [{"tabela": "produtos", "colunas": ["id", "receita", "custo"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 100, 50], [2, 80, 0], [3, 30, null]]}],
+          "solucao": "SELECT id, receita / NULLIF(custo, 0) AS margem\nFROM produtos;"
+        },
+        "intermediario": {
+          "enunciado": "Calcule a margem com `try_divide` e crie uma flag de qualidade portável (sem `IFF`) que separe custo zero de custo ausente.",
+          "dados": [{"tabela": "produtos", "colunas": ["id", "receita", "custo"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 100, 50], [2, 80, 0], [3, 30, null]]}],
+          "solucao": "SELECT id,\n       try_divide(receita, custo) AS margem,\n       CASE WHEN custo IS NULL THEN 'AUSENTE'\n            WHEN custo = 0     THEN 'ZERO'\n            ELSE 'OK' END AS qualidade_custo\nFROM produtos;"
+        },
+        "avancado": {
+          "enunciado": "Calcule o ticket médio por loja (`receita / pedidos`) em uma agregação. Lojas sem pedido devem aparecer com ticket nulo e uma métrica separada deve contar quantas lojas ficaram sem ticket.",
+          "dados": [{"tabela": "lojas_mes", "colunas": ["loja", "receita", "pedidos"], "tipos": ["STRING", "DECIMAL(10,2)", "INT"], "linhas": [["A", 1000.0, 10], ["B", 0.0, 0], ["C", 450.5, 3]]}],
+          "solucao": "WITH t AS (\n    SELECT loja, try_divide(receita, pedidos) AS ticket FROM lojas_mes\n)\nSELECT loja, ticket, count_if(ticket IS NULL) OVER () AS lojas_sem_ticket\nFROM t;"
+        }
+      }
+    }
+  ]
+}

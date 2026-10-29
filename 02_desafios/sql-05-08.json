@@ -1,0 +1,289 @@
+{
+  "desafios": [
+    {
+      "id": "sql-05-ctes-organizar",
+      "ref": "01_sql/05_ctes.md#ctes-para-organizar-a-logica",
+      "ferramenta": "WITH (CTE)",
+      "niveis": {
+        "basico": {
+          "enunciado": "Com uma CTE para clientes ativos e outra para o total comprado por cliente, liste nome e total dos clientes ativos.",
+          "dados": [
+            {"tabela": "clientes", "colunas": ["id_cliente", "nome", "status"], "tipos": ["INT", "STRING", "STRING"], "linhas": [[1, "Ana", "ATIVO"], [2, "Bruno", "INATIVO"], [3, "Carla", "ATIVO"]]},
+            {"tabela": "vendas", "colunas": ["id_cliente", "receita"], "tipos": ["INT", "INT"], "linhas": [[1, 100], [1, 50], [2, 70], [3, 30]]}
+          ],
+          "solucao": "WITH clientes_ativos AS (\n    SELECT id_cliente, nome FROM clientes WHERE status = 'ATIVO'\n),\nfaturamento AS (\n    SELECT id_cliente, SUM(receita) AS total FROM vendas GROUP BY id_cliente\n)\nSELECT c.nome, f.total\nFROM clientes_ativos AS c\nJOIN faturamento AS f USING (id_cliente);"
+        },
+        "intermediario": {
+          "enunciado": "Reescreva com CTEs nomeadas por conteúdo a consulta aninhada:\n`SELECT * FROM (SELECT uf, SUM(v) s FROM (SELECT uf, valor v FROM pedidos WHERE valor > 0) GROUP BY uf) WHERE s > 100`",
+          "dados": [{"tabela": "pedidos", "colunas": ["uf", "valor"], "tipos": ["STRING", "INT"], "linhas": [["SP", 80], ["SP", 40], ["RJ", 90], ["RJ", -5]]}],
+          "solucao": "WITH pedidos_validos AS (\n    SELECT uf, valor FROM pedidos WHERE valor > 0\n),\ntotal_por_uf AS (\n    SELECT uf, SUM(valor) AS total FROM pedidos_validos GROUP BY uf\n)\nSELECT * FROM total_por_uf WHERE total > 100;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, pegue a consulta mais longa que você mantém e refatore-a em CTEs com uma responsabilidade cada (filtrar, padronizar, agregar, juntar). Valide que o resultado é idêntico comparando as duas versões com `EXCEPT ALL` nos dois sentidos.",
+          "dados": null,
+          "solucao": "WITH antiga AS (<consulta original>), nova AS (<consulta refatorada>)\nSELECT 'so_antiga' AS lado, * FROM (SELECT * FROM antiga EXCEPT ALL SELECT * FROM nova)\nUNION ALL\nSELECT 'so_nova', * FROM (SELECT * FROM nova EXCEPT ALL SELECT * FROM antiga);\n-- Resultado vazio = mesma saída, inclusive multiplicidade."
+        }
+      }
+    },
+    {
+      "id": "sql-05-temp-views",
+      "ref": "01_sql/05_ctes.md#views-temporarias",
+      "ferramenta": "CREATE TEMP VIEW",
+      "niveis": {
+        "basico": {
+          "enunciado": "Crie uma temp view que marque usuários sem e-mail com uma flag e consulte só os problemáticos.",
+          "dados": [{"tabela": "usuarios", "colunas": ["id", "email"], "tipos": ["INT", "STRING"], "linhas": [[1, "a@x.com"], [2, null], [3, null]]}],
+          "solucao": "CREATE OR REPLACE TEMP VIEW v_qualidade_usuarios AS\nSELECT *, CASE WHEN email IS NULL THEN 1 ELSE 0 END AS flag_sem_email\nFROM usuarios;\n\nSELECT * FROM v_qualidade_usuarios WHERE flag_sem_email = 1;"
+        },
+        "intermediario": {
+          "enunciado": "Crie uma temp view com o resumo de qualidade (total, sem e-mail, % sem e-mail) a partir da view anterior, para reaproveitar em outras células do notebook.",
+          "dados": [{"tabela": "usuarios", "colunas": ["id", "email"], "tipos": ["INT", "STRING"], "linhas": [[1, "a@x.com"], [2, null], [3, null], [4, "d@x.com"]]}],
+          "solucao": "CREATE OR REPLACE TEMP VIEW v_qualidade_usuarios AS\nSELECT *, CASE WHEN email IS NULL THEN 1 ELSE 0 END AS flag_sem_email FROM usuarios;\n\nCREATE OR REPLACE TEMP VIEW v_resumo_qualidade AS\nSELECT COUNT(*) AS total,\n       SUM(flag_sem_email) AS sem_email,\n       ROUND(100 * AVG(flag_sem_email), 1) AS pct_sem_email\nFROM v_qualidade_usuarios;\n\nSELECT * FROM v_resumo_qualidade;"
+        },
+        "avancado": {
+          "enunciado": "Um job serverless precisa compartilhar um resultado intermediário entre dois notebooks (tarefas diferentes). Explique por que temp view e global temp view não servem e implemente a alternativa com limpeza ao final.",
+          "dados": null,
+          "solucao": "-- Temp view vive só na sessão; global temp view não é suportada em serverless.\n-- Tarefa 1:\nCREATE OR REPLACE TABLE main.tmp.resultado_intermediario AS SELECT ...;\n-- Tarefa 2:\nSELECT * FROM main.tmp.resultado_intermediario;\n-- Última tarefa (ou em caso de falha, num passo de limpeza):\nDROP TABLE IF EXISTS main.tmp.resultado_intermediario;"
+        }
+      }
+    },
+    {
+      "id": "sql-05-reaproveitamento",
+      "ref": "01_sql/05_ctes.md#reaproveitamento-e-materializacao",
+      "ferramenta": "EXPLAIN de CTE reutilizada, CACHE TABLE",
+      "niveis": {
+        "basico": {
+          "enunciado": "Use a mesma CTE de vendas recentes duas vezes (uma por região) e rode `EXPLAIN FORMATTED`. Procure se aparece `ReusedExchange` ou duas leituras da tabela.",
+          "dados": [{"tabela": "vendas", "colunas": ["id", "regiao", "dt_venda"], "tipos": ["INT", "STRING", "DATE"], "linhas": [[1, "N", "2025-02-01"], [2, "S", "2025-03-01"], [3, "S", "2024-12-31"]]}],
+          "solucao": "EXPLAIN FORMATTED\nWITH vendas_recentes AS (\n    SELECT * FROM vendas WHERE dt_venda >= DATE '2025-01-01'\n)\nSELECT 'N' AS regiao, COUNT(*) FROM vendas_recentes WHERE regiao = 'N'\nUNION ALL\nSELECT 'S', COUNT(*) FROM vendas_recentes WHERE regiao = 'S';"
+        },
+        "intermediario": {
+          "enunciado": "Em um cluster clássico (não serverless), materialize em cache o passo caro, use-o nas duas consultas e libere a memória no final.",
+          "dados": null,
+          "solucao": "CACHE TABLE vendas_recentes AS\nSELECT * FROM silver.vendas WHERE dt_venda >= DATE '2025-01-01';\n\nSELECT regiao, COUNT(*) FROM vendas_recentes GROUP BY regiao;\nSELECT MAX(valor) FROM vendas_recentes;\n\nUNCACHE TABLE vendas_recentes;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, encontre uma consulta em que uma CTE pesada é usada 2+ vezes. Meça o tempo e os bytes lidos (Query Profile ou Spark UI) da versão original e de uma versão com tabela intermediária. Registre se a materialização compensou, considerando o custo de escrita.",
+          "dados": null,
+          "solucao": "-- Versão A: consulta original com a CTE.\n-- Versão B:\nCREATE OR REPLACE TABLE main.tmp.passo_caro AS <corpo da CTE>;\n<consulta usando main.tmp.passo_caro>;\nDROP TABLE main.tmp.passo_caro;\n-- Compare: duração total, bytes lidos, nº de scans da origem no plano.\n-- Só mantenha B se o ganho superar o custo de escrita e limpeza."
+        }
+      }
+    },
+    {
+      "id": "sql-05-cte-recursiva",
+      "ref": "01_sql/05_ctes.md#cte-recursiva",
+      "ferramenta": "WITH RECURSIVE",
+      "niveis": {
+        "basico": {
+          "enunciado": "Gere os números de 1 a 5 com uma CTE recursiva.",
+          "dados": null,
+          "solucao": "WITH RECURSIVE seq (n) AS (\n    SELECT 1\n    UNION ALL\n    SELECT n + 1 FROM seq WHERE n < 5\n)\nSELECT n FROM seq;"
+        },
+        "intermediario": {
+          "enunciado": "Monte o organograma: para cada colaborador, o nível hierárquico a partir do diretor (sem gestor).",
+          "dados": [{"tabela": "colaboradores", "colunas": ["id", "nome", "id_gestor"], "tipos": ["INT", "STRING", "INT"], "linhas": [[1, "Diretora", null], [2, "Gerente A", 1], [3, "Gerente B", 1], [4, "Analista", 2], [5, "Estagiário", 4]]}],
+          "solucao": "WITH RECURSIVE hierarquia (id, nome, id_gestor, nivel) AS (\n    SELECT id, nome, id_gestor, 0 FROM colaboradores WHERE id_gestor IS NULL\n    UNION ALL\n    SELECT c.id, c.nome, c.id_gestor, h.nivel + 1\n    FROM colaboradores AS c\n    JOIN hierarquia AS h ON c.id_gestor = h.id\n)\nSELECT * FROM hierarquia ORDER BY nivel, id;"
+        },
+        "avancado": {
+          "enunciado": "Monte o caminho completo de cada categoria (ex.: `Casa > Cozinha > Panelas`). Depois explique o que acontece se houver um ciclo (categoria apontando para uma descendente) e como se proteger.",
+          "dados": [{"tabela": "categorias", "colunas": ["id", "nome", "id_pai"], "tipos": ["INT", "STRING", "INT"], "linhas": [[1, "Casa", null], [2, "Cozinha", 1], [3, "Panelas", 2], [4, "Jardim", 1]]}],
+          "solucao": "WITH RECURSIVE arvore (id, caminho, profundidade) AS (\n    SELECT id, nome, 0 FROM categorias WHERE id_pai IS NULL\n    UNION ALL\n    SELECT c.id, concat(a.caminho, ' > ', c.nome), a.profundidade + 1\n    FROM categorias AS c\n    JOIN arvore AS a ON c.id_pai = a.id\n    WHERE a.profundidade < 20   -- proteção contra ciclos\n)\nSELECT * FROM arvore ORDER BY caminho;\n-- Com ciclo e sem a proteção, a recursão cresce até o limite (padrão 100) e falha\n-- com RECURSION_LEVEL_LIMIT_EXCEEDED."
+        }
+      }
+    },
+    {
+      "id": "sql-06-agregacoes-filter",
+      "ref": "01_sql/06_group-by-e-pivots.md#agregacoes-e-filtros-por-agregacao",
+      "ferramenta": "count_if, FILTER (WHERE), approx_count_distinct",
+      "niveis": {
+        "basico": {
+          "enunciado": "Por região: total de pedidos, frete total e quantos pedidos falharam (sem `CASE WHEN`).",
+          "dados": [{"tabela": "despachos", "colunas": ["regiao", "status", "frete"], "tipos": ["STRING", "STRING", "INT"], "linhas": [["N", "OK", 10], ["N", "FALHA", 5], ["S", "OK", 20], ["S", "OK", 15]]}],
+          "solucao": "SELECT regiao,\n       COUNT(*) AS pedidos,\n       SUM(frete) AS frete_total,\n       count_if(status = 'FALHA') AS falhas\nFROM despachos\nGROUP BY regiao;"
+        },
+        "intermediario": {
+          "enunciado": "Por região, mostre o frete da LOJA e do SITE em colunas separadas usando `FILTER (WHERE ...)`, e só as regiões com frete total acima de 20.",
+          "dados": [{"tabela": "despachos", "colunas": ["regiao", "canal", "frete"], "tipos": ["STRING", "STRING", "INT"], "linhas": [["N", "LOJA", 10], ["N", "SITE", 5], ["S", "LOJA", 20], ["S", "SITE", 15]]}],
+          "solucao": "SELECT regiao,\n       SUM(frete) FILTER (WHERE canal = 'LOJA') AS frete_loja,\n       SUM(frete) FILTER (WHERE canal = 'SITE') AS frete_site\nFROM despachos\nGROUP BY regiao\nHAVING SUM(frete) > 20;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, compare `COUNT(DISTINCT id_cliente)` com `approx_count_distinct(id_cliente)` (padrão) e com `approx_count_distinct(id_cliente, 0.01)` por mês. Meça o erro relativo e o tempo de cada versão e decida qual usar no dashboard.",
+          "dados": null,
+          "solucao": "SELECT date_trunc('MONTH', dt_venda) AS mes,\n       COUNT(DISTINCT id_cliente)               AS exato,\n       approx_count_distinct(id_cliente)        AS aprox_5pct,\n       approx_count_distinct(id_cliente, 0.01)  AS aprox_1pct,\n       ROUND(100 * (approx_count_distinct(id_cliente) - COUNT(DISTINCT id_cliente)) / COUNT(DISTINCT id_cliente), 2) AS erro_pct\nFROM <tabela>\nGROUP BY 1 ORDER BY 1;\n-- Rode cada métrica isolada para comparar tempo; o erro padrão esperado é ~5% (relativeSD = 0.05)."
+        }
+      }
+    },
+    {
+      "id": "sql-06-pivot-unpivot",
+      "ref": "01_sql/06_group-by-e-pivots.md#pivot-e-unpivot",
+      "ferramenta": "PIVOT e UNPIVOT",
+      "niveis": {
+        "basico": {
+          "enunciado": "Gire as vendas por região, com uma coluna por ano (2024 e 2025).",
+          "dados": [{"tabela": "vendas_anuais", "colunas": ["regiao", "ano", "vendas"], "tipos": ["STRING", "INT", "INT"], "linhas": [["N", 2024, 10], ["N", 2025, 15], ["S", 2024, 20], ["S", 2025, 5], ["S", 2025, 5]]}],
+          "solucao": "SELECT *\nFROM (SELECT regiao, ano, vendas FROM vendas_anuais)\nPIVOT (SUM(vendas) FOR ano IN (2024, 2025));"
+        },
+        "intermediario": {
+          "enunciado": "A planilha tem uma coluna por mês. Transforme em linhas (`mes`, `receita`) com nomes curtos para os meses.",
+          "dados": [{"tabela": "planilha", "colunas": ["loja", "receita_jan", "receita_fev", "receita_mar"], "tipos": ["STRING", "INT", "INT", "INT"], "linhas": [["A", 10, 20, 30], ["B", 5, null, 7]]}],
+          "solucao": "SELECT *\nFROM planilha\nUNPIVOT (\n    receita FOR mes IN (receita_jan AS jan, receita_fev AS fev, receita_mar AS mar)\n);\n-- A loja B não terá a linha de fevereiro: UNPIVOT descarta NULL por padrão."
+        },
+        "avancado": {
+          "enunciado": "Repita o unpivot preservando os meses sem valor e, em seguida, pivote de volta para conferir que o resultado reconstrói a planilha original.",
+          "dados": [{"tabela": "planilha", "colunas": ["loja", "receita_jan", "receita_fev"], "tipos": ["STRING", "INT", "INT"], "linhas": [["A", 10, 20], ["B", 5, null]]}],
+          "solucao": "WITH longo AS (\n    SELECT * FROM planilha\n    UNPIVOT INCLUDE NULLS (receita FOR mes IN (receita_jan AS jan, receita_fev AS fev))\n)\nSELECT *\nFROM longo\nPIVOT (first(receita) FOR mes IN ('jan' AS receita_jan, 'fev' AS receita_fev));"
+        }
+      }
+    },
+    {
+      "id": "sql-06-rollup-cube",
+      "ref": "01_sql/06_group-by-e-pivots.md#subtotais-rollup-cube-e-grouping-sets",
+      "ferramenta": "ROLLUP, CUBE, GROUPING SETS, grouping_id",
+      "niveis": {
+        "basico": {
+          "enunciado": "Some o volume por país e região com subtotal por país e total geral.",
+          "dados": [{"tabela": "transporte", "colunas": ["pais", "regiao", "volume"], "tipos": ["STRING", "STRING", "INT"], "linhas": [["BR", "SUL", 10], ["BR", "NE", 20], ["AR", "NORTE", 5]]}],
+          "solucao": "SELECT pais, regiao, SUM(volume) AS volume\nFROM transporte\nGROUP BY ROLLUP (pais, regiao)\nORDER BY pais NULLS LAST, regiao NULLS LAST;"
+        },
+        "intermediario": {
+          "enunciado": "Faça o mesmo rollup, mas rotule as linhas como 'DETALHE', 'SUBTOTAL PAÍS' e 'TOTAL'. Atenção: existe uma região nula de verdade nos dados.",
+          "dados": [{"tabela": "transporte", "colunas": ["pais", "regiao", "volume"], "tipos": ["STRING", "STRING", "INT"], "linhas": [["BR", "SUL", 10], ["BR", null, 20], ["AR", "NORTE", 5]]}],
+          "solucao": "SELECT pais, regiao, SUM(volume) AS volume,\n       CASE grouping_id(pais, regiao)\n           WHEN 0 THEN 'DETALHE'\n           WHEN 1 THEN 'SUBTOTAL PAÍS'\n           ELSE 'TOTAL'\n       END AS nivel\nFROM transporte\nGROUP BY ROLLUP (pais, regiao);"
+        },
+        "avancado": {
+          "enunciado": "Gere em uma consulta: total por (ano, região), total por ano e total por região — mas **não** o total geral nem outras combinações.",
+          "dados": [{"tabela": "faturamento", "colunas": ["ano", "regiao", "vendas"], "tipos": ["INT", "STRING", "INT"], "linhas": [[2024, "N", 10], [2024, "S", 20], [2025, "N", 30]]}],
+          "solucao": "SELECT ano, regiao, SUM(vendas) AS vendas, grouping_id(ano, regiao) AS nivel\nFROM faturamento\nGROUP BY GROUPING SETS ((ano, regiao), (ano), (regiao))\nORDER BY nivel, ano, regiao;"
+        }
+      }
+    },
+    {
+      "id": "sql-07-tipos-de-join",
+      "ref": "01_sql/07_joins.md#quando-usar",
+      "ferramenta": "INNER, LEFT, FULL OUTER, SEMI e ANTI JOIN",
+      "niveis": {
+        "basico": {
+          "enunciado": "Liste todas as vendas com a UF da loja, mantendo vendas cuja loja não está cadastrada.",
+          "dados": [
+            {"tabela": "fato_vendas", "colunas": ["id_venda", "loja_id"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20], [3, 99]]},
+            {"tabela": "dim_loja", "colunas": ["loja_id", "uf"], "tipos": ["INT", "STRING"], "linhas": [[10, "SP"], [20, "RJ"], [30, "MG"]]}
+          ],
+          "solucao": "SELECT f.id_venda, d.uf\nFROM fato_vendas AS f\nLEFT JOIN dim_loja AS d ON f.loja_id = d.loja_id;"
+        },
+        "intermediario": {
+          "enunciado": "Usando as mesmas tabelas, liste (a) as lojas que têm vendas e (b) as lojas sem nenhuma venda, sem trazer colunas da fato.",
+          "dados": [
+            {"tabela": "fato_vendas", "colunas": ["id_venda", "loja_id"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 10], [3, 20]]},
+            {"tabela": "dim_loja", "colunas": ["loja_id", "uf"], "tipos": ["INT", "STRING"], "linhas": [[10, "SP"], [20, "RJ"], [30, "MG"]]}
+          ],
+          "solucao": "SELECT d.* FROM dim_loja AS d LEFT SEMI JOIN fato_vendas AS f ON d.loja_id = f.loja_id;\nSELECT d.* FROM dim_loja AS d LEFT ANTI JOIN fato_vendas AS f ON d.loja_id = f.loja_id;"
+        },
+        "avancado": {
+          "enunciado": "Concilie origem e destino: para cada id, mostre os dois valores e classifique como 'SO_ORIGEM', 'SO_DESTINO', 'DIVERGENTE' ou 'OK'. Trate valores nulos como iguais entre si.",
+          "dados": [
+            {"tabela": "origem", "colunas": ["id", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20], [3, null], [4, 40]]},
+            {"tabela": "destino", "colunas": ["id", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 25], [3, null], [5, 50]]}
+          ],
+          "solucao": "SELECT coalesce(a.id, b.id) AS id, a.valor AS valor_origem, b.valor AS valor_destino,\n       CASE\n           WHEN b.id IS NULL THEN 'SO_ORIGEM'\n           WHEN a.id IS NULL THEN 'SO_DESTINO'\n           WHEN a.valor <=> b.valor THEN 'OK'\n           ELSE 'DIVERGENTE'\n       END AS situacao\nFROM origem AS a\nFULL OUTER JOIN destino AS b ON a.id = b.id\nORDER BY id;"
+        }
+      }
+    },
+    {
+      "id": "sql-07-cardinalidade",
+      "ref": "01_sql/07_joins.md#cardinalidade-e-exploding-join",
+      "ferramenta": "Diagnóstico de exploding join",
+      "niveis": {
+        "basico": {
+          "enunciado": "Antes de juntar vendas com a dimensão de loja, verifique se a dimensão tem uma linha por loja.",
+          "dados": [{"tabela": "dim_loja", "colunas": ["loja_id", "uf", "atualizado_em"], "tipos": ["INT", "STRING", "DATE"], "linhas": [[10, "SP", "2025-01-01"], [10, "SP", "2025-03-01"], [20, "RJ", "2025-01-01"]]}],
+          "solucao": "SELECT loja_id, COUNT(*) AS quantidade\nFROM dim_loja\nGROUP BY loja_id\nHAVING COUNT(*) > 1;"
+        },
+        "intermediario": {
+          "enunciado": "Some a receita por UF. A dimensão de loja tem versões duplicadas e infla o resultado. Mostre o total errado e o correto, usando a versão mais recente de cada loja.",
+          "dados": [
+            {"tabela": "fato_vendas", "colunas": ["id_venda", "loja_id", "valor"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 10, 100], [2, 20, 50]]},
+            {"tabela": "dim_loja", "colunas": ["loja_id", "uf", "atualizado_em", "versao"], "tipos": ["INT", "STRING", "DATE", "INT"], "linhas": [[10, "SP", "2025-01-01", 1], [10, "SP", "2025-03-01", 2], [20, "RJ", "2025-01-01", 1]]}
+          ],
+          "solucao": "-- Errado: SP aparece com 200\nSELECT d.uf, SUM(f.valor) FROM fato_vendas f JOIN dim_loja d USING (loja_id) GROUP BY d.uf;\n\n-- Correto (Databricks: QUALIFY row_number() ... = 1; aqui com subconsulta portável)\nWITH dim_atual AS (\n    SELECT * FROM (\n        SELECT *, row_number() OVER (PARTITION BY loja_id ORDER BY atualizado_em DESC, versao DESC) AS rn\n        FROM dim_loja\n    ) WHERE rn = 1\n)\nSELECT d.uf, SUM(f.valor) AS receita\nFROM fato_vendas AS f\nJOIN dim_atual AS d USING (loja_id)\nGROUP BY d.uf;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha um join entre uma fato e uma dimensão. Escreva uma checagem que compare a contagem e a soma de uma métrica da fato antes e depois do join e falhe (ou sinalize) se o join multiplicar ou perder linhas.",
+          "dados": null,
+          "solucao": "WITH antes AS (SELECT COUNT(*) n, SUM(valor) s FROM fato),\n     depois AS (SELECT COUNT(*) n, SUM(f.valor) s FROM fato f LEFT JOIN dim d ON f.k = d.k)\nSELECT antes.n, depois.n, antes.s, depois.s,\n       CASE WHEN antes.n = depois.n AND antes.s <=> depois.s THEN 'OK'\n            ELSE raise_error('Join alterou a cardinalidade da fato') END AS status\nFROM antes, depois;"
+        }
+      }
+    },
+    {
+      "id": "sql-07-performance-broadcast",
+      "ref": "01_sql/07_joins.md#performance",
+      "ferramenta": "Hint BROADCAST e EXPLAIN FORMATTED",
+      "niveis": {
+        "basico": {
+          "enunciado": "Rode `EXPLAIN FORMATTED` de um join entre a fato e uma dimensão pequena e identifique a estratégia de join escolhida (ex.: `BroadcastHashJoin`, `SortMergeJoin`).",
+          "dados": [
+            {"tabela": "fato_vendas", "colunas": ["id_venda", "loja_id"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20]]},
+            {"tabela": "dim_loja", "colunas": ["loja_id", "uf"], "tipos": ["INT", "STRING"], "linhas": [[10, "SP"], [20, "RJ"]]}
+          ],
+          "solucao": "EXPLAIN FORMATTED\nSELECT f.id_venda, d.uf\nFROM fato_vendas AS f\nLEFT JOIN dim_loja AS d ON f.loja_id = d.loja_id;"
+        },
+        "intermediario": {
+          "enunciado": "Force o broadcast da dimensão com hint e confirme no plano que a estratégia mudou para `BroadcastHashJoin`.",
+          "dados": [
+            {"tabela": "fato_vendas", "colunas": ["id_venda", "loja_id"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20]]},
+            {"tabela": "dim_loja", "colunas": ["loja_id", "uf"], "tipos": ["INT", "STRING"], "linhas": [[10, "SP"], [20, "RJ"]]}
+          ],
+          "solucao": "EXPLAIN FORMATTED\nSELECT /*+ BROADCAST(d) */ f.id_venda, d.uf\nFROM fato_vendas AS f\nLEFT JOIN dim_loja AS d ON f.loja_id = d.loja_id;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, encontre um join lento com uma dimensão. Meça o tamanho real da dimensão (após filtros e projeção), compare duração e shuffle com e sem o hint `BROADCAST`, e registre se o ganho justifica fixar o hint (lembre que a dimensão pode crescer).",
+          "dados": null,
+          "solucao": "DESCRIBE DETAIL <dimensao>;   -- sizeInBytes, numFiles\n-- Versão A: sem hint. Versão B: SELECT /*+ BROADCAST(d) */ ...\n-- Compare no Query Profile / Spark UI: duração, bytes de shuffle, estratégia de join.\n-- Se a dimensão pode crescer além da memória dos executores, prefira deixar o AQE decidir."
+        }
+      }
+    },
+    {
+      "id": "sql-08-row-number-lag-acumulado",
+      "ref": "01_sql/08_window-functions.md#exemplos",
+      "ferramenta": "row_number, lag e SUM OVER",
+      "niveis": {
+        "basico": {
+          "enunciado": "Para cada cliente, mostre o valor do evento anterior ao lado do valor atual.",
+          "dados": [{"tabela": "eventos", "colunas": ["cliente_id", "evento_id", "evento_em", "valor"], "tipos": ["INT", "INT", "TIMESTAMP", "INT"], "linhas": [[1, 1, "2025-01-01T10:00:00", 100], [1, 2, "2025-01-02T10:00:00", 120], [2, 3, "2025-01-01T09:00:00", 50], [1, 4, "2025-01-03T10:00:00", 90]]}],
+          "solucao": "SELECT cliente_id, evento_em, valor,\n       lag(valor) OVER (PARTITION BY cliente_id ORDER BY evento_em, evento_id) AS valor_anterior\nFROM eventos;"
+        },
+        "intermediario": {
+          "enunciado": "Pegue o evento mais recente de cada cliente. Há dois eventos do cliente 1 no mesmo instante: garanta um resultado determinístico.",
+          "dados": [{"tabela": "eventos", "colunas": ["cliente_id", "evento_id", "evento_em", "valor"], "tipos": ["INT", "INT", "TIMESTAMP", "INT"], "linhas": [[1, 1, "2025-01-01T10:00:00", 100], [1, 2, "2025-01-03T10:00:00", 120], [1, 3, "2025-01-03T10:00:00", 130], [2, 4, "2025-01-01T09:00:00", 50]]}],
+          "solucao": "-- No Databricks: SELECT * FROM eventos QUALIFY row_number() OVER (...) = 1\nSELECT * FROM (\n    SELECT *, row_number() OVER (\n        PARTITION BY cliente_id ORDER BY evento_em DESC, evento_id DESC\n    ) AS rn\n    FROM eventos\n) WHERE rn = 1;"
+        },
+        "avancado": {
+          "enunciado": "Calcule o saldo acumulado por conta e a variação percentual de cada movimento em relação ao saldo anterior. O primeiro movimento de cada conta não tem anterior.",
+          "dados": [{"tabela": "movimentos", "colunas": ["conta_id", "movimento_id", "data_movimento", "valor"], "tipos": ["INT", "INT", "DATE", "DECIMAL(10,2)"], "linhas": [[1, 1, "2025-01-01", 100.0], [1, 2, "2025-01-02", -30.0], [1, 3, "2025-01-05", 50.0], [2, 4, "2025-01-01", 10.0]]}],
+          "solucao": "WITH saldo AS (\n    SELECT *, SUM(valor) OVER (\n        PARTITION BY conta_id ORDER BY data_movimento, movimento_id\n        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW\n    ) AS saldo_acumulado\n    FROM movimentos\n)\nSELECT *,\n       ROUND(100 * try_divide(valor, lag(saldo_acumulado) OVER (PARTITION BY conta_id ORDER BY data_movimento, movimento_id)), 2) AS variacao_pct\nFROM saldo;"
+        }
+      }
+    },
+    {
+      "id": "sql-08-rows-range",
+      "ref": "01_sql/08_window-functions.md#rows-versus-range",
+      "ferramenta": "ROWS × RANGE em frames",
+      "niveis": {
+        "basico": {
+          "enunciado": "Calcule a média móvel das últimas 3 linhas de vendas diárias por loja.",
+          "dados": [{"tabela": "vendas_dia", "colunas": ["loja", "dia", "valor"], "tipos": ["STRING", "DATE", "INT"], "linhas": [["A", "2025-01-01", 10], ["A", "2025-01-02", 20], ["A", "2025-01-03", 30], ["A", "2025-01-04", 40]]}],
+          "solucao": "SELECT loja, dia, valor,\n       AVG(valor) OVER (PARTITION BY loja ORDER BY dia ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS media_3_linhas\nFROM vendas_dia;"
+        },
+        "intermediario": {
+          "enunciado": "Faltam dias na série. Calcule a soma dos **últimos 3 dias corridos** (não 3 linhas) e compare com a versão `ROWS`.",
+          "dados": [{"tabela": "vendas_dia", "colunas": ["loja", "dia", "valor"], "tipos": ["STRING", "DATE", "INT"], "linhas": [["A", "2025-01-01", 10], ["A", "2025-01-02", 20], ["A", "2025-01-05", 30], ["A", "2025-01-06", 40]]}],
+          "solucao": "SELECT loja, dia, valor,\n       SUM(valor) OVER (PARTITION BY loja ORDER BY dia ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS soma_3_linhas,\n       SUM(valor) OVER (PARTITION BY loja ORDER BY unix_date(dia) RANGE BETWEEN 2 PRECEDING AND CURRENT ROW) AS soma_3_dias\nFROM vendas_dia;"
+        },
+        "avancado": {
+          "enunciado": "Há várias vendas por dia. Calcule, para cada dia, a soma dos 7 dias corridos anteriores incluindo o dia, sem duplicar o resultado por venda. Explique por que agregar antes ao grão diário simplifica.",
+          "dados": [{"tabela": "vendas", "colunas": ["loja", "dia", "valor"], "tipos": ["STRING", "DATE", "INT"], "linhas": [["A", "2025-01-01", 10], ["A", "2025-01-01", 5], ["A", "2025-01-04", 20], ["A", "2025-01-09", 30]]}],
+          "solucao": "WITH diario AS (\n    SELECT loja, dia, SUM(valor) AS valor_dia FROM vendas GROUP BY loja, dia\n)\nSELECT loja, dia, valor_dia,\n       SUM(valor_dia) OVER (PARTITION BY loja ORDER BY unix_date(dia) RANGE BETWEEN 6 PRECEDING AND CURRENT ROW) AS soma_7_dias\nFROM diario\nORDER BY loja, dia;"
+        }
+      }
+    }
+  ]
+}

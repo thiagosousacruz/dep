@@ -565,9 +565,9 @@
 
   <section id="sql-01" class="cheat-section">
 <h2><span class="sec-num sql">SQL 01</span> Sintaxe Básica (SQL / Databricks)</h2>
-<h2>O que é</h2>
+<h2 id="sql-01-o-que-e">O que é</h2>
 <p>A estrutura de uma consulta <code>SELECT</code> e a ordem lógica em que suas cláusulas são avaliadas. Entender essa ordem explica por que um alias do <code>SELECT</code> não pode ser usado no <code>WHERE</code>, por que agregados são filtrados no <code>HAVING</code> e onde entra o <code>QUALIFY</code>.</p>
-<h2>Ordem lógica de avaliação</h2>
+<h2 id="sql-01-ordem-logica-de-avaliacao">Ordem lógica de avaliação</h2>
 <p>A ordem em que escrevemos não é a ordem em que a consulta é avaliada. A ordem lógica é:</p>
 <p><code>FROM/JOIN → WHERE → GROUP BY → HAVING → janelas (OVER) → QUALIFY → SELECT (projeção) → DISTINCT → ORDER BY → LIMIT</code></p>
 <p>O otimizador pode reordenar a execução física (por exemplo, empurrar filtros para a leitura), mas o resultado sempre respeita essa ordem lógica.</p>
@@ -586,7 +586,7 @@ LIMIT 10;
 <li>Use <code>HAVING</code> apenas para condições sobre agregados.</li>
 <li><code>QUALIFY</code> filtra o resultado de funções de janela (ver <a href="#sql-08">Window functions</a>). É suportado no Databricks, mas não no Spark open source; fora do Databricks, use uma subconsulta com filtro sobre a coluna da janela.</li>
 </ul>
-<h2>Filtros: IN, BETWEEN e LIKE</h2>
+<h2 id="sql-01-filtros-in-between-e-like">Filtros: IN, BETWEEN e LIKE</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT *
 FROM clientes
 WHERE sigla_estado IN ('SP', 'RJ', 'MG')                  -- lista de valores
@@ -607,7 +607,7 @@ SELECT * FROM clientes WHERE id_cliente NOT IN (SELECT id_cliente FROM bloqueado
 SELECT * FROM clientes c
 WHERE NOT EXISTS (SELECT 1 FROM bloqueados b WHERE b.id_cliente = c.id_cliente);
 </code></pre></div>
-<h2>DISTINCT com propósito</h2>
+<h2 id="sql-01-distinct-com-proposito">DISTINCT com propósito</h2>
 <p><code>DISTINCT</code> força agrupamento por todas as colunas projetadas e, em geral, um shuffle. Usá-lo para "corrigir" duplicidade esconde a causa (normalmente um join que multiplicou linhas).</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">-- Evite: deduplica tudo sem explicar de onde veio a duplicidade
 SELECT DISTINCT * FROM fato_vendas;
@@ -618,7 +618,7 @@ FROM clientes_ativos
 WHERE id_cliente IS NOT NULL;
 </code></pre></div>
 <p>Se a duplicidade é inesperada, investigue a cardinalidade antes de deduplicar.</p>
-<h2>Operadores de conjunto</h2>
+<h2 id="sql-01-operadores-de-conjunto">Operadores de conjunto</h2>
 <p>Combinam resultados de consultas com o mesmo número de colunas e tipos compatíveis. A correspondência é por <strong>posição</strong>, não por nome.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">-- UNION ALL: empilha mantendo duplicatas (sem custo de deduplicação)
 SELECT id_user FROM base_antiga
@@ -644,7 +644,7 @@ SELECT id_produto FROM estoque_fisico;
 <li><code>EXCEPT ALL</code> e <code>INTERSECT ALL</code> preservam multiplicidade — úteis para comparar tabelas linha a linha em migrações.</li>
 <li>Ao contrário de <code>=</code>, operadores de conjunto tratam <code>NULL</code> como igual a <code>NULL</code>.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="sql-01-checklist">Checklist</h2>
 <ul>
 <li>[ ] Filtros de linha estão no <code>WHERE</code> e filtros de agregado no <code>HAVING</code>?</li>
 <li>[ ] Intervalos de tempo usam limite superior exclusivo?</li>
@@ -655,9 +655,9 @@ SELECT id_produto FROM estoque_fisico;
 
 <section id="sql-02" class="cheat-section">
 <h2><span class="sec-num sql">SQL 02</span> Tipos, Conversões e Timezones (SQL / Databricks)</h2>
-<h2>O que é</h2>
+<h2 id="sql-02-o-que-e">O que é</h2>
 <p>Comparar <code>100</code> (<code>INT</code>) com <code>'100'</code> (<code>STRING</code>) força conversões implícitas que podem quebrar joins, filtros e métricas sem erro aparente. Tipos explícitos estabilizam pipelines, principalmente em chaves, <code>MERGE</code>, datas e valores financeiros.</p>
-<h2>CAST, TRY_CAST e modo ANSI</h2>
+<h2 id="sql-02-cast-try-cast-e-modo-ansi">CAST, TRY_CAST e modo ANSI</h2>
 <p>O Databricks SQL e o Spark 4.x usam modo ANSI por padrão: <code>CAST</code> de um valor inválido gera erro em vez de devolver <code>NULL</code>. Em origens instáveis, <code>TRY_CAST</code> converte valores inválidos em <code>NULL</code> para que sejam tratados explicitamente.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     TRY_CAST(idade_txt AS INT)         AS idade,
@@ -673,7 +673,7 @@ FROM bronze.cadastro;
 <li>Use <code>CAST</code> quando um valor inválido deve parar o pipeline; <code>TRY_CAST</code> quando ele deve ser medido e tratado.</li>
 <li>Confira o modo da sessão com <code>SET ansi_mode;</code> (Databricks SQL) ou <code>spark.sql.ansi.enabled</code> (clusters).</li>
 </ul>
-<h2>DECIMAL para valores financeiros</h2>
+<h2 id="sql-02-decimal-para-valores-financeiros">DECIMAL para valores financeiros</h2>
 <p><code>FLOAT</code> e <code>DOUBLE</code> são binários e aproximados: somas e arredondamentos podem divergir de uma conciliação. Use <code>DECIMAL(p, s)</code>.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     CAST(vlr_saldo AS DECIMAL(18, 2))   AS saldo,
@@ -684,7 +684,7 @@ FROM extrato_banco;
 <li><code>p</code> é o total de dígitos e <code>s</code> as casas decimais; dimensione <code>p</code> para o maior valor esperado mais a margem de somas.</li>
 <li>Operações entre decimais podem ampliar precisão e escala; faça o <code>CAST</code> final na publicação.</li>
 </ul>
-<h2>Datas, formatos e timezone</h2>
+<h2 id="sql-02-datas-formatos-e-timezone">Datas, formatos e timezone</h2>
 <p><code>current_date()</code> e <code>current_timestamp()</code> seguem o timezone da sessão. O erro comum é misturar timestamps armazenados em UTC com sessões em outro fuso sem conversão explícita.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SET TIME ZONE 'America/Sao_Paulo';   -- fixa o fuso da sessão/job quando a regra exige
 
@@ -703,13 +703,13 @@ FROM logs;
 <li>Com ANSI ligado, <code>to_timestamp</code> falha em texto inválido; <code>try_to_timestamp</code> devolve <code>NULL</code>.</li>
 <li>Use literais tipados (<code>DATE '2024-01-01'</code>, <code>TIMESTAMP '...'</code>) para não depender de conversão implícita.</li>
 </ul>
-<h2>Cuidados</h2>
+<h2 id="sql-02-cuidados">Cuidados</h2>
 <ul>
 <li>Padronize tipos antes de joins e <code>MERGE INTO</code>; casts dentro da condição de join escondem dados inválidos.</li>
 <li>Documente a regra de timezone da pipeline: armazenamento (geralmente UTC), sessão e exibição.</li>
 <li>Meça os <code>NULL</code> gerados por <code>TRY_CAST</code> em vez de descartá-los silenciosamente.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="sql-02-checklist">Checklist</h2>
 <ul>
 <li>[ ] O modo ANSI do ambiente é conhecido?</li>
 <li>[ ] Valores monetários usam <code>DECIMAL</code>?</li>
@@ -720,9 +720,9 @@ FROM logs;
 
 <section id="sql-03" class="cheat-section">
 <h2><span class="sec-num sql">SQL 03</span> Sanitização de Strings e Nomenclatura (SQL)</h2>
-<h2>O que é</h2>
+<h2 id="sql-03-o-que-e">O que é</h2>
 <p>Sanitização reduz variações de texto que dificultam joins, validações e consumo. Na passagem para Silver, aplique regras explícitas e rastreáveis; não altere valores só por estética e preserve o dado bruto na Bronze.</p>
-<h2>Limpeza básica e aliases</h2>
+<h2 id="sql-03-limpeza-basica-e-aliases">Limpeza básica e aliases</h2>
 <p>Projete e nomeie explicitamente as colunas publicadas. Isso torna mudanças de schema visíveis e evita transportar campos desnecessários.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     UPPER(TRIM(cidade))    AS nm_cidade,         -- '  sao pAULO ' -&gt; 'SAO PAULO'
@@ -735,7 +735,7 @@ FROM bronze.lojas_filial;
 <li>Defina uma convenção (prefixos <code>id_</code>, <code>dt_</code>, <code>vl_</code>, <code>is_</code>; <code>snake_case</code>) e documente-a no contrato da tabela.</li>
 <li><code>TRIM</code> remove apenas espaços; para tabulações e quebras de linha use expressão regular.</li>
 </ul>
-<h2>Expressões regulares</h2>
+<h2 id="sql-03-expressoes-regulares">Expressões regulares</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     REGEXP_REPLACE(descricao, '\\s+', ' ')             AS descricao_normalizada, -- colapsa espaços, tabs, quebras
     REGEXP_REPLACE(cpf_com_mascara, '[^0-9]', '')      AS cpf_digitos,          -- mantém só dígitos
@@ -747,7 +747,7 @@ FROM bronze.usuarios;
 <li>Em literais SQL do Spark, a barra invertida é escapada: <code>'\\s'</code> vira o regex <code>\s</code>.</li>
 <li>Regex é mais cara que funções simples (<code>TRIM</code>, <code>REPLACE</code>, <code>TRANSLATE</code>); use quando o padrão realmente exigir.</li>
 </ul>
-<h2>Remoção de acentos com TRANSLATE</h2>
+<h2 id="sql-03-remocao-de-acentos-com-translate">Remoção de acentos com TRANSLATE</h2>
 <p><code>TRANSLATE</code> substitui cada caractere do segundo argumento pelo da mesma posição no terceiro. É útil para gerar chaves de comparação sem acentos (<code>'João do Caminhão'</code> vs <code>'Joao do Caminhao'</code>).</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     TRANSLATE(LOWER(nome),
@@ -759,7 +759,7 @@ FROM pdvs;
 <li>Use o resultado como <strong>chave de comparação</strong>, não como valor publicado.</li>
 <li>A lista cobre o português comum; outros caracteres (ex.: <code>ñ</code>) precisam ser acrescentados. Para matching aproximado de verdade (erros de digitação), avalie funções como <code>levenshtein</code> e regras de negócio específicas.</li>
 </ul>
-<h2>Renomear colunas em tabelas Delta</h2>
+<h2 id="sql-03-renomear-colunas-em-tabelas-delta">Renomear colunas em tabelas Delta</h2>
 <p>Em Delta, <code>RENAME COLUMN</code> e <code>DROP COLUMN</code> exigem <strong>column mapping</strong> habilitado na tabela. Com ele, a operação altera só metadados, sem reescrever os dados.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">ALTER TABLE silver.vendas SET TBLPROPERTIES ('delta.columnMapping.mode' = 'name');
 ALTER TABLE silver.vendas RENAME COLUMN id_prod TO id_produto;
@@ -769,7 +769,7 @@ ALTER TABLE silver.vendas RENAME COLUMN id_prod TO id_produto;
 <li>Consumidores que referenciam o nome antigo quebram: trate como mudança de contrato.</li>
 <li>Referência: <a href="https://docs.databricks.com/aws/en/delta/column-mapping">Delta column mapping (Databricks)</a>.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="sql-03-checklist">Checklist</h2>
 <ul>
 <li>[ ] A regra de limpeza está documentada e é reversível a partir da Bronze?</li>
 <li>[ ] Chaves de match sem acento são usadas só para comparação?</li>
@@ -779,9 +779,9 @@ ALTER TABLE silver.vendas RENAME COLUMN id_prod TO id_produto;
 
 <section id="sql-04" class="cheat-section">
 <h2><span class="sec-num sql">SQL 04</span> Nulos e Condicionais (SQL)</h2>
-<h2>O que é</h2>
+<h2 id="sql-04-o-que-e">O que é</h2>
 <p><code>NULL</code> representa ausência de valor: não é string vazia (<code>''</code>) nem zero. Comparações com <code>NULL</code> resultam em <code>NULL</code> (desconhecido), o que afeta filtros, joins e agregações de forma silenciosa.</p>
-<h2>COALESCE e CASE WHEN</h2>
+<h2 id="sql-04-coalesce-e-case-when">COALESCE e CASE WHEN</h2>
 <p><code>COALESCE(a, b, ...)</code> devolve o primeiro argumento não nulo. <code>CASE WHEN</code> cobre regras com várias condições — sempre com <code>ELSE</code> explícito.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     id_produto,
@@ -798,7 +798,7 @@ FROM silver.produtos;
 <li>Substituir chave nula por <code>-1</code> só funciona se a dimensão tiver a linha <code>-1 = Desconhecido</code>; combine isso com o modelo.</li>
 <li><code>CASE</code> avalia as condições em ordem e para na primeira verdadeira.</li>
 </ul>
-<h2>NULL em agregações e comparações</h2>
+<h2 id="sql-04-null-em-agregacoes-e-comparacoes">NULL em agregações e comparações</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     COUNT(*)                 AS linhas,            -- conta todas as linhas
     COUNT(telefone)          AS com_telefone,      -- ignora NULL
@@ -812,7 +812,7 @@ FROM envios;
 <li>Para igualdade que trate <code>NULL</code> como igual: <code>a &lt;=&gt; b</code> ou <code>a IS NOT DISTINCT FROM b</code>.</li>
 <li>Em joins, chaves <code>NULL</code> não se correspondem (ver <a href="#sql-07">Joins</a>).</li>
 </ul>
-<h2>Divisão por zero, NULLIF e funções try_</h2>
+<h2 id="sql-04-divisao-por-zero-nullif-e-funcoes-try">Divisão por zero, NULLIF e funções try_</h2>
 <p>Com ANSI ligado (padrão no Databricks SQL e no Spark 4.x), dividir por zero gera erro <code>DIVIDE_BY_ZERO</code>. Escolha explicitamente o comportamento.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     valor_bruto / NULLIF(comissao, 0)  AS fator,          -- denominador 0 vira NULL
@@ -824,7 +824,7 @@ FROM fatos;
 <li><code>iff(cond, a, b)</code> existe no Databricks SQL, mas não no Spark open source; <code>if(cond, a, b)</code> existe nos dois, mas não é ANSI. <code>CASE WHEN</code> é portável.</li>
 <li>Flags de qualidade (<code>is_*</code>) permitem medir o problema em vez de escondê-lo.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="sql-04-checklist">Checklist</h2>
 <ul>
 <li>[ ] Comparações com nulos usam <code>IS NULL</code>, <code>&lt;=&gt;</code> ou <code>IS NOT DISTINCT FROM</code>?</li>
 <li>[ ] A regra de agregação com nulos (ignorar ou tratar como zero) está explícita?</li>
@@ -835,9 +835,9 @@ FROM fatos;
 
 <section id="sql-05" class="cheat-section">
 <h2><span class="sec-num sql">SQL 05</span> CTEs e Views Temporárias (Databricks / Spark SQL)</h2>
-<h2>O que é</h2>
+<h2 id="sql-05-o-que-e">O que é</h2>
 <p>Uma Common Table Expression (<code>WITH nome AS (...)</code>) nomeia um passo intermediário da consulta. Substitui subconsultas aninhadas por blocos sequenciais e legíveis. É uma construção <strong>lógica</strong>: não grava dados.</p>
-<h2>CTEs para organizar a lógica</h2>
+<h2 id="sql-05-ctes-para-organizar-a-logica">CTEs para organizar a lógica</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">WITH clientes_ativos AS (
     SELECT id_cliente, nome, estado
     FROM silver.clientes
@@ -857,7 +857,7 @@ JOIN faturamento AS f USING (id_cliente);
 <li>Um bloco por responsabilidade (filtrar, agregar, juntar) facilita testar cada passo isoladamente.</li>
 <li>Nomeie CTEs pelo conteúdo (<code>clientes_ativos</code>), não pela técnica (<code>cte1</code>).</li>
 </ul>
-<h2>Views temporárias</h2>
+<h2 id="sql-05-views-temporarias">Views temporárias</h2>
 <p><code>TEMP VIEW</code> guarda a definição de uma consulta durante a <strong>sessão</strong> (notebook ou conexão). Útil para inspecionar passos em células diferentes.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TEMP VIEW v_qualidade_usuarios AS
 SELECT *,
@@ -870,7 +870,7 @@ SELECT * FROM v_qualidade_usuarios WHERE flag_erro_email = 1;
 <li>A view some quando a sessão termina e não é visível para outras sessões.</li>
 <li>Global temp views (<code>global_temp</code>) não são suportadas em computação serverless; para compartilhar um resultado entre sessões, grave uma tabela.</li>
 </ul>
-<h2>Reaproveitamento e materialização</h2>
+<h2 id="sql-05-reaproveitamento-e-materializacao">Reaproveitamento e materialização</h2>
 <p>Uma CTE referenciada várias vezes <strong>pode</strong> ser recalculada a cada referência ou ter a leitura reaproveitada — depende do plano (procure <code>ReusedExchange</code> ou <code>ReusedSubquery</code> no <code>EXPLAIN</code>). Não presuma nenhum dos dois: observe o plano (ver <a href="#sql-12">Performance tuning</a>).</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">EXPLAIN FORMATTED
 WITH vendas_recentes AS (
@@ -894,7 +894,7 @@ SELECT * FROM silver.vendas WHERE dt_venda &gt;= DATE '2025-01-01';
 <li><code>CACHE TABLE</code> e as APIs de cache não são suportados em computação serverless: <a href="https://docs.databricks.com/aws/en/compute/serverless/limitations">limitações do serverless</a>.</li>
 <li>Tabela intermediária tem custo de escrita e de limpeza; meça antes e depois.</li>
 </ul>
-<h2>CTE recursiva</h2>
+<h2 id="sql-05-cte-recursiva">CTE recursiva</h2>
 <p><code>WITH RECURSIVE</code> percorre hierarquias (organogramas, árvores de categorias). Disponível a partir do Databricks Runtime 17.0 / DBSQL 2025.20 (Preview).</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">WITH RECURSIVE hierarquia (id, id_gestor, nivel) AS (
     SELECT id, id_gestor, 0 FROM rh.colaboradores WHERE id_gestor IS NULL
@@ -909,7 +909,7 @@ SELECT * FROM hierarquia;
 <li>O limite padrão é de 100 níveis de recursão (<code>RECURSION_LEVEL_LIMIT_EXCEEDED</code>); ciclos nos dados precisam ser tratados.</li>
 <li>Referência: <a href="https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-cte">CTE (Databricks)</a>.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="sql-05-checklist">Checklist</h2>
 <ul>
 <li>[ ] Cada CTE tem uma responsabilidade e um nome descritivo?</li>
 <li>[ ] O plano foi verificado antes de assumir recomputação ou reaproveitamento?</li>
@@ -919,9 +919,9 @@ SELECT * FROM hierarquia;
 
 <section id="sql-06" class="cheat-section">
 <h2><span class="sec-num sql">SQL 06</span> Agrupamentos e Pivots (SQL / Databricks)</h2>
-<h2>O que é</h2>
+<h2 id="sql-06-o-que-e">O que é</h2>
 <p><code>GROUP BY</code> resume linhas em métricas por grupo. <code>PIVOT</code> e <code>UNPIVOT</code> giram dados entre linhas e colunas. <code>ROLLUP</code>, <code>CUBE</code> e <code>GROUPING SETS</code> produzem subtotais em uma única consulta.</p>
-<h2>Agregações e filtros por agregação</h2>
+<h2 id="sql-06-agregacoes-e-filtros-por-agregacao">Agregações e filtros por agregação</h2>
 <p>Toda coluna não agregada do <code>SELECT</code> precisa estar no <code>GROUP BY</code>.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     regiao,
@@ -939,7 +939,7 @@ HAVING SUM(vlr_frete) &gt; 100000;
 <li><code>approx_count_distinct</code> usa HyperLogLog++ com erro relativo padrão de <strong>5%</strong> (<code>relativeSD = 0.05</code>); passe um segundo argumento menor para mais precisão (ex.: <code>approx_count_distinct(id_cliente, 0.01)</code>), com mais memória. Use quando a contagem exata não for requisito.</li>
 <li><code>GROUP BY ALL</code> (Databricks) agrupa por todas as colunas não agregadas do <code>SELECT</code>; prático em exploração, mas explícito é mais seguro em produção.</li>
 </ul>
-<h2>PIVOT e UNPIVOT</h2>
+<h2 id="sql-06-pivot-e-unpivot">PIVOT e UNPIVOT</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">-- Linhas → colunas: um valor de ano_fiscal vira uma coluna
 SELECT *
 FROM (
@@ -960,7 +960,7 @@ UNPIVOT (
 <li>A lista do <code>PIVOT</code> é fixa: valores novos não viram colunas automaticamente. Revise-a quando o domínio mudar.</li>
 <li><code>UNPIVOT</code> descarta linhas cujo valor é <code>NULL</code>; use <code>UNPIVOT INCLUDE NULLS</code> se precisar delas.</li>
 </ul>
-<h2>Subtotais: ROLLUP, CUBE e GROUPING SETS</h2>
+<h2 id="sql-06-subtotais-rollup-cube-e-grouping-sets">Subtotais: ROLLUP, CUBE e GROUPING SETS</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">-- ROLLUP: hierárquico (pais, regiao, estado) → (pais, regiao) → (pais) → total
 SELECT pais, regiao, estado, SUM(volume) AS volume,
        grouping_id(pais, regiao, estado) AS nivel
@@ -981,7 +981,7 @@ GROUP BY GROUPING SETS ((ano, regiao), (ano), ());
 <li>Nas linhas de subtotal a coluna agregada aparece como <code>NULL</code>. Use <code>grouping(col)</code> ou <code>grouping_id(...)</code> para distinguir subtotal de um <code>NULL</code> real.</li>
 <li><code>GROUP BY a, b WITH ROLLUP</code> é sintaxe equivalente aceita pelo Spark.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="sql-06-checklist">Checklist</h2>
 <ul>
 <li>[ ] O grão do resultado está claro (uma linha por quê)?</li>
 <li>[ ] O erro de <code>approx_count_distinct</code> é aceitável para o uso?</li>
@@ -992,9 +992,9 @@ GROUP BY GROUPING SETS ((ano, regiao), (ano), ());
 
 <section id="sql-07" class="cheat-section">
 <h2><span class="sec-num sql">SQL 07</span> SQL Joins (Databricks / Spark SQL)</h2>
-<h2>O que é</h2>
+<h2 id="sql-07-o-que-e">O que é</h2>
 <p>Joins combinam conjuntos de dados por uma condição. Em Spark, podem exigir shuffle; o custo depende do volume, da distribuição das chaves, da estratégia física e das colunas transportadas.</p>
-<h2>Quando usar</h2>
+<h2 id="sql-07-quando-usar">Quando usar</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">-- INNER: somente correspondências
 SELECT f.id_venda, d.uf
 FROM fato_vendas AS f
@@ -1019,7 +1019,7 @@ CROSS JOIN faixas AS f;
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT a.id FROM clientes AS a LEFT SEMI JOIN acessos AS b ON a.id = b.cliente_id;
 SELECT a.id FROM clientes AS a LEFT ANTI JOIN acessos AS b ON a.id = b.cliente_id;
 </code></pre></div>
-<h2>Cardinalidade e exploding join</h2>
+<h2 id="sql-07-cardinalidade-e-exploding-join">Cardinalidade e exploding join</h2>
 <p>O número de linhas pode crescer quando uma chave encontra múltiplas linhas do outro lado. Isso pode ser correto em uma relação 1:N ou indicar violação do grão esperado. Não deduplique automaticamente: primeiro confirme a regra de negócio e escolha uma ordenação determinística.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">-- Diagnóstico do lado que deveria ter uma linha por loja
 SELECT loja_id, count(*) AS quantidade
@@ -1039,7 +1039,7 @@ SELECT f.id_venda, d.uf
 FROM fato_vendas AS f
 LEFT JOIN dim_loja_atual AS d ON f.loja_id = d.loja_id;
 </code></pre></div>
-<h2>Performance</h2>
+<h2 id="sql-07-performance">Performance</h2>
 <p>O hint <code>BROADCAST</code> pode evitar shuffle da tabela grande quando o lado transmitido cabe com folga na memória dos executores. Confirme a estratégia no plano e não force broadcast apenas por contagem de linhas.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT /*+ BROADCAST(d) */ f.id_venda, d.uf
 FROM fato_vendas AS f
@@ -1051,14 +1051,14 @@ FROM fato_vendas AS f
 LEFT JOIN dim_loja AS d ON f.loja_id = d.loja_id;
 </code></pre></div>
 <p>Para skew, prefira primeiro AQE, filtragem antecipada e revisão das chaves. Salting é uma intervenção adicional e exige medir a distribuição e preservar a semântica.</p>
-<h2>Cuidados</h2>
+<h2 id="sql-07-cuidados">Cuidados</h2>
 <ul>
 <li>Alinhe os tipos das chaves explicitamente; casts durante o join podem mascarar dados inválidos.</li>
 <li><code>NULL = NULL</code> não é verdadeiro. Em Spark SQL, use <code>&lt;=&gt;</code> apenas quando nulos devam corresponder.</li>
 <li>Selecione apenas as colunas necessárias para reduzir leitura e transferência.</li>
 <li>Compare contagens e métricas antes e depois do join segundo o grão esperado.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="sql-07-checklist">Checklist</h2>
 <ul>
 <li>[ ] O grão de cada lado está declarado?</li>
 <li>[ ] A cardinalidade esperada é 1:1, 1:N ou N:N?</li>
@@ -1069,9 +1069,9 @@ LEFT JOIN dim_loja AS d ON f.loja_id = d.loja_id;
 
 <section id="sql-08" class="cheat-section">
 <h2><span class="sec-num sql">SQL 08</span> Window Functions em Spark SQL</h2>
-<h2>O que são</h2>
+<h2 id="sql-08-o-que-sao">O que são</h2>
 <p>Funções de janela calculam valores relacionados sem reduzir o número de linhas como um <code>GROUP BY</code>. A especificação combina particionamento lógico, ordenação e, quando necessário, um frame.</p>
-<h2>Exemplos</h2>
+<h2 id="sql-08-exemplos">Exemplos</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">-- Versão mais recente por cliente; inclua desempate determinístico
 SELECT *
 FROM eventos
@@ -1101,9 +1101,9 @@ SELECT
   ) AS saldo_acumulado
 FROM movimentos;
 </code></pre></div>
-<h2>Rows versus range</h2>
+<h2 id="sql-08-rows-versus-range">Rows versus range</h2>
 <p><code>ROWS BETWEEN 6 PRECEDING AND CURRENT ROW</code> cobre sete linhas, não sete dias. Para uma janela temporal, use uma expressão de ordenação e um <code>RANGE</code> compatíveis com a versão e o tipo de dado, ou agregue por data antes de usar <code>ROWS</code>.</p>
-<h2>Cuidados de escala</h2>
+<h2 id="sql-08-cuidados-de-escala">Cuidados de escala</h2>
 <p>Uma janela ordenada sem <code>PARTITION BY</code> forma uma única partição lógica e pode concentrar ordenação e estado em um executor. Ela ainda pode ser necessária para ranking global, mas deve ser usada conscientemente e medida na Spark UI. Não invente uma chave de partição apenas para acelerar: isso altera o resultado.</p>
 <ul>
 <li>Use colunas de desempate para resultados determinísticos.</li>
@@ -1111,7 +1111,7 @@ FROM movimentos;
 <li>Projete apenas as colunas necessárias antes da janela.</li>
 <li>Verifique sort, shuffle, spill e duração das tarefas no plano e na UI.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="sql-08-checklist">Checklist</h2>
 <ul>
 <li>[ ] A partição representa o grupo lógico correto?</li>
 <li>[ ] A ordenação é determinística?</li>
@@ -1122,9 +1122,9 @@ FROM movimentos;
 
 <section id="sql-09" class="cheat-section">
 <h2><span class="sec-num sql">SQL 09</span> JSON, Arrays e Structs (SQL)</h2>
-<h2>O que é</h2>
+<h2 id="sql-09-o-que-e">O que é</h2>
 <p>APIs e eventos costumam chegar como JSON: objetos aninhados e listas dentro de um único campo de texto. Em SQL você pode extrair campos do texto, convertê-lo em tipos nativos (<code>STRUCT</code>, <code>ARRAY</code>, <code>MAP</code>) ou armazená-lo como <code>VARIANT</code>.</p>
-<h2>Extração direta de texto JSON</h2>
+<h2 id="sql-09-extracao-direta-de-texto-json">Extração direta de texto JSON</h2>
 <p>Para poucos campos de uma coluna <code>STRING</code> com JSON:</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     id,
@@ -1137,7 +1137,7 @@ FROM bronze.dados_api;
 <li><code>get_json_object</code> e o operador <code>:</code> devolvem <code>NULL</code> quando o caminho não existe — meça os nulos.</li>
 <li>Extrair muitos campos repetidamente reprocessa o texto a cada chamada; nesses casos converta uma vez com <code>from_json</code>.</li>
 </ul>
-<h2>from_json: texto para tipos nativos</h2>
+<h2 id="sql-09-from-json-texto-para-tipos-nativos">from_json: texto para tipos nativos</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     id,
     from_json(payload, 'STRUCT&lt;cliente: STRUCT&lt;id: INT, nome: STRING&gt;, itens: ARRAY&lt;STRUCT&lt;cod: INT, valor: DECIMAL(10,2)&gt;&gt;&gt;') AS dados
@@ -1150,7 +1150,7 @@ SELECT dados.cliente.nome, size(dados.itens) AS qtd_itens FROM silver.pedidos_js
 <li><code>schema_of_json('&lt;exemplo&gt;')</code> sugere um schema a partir de uma amostra; revise antes de fixar.</li>
 <li>Registros que não seguem o schema geram campos <code>NULL</code>; valide-os.</li>
 </ul>
-<h2>Explode: uma linha por elemento</h2>
+<h2 id="sql-09-explode-uma-linha-por-elemento">Explode: uma linha por elemento</h2>
 <p><code>explode</code> muda o grão (de pedido para item). Faça isso só quando o grão desejado for o elemento, e leve junto a chave da origem.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">-- Pedido 10 com itens [{cod:1, valor:20}, {cod:2, valor:30}] vira duas linhas
 SELECT
@@ -1175,7 +1175,7 @@ FROM silver.pedidos AS p,
        filter(itens, x -&gt; x.valor &gt; 25)                                     AS itens_caros
 FROM silver.pedidos;
 </code></pre></div>
-<h2>VARIANT para JSON semiestruturado</h2>
+<h2 id="sql-09-variant-para-json-semiestruturado">VARIANT para JSON semiestruturado</h2>
 <p>O tipo <code>VARIANT</code> (Databricks Runtime 15.3+) armazena JSON de forma binária e eficiente, sem schema fixo. É a opção recomendada para dados com estrutura instável que hoje ficam como <code>STRING</code>.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT parse_json(payload) AS v FROM bronze.dados_api;          -- STRING → VARIANT
 SELECT v:cliente.nome::STRING, try_variant_get(v, '$.itens[0].valor', 'DECIMAL(10,2)')
@@ -1184,7 +1184,7 @@ FROM bronze.eventos_variant;
 <ul>
 <li>Referência: <a href="https://docs.databricks.com/aws/en/semi-structured/variant">VARIANT (Databricks)</a>.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="sql-09-checklist">Checklist</h2>
 <ul>
 <li>[ ] A extração preserva a chave do registro de origem?</li>
 <li>[ ] O novo grão após <code>explode</code> está documentado?</li>
@@ -1195,9 +1195,9 @@ FROM bronze.eventos_variant;
 
 <section id="sql-10" class="cheat-section">
 <h2><span class="sec-num sql">SQL 10</span> Delta Lake: DML e Manutenção</h2>
-<h2>O que é</h2>
+<h2 id="sql-10-o-que-e">O que é</h2>
 <p>Delta Lake adiciona log transacional e controle de concorrência a arquivos de dados. Operações, sintaxe e recursos de otimização podem variar por versão do Delta Lake e pelo Databricks Runtime.</p>
-<h2>Merge</h2>
+<h2 id="sql-10-merge">Merge</h2>
 <p>A condição do <code>MERGE</code> deve identificar no máximo uma linha de origem para cada linha de destino. Deduplique ou rejeite ambiguidades antes da operação.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">MERGE INTO gold.vendas AS target
 USING silver.vendas_incrementais AS source
@@ -1213,16 +1213,16 @@ WHEN NOT MATCHED THEN INSERT (
   source.venda_id, source.preco, current_timestamp()
 );
 </code></pre></div>
-<h2>Time travel e restore</h2>
+<h2 id="sql-10-time-travel-e-restore">Time travel e restore</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT * FROM gold.vendas VERSION AS OF 42;
 RESTORE TABLE gold.vendas TO VERSION AS OF 42;
 </code></pre></div>
 <p>Time travel depende da disponibilidade do log e dos arquivos referenciados. Um <code>VACUUM</code> pode tornar versões antigas ilegíveis.</p>
-<h2>Vacuum</h2>
+<h2 id="sql-10-vacuum">Vacuum</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">VACUUM gold.vendas RETAIN 168 HOURS;
 </code></pre></div>
 <p><code>VACUUM</code> remove arquivos não referenciados mais antigos que a retenção. Antes de reduzir a retenção padrão, avalie leitores concorrentes, operações longas, políticas de recuperação e requisitos de auditoria. Não trate <code>VACUUM</code> como limpeza inofensiva.</p>
-<h2>Optimize e layout de dados</h2>
+<h2 id="sql-10-optimize-e-layout-de-dados">Optimize e layout de dados</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">OPTIMIZE gold.vendas;
 </code></pre></div>
 <p><code>OPTIMIZE</code> compacta arquivos pequenos. Para organizar dados pelas colunas mais filtradas, o Databricks recomenda <strong>liquid clustering</strong> em tabelas novas, no lugar de <code>PARTITIONED BY</code> e <code>ZORDER</code>.</p>
@@ -1238,7 +1238,7 @@ OPTIMIZE gold.vendas;                           -- aplica o clustering increment
 <li>Com predictive optimization habilitado, <code>OPTIMIZE</code> e <code>VACUUM</code> podem ser executados automaticamente em tabelas gerenciadas pelo Unity Catalog.</li>
 <li>Referência: <a href="https://docs.databricks.com/aws/en/delta/clustering">Liquid clustering (Databricks)</a>.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="sql-10-checklist">Checklist</h2>
 <ul>
 <li>[ ] A origem do merge é única pela condição usada?</li>
 <li>[ ] O merge é idempotente para reprocessamentos?</li>
@@ -1250,9 +1250,9 @@ OPTIMIZE gold.vendas;                           -- aplica o clustering increment
 
 <section id="sql-11" class="cheat-section">
 <h2><span class="sec-num sql">SQL 11</span> Profiling e Checagens de Data Quality (SQL)</h2>
-<h2>O que é</h2>
+<h2 id="sql-11-o-que-e">O que é</h2>
 <p>Muitos problemas de dados não geram erro: a consulta roda e o defeito só aparece no KPI. Checagens curtas e frequentes validam grão, unicidade, nulos, faixas e distribuição antes de publicar.</p>
-<h2>Grão e unicidade</h2>
+<h2 id="sql-11-grao-e-unicidade">Grão e unicidade</h2>
 <p>Compare o número de linhas com o número de chaves distintas <strong>do grão esperado</strong>.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">-- Saída deveria ter 1 linha por pedido
 SELECT
@@ -1269,7 +1269,7 @@ HAVING COUNT(*) &gt; 1
 ORDER BY n DESC
 LIMIT 20;
 </code></pre></div>
-<h2>Nulos e faixas impossíveis</h2>
+<h2 id="sql-11-nulos-e-faixas-impossiveis">Nulos e faixas impossíveis</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     count_if(id_cliente IS NULL)             AS clientes_nulos,
     ROUND(100 * AVG(CASE WHEN email IS NULL THEN 1 ELSE 0 END), 2) AS pct_email_nulo,
@@ -1279,7 +1279,7 @@ LIMIT 20;
     count_if(dt_evento &gt; current_date())     AS datas_futuras
 FROM silver.cadastro;
 </code></pre></div>
-<h2>Distribuição por categoria</h2>
+<h2 id="sql-11-distribuicao-por-categoria">Distribuição por categoria</h2>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT
     tipo_assinatura,
     COUNT(*)                                             AS linhas,
@@ -1289,7 +1289,7 @@ GROUP BY tipo_assinatura
 ORDER BY linhas DESC;
 </code></pre></div>
 <p>Compare com a execução anterior: uma categoria que some ou dobra costuma indicar problema na origem.</p>
-<h2>Expectativas na própria tabela</h2>
+<h2 id="sql-11-expectativas-na-propria-tabela">Expectativas na própria tabela</h2>
 <p>Restrições <code>CHECK</code> em tabelas Delta impedem gravar linhas que violem a regra.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">ALTER TABLE silver.cadastro ADD CONSTRAINT idade_valida CHECK (idade BETWEEN 0 AND 120);
 ALTER TABLE silver.cadastro ALTER COLUMN id_cliente SET NOT NULL;
@@ -1298,7 +1298,7 @@ ALTER TABLE silver.cadastro ALTER COLUMN id_cliente SET NOT NULL;
 <li>A escrita inteira falha se uma linha violar a restrição; decida se isso é o comportamento desejado ou se prefere quarentena.</li>
 <li>Em pipelines declarativos (Lakeflow / DLT), <code>EXPECT ... ON VIOLATION DROP ROW | FAIL UPDATE</code> registra métricas por regra.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="sql-11-checklist">Checklist</h2>
 <ul>
 <li>[ ] O grão esperado está declarado e testado?</li>
 <li>[ ] Nulos em campos críticos têm limite aceitável definido?</li>
@@ -1309,9 +1309,9 @@ ALTER TABLE silver.cadastro ALTER COLUMN id_cliente SET NOT NULL;
 
 <section id="sql-12" class="cheat-section">
 <h2><span class="sec-num sql">SQL 12</span> Performance Tuning e Leitura de Planos</h2>
-<h2>Princípio</h2>
+<h2 id="sql-12-principio">Princípio</h2>
 <p>Otimização começa por evidência: plano físico, métricas da execução, volume lido, shuffle, skew e spill. Evite otimizar apenas pela aparência da consulta.</p>
-<h2>Reduzir leitura e transferência</h2>
+<h2 id="sql-12-reduzir-leitura-e-transferencia">Reduzir leitura e transferência</h2>
 <p>O Catalyst pode aplicar column pruning e predicate pushdown quando a fonte e a expressão permitem. Escrever projeções e filtros claros melhora a intenção, mas confirme no plano se foram efetivamente empurrados para a leitura.</p>
 <div class="code-wrap"><div class="code-lang sql-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT id_venda, loja_id, valor
 FROM vendas
@@ -1323,7 +1323,7 @@ FROM vendas
 WHERE data_venda &gt;= DATE '2026-01-01';
 </code></pre></div>
 <p>Procure no plano por filtros na varredura, colunas lidas, exchanges, sorts e estratégia de join. Uma CTE é uma construção lógica; não presuma materialização ou reavaliação sem observar o plano.</p>
-<h2>Shuffle, skew e spill</h2>
+<h2 id="sql-12-shuffle-skew-e-spill">Shuffle, skew e spill</h2>
 <ul>
 <li><strong>Shuffle:</strong> redistribui dados entre executores; é esperado em joins e agregações, mas volume excessivo merece investigação.</li>
 <li><strong>Skew:</strong> poucas chaves concentram grande parte dos registros, produzindo tarefas muito mais lentas que as demais.</li>
@@ -1335,7 +1335,7 @@ SELECT /*+ BROADCAST(d) */ f.id_venda, d.categoria
 FROM fato_vendas AS f
 JOIN dim_produto AS d ON f.produto_id = d.produto_id;
 </code></pre></div>
-<h2>Sequência de diagnóstico</h2>
+<h2 id="sql-12-sequencia-de-diagnostico">Sequência de diagnóstico</h2>
 <ol>
 <li>Confirme resultado, grão e volume esperado.</li>
 <li>Compare bytes e arquivos lidos com o necessário.</li>
@@ -1344,7 +1344,7 @@ JOIN dim_produto AS d ON f.produto_id = d.produto_id;
 <li>Verifique spill, memória e tamanho das partições.</li>
 <li>Altere uma variável por vez e meça novamente.</li>
 </ol>
-<h2>Checklist</h2>
+<h2 id="sql-12-checklist">Checklist</h2>
 <ul>
 <li>[ ] Há filtro seletivo e projeção de colunas?</li>
 <li>[ ] O plano confirma pruning e pushdown quando aplicáveis?</li>
@@ -1356,9 +1356,9 @@ JOIN dim_produto AS d ON f.produto_id = d.produto_id;
 
 <section id="pyspark-01" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 01</span> Fundamentos: Lazy Evaluation, DAGs e Spark SQL (PySpark)</h2>
-<h2>O que é</h2>
+<h2 id="pyspark-01-o-que-e">O que é</h2>
 <p>O Spark não executa cada linha de código imediatamente. Transformações montam um plano; ações disparam a execução distribuída desse plano. DataFrame API e SQL compartilham o mesmo otimizador (Catalyst), então você pode alternar entre os dois.</p>
-<h2>Transformações e ações</h2>
+<h2 id="pyspark-01-transformacoes-e-acoes">Transformações e ações</h2>
 <p>Transformações (<code>filter</code>, <code>select</code>, <code>withColumn</code>, <code>join</code>) são <strong>lazy</strong>: só descrevem um novo DataFrame. Ações (<code>count</code>, <code>show</code>, <code>collect</code>, <code>write</code>) executam o plano.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 
@@ -1377,7 +1377,7 @@ df_filtrado.write.mode("overwrite").saveAsTable("silver.pessoas")
 <li><code>collect()</code> traz todos os dados para o driver: use apenas em resultados pequenos.</li>
 <li>Narrow transformations (<code>filter</code>, <code>select</code>) não exigem shuffle; wide transformations (<code>groupBy</code>, <code>join</code>, <code>orderBy</code>) redistribuem dados entre executores e criam novos estágios.</li>
 </ul>
-<h2>DataFrame API vs RDD</h2>
+<h2 id="pyspark-01-dataframe-api-vs-rdd">DataFrame API vs RDD</h2>
 <p>RDDs oferecem controle de baixo nível, mas não expõem ao Catalyst a estrutura dos dados. Para transformações tabulares, a DataFrame API permite poda de colunas, pushdown de filtros e escolha de estratégia de join.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_vendas = spark.read.table("bronze.vendas")
 df_fechadas = df_vendas.filter(F.col("status") == "FECHADO")
@@ -1386,7 +1386,7 @@ df_fechadas.explain("formatted")   # mostra o plano físico
 <ul>
 <li>No Spark Connect (usado pela computação serverless e pelo modo compartilhado do Unity Catalog), a API de RDD e <code>sparkContext</code> não estão disponíveis.</li>
 </ul>
-<h2>Spark SQL e temp views</h2>
+<h2 id="pyspark-01-spark-sql-e-temp-views">Spark SQL e temp views</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_vendas.createOrReplaceTempView("vw_vendas")
 
 df_resumo = spark.sql("""
@@ -1406,7 +1406,7 @@ df_regiao = spark.sql(
 <li>Temp views valem para a <code>SparkSession</code> atual. Global temp views (<code>global_temp</code>) valem para a aplicação Spark inteira, não para outros clusters, e não são suportadas em serverless.</li>
 <li>Montar SQL com f-string a partir de entrada externa abre espaço para SQL injection; prefira <code>args</code>.</li>
 </ul>
-<h2>Imports e convenções</h2>
+<h2 id="pyspark-01-imports-e-convencoes">Imports e convenções</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 from pyspark.sql import types as T
 from pyspark.sql.window import Window
@@ -1414,7 +1414,7 @@ from pyspark.sql.window import Window
 <ul>
 <li>Usar o namespace <code>F.</code> evita sombrear funções nativas do Python (<code>sum</code>, <code>max</code>, <code>round</code>, <code>filter</code>).</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="pyspark-01-checklist">Checklist</h2>
 <ul>
 <li>[ ] As ações no código são intencionais (sem <code>count()</code>/<code>show()</code> de depuração)?</li>
 <li>[ ] <code>collect()</code>/<code>toPandas()</code> só recebem resultados pequenos?</li>
@@ -1425,9 +1425,9 @@ from pyspark.sql.window import Window
 
 <section id="pyspark-02" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 02</span> Leitura e Escrita de Dados (PySpark I/O)</h2>
-<h2>O que é</h2>
+<h2 id="pyspark-02-o-que-e">O que é</h2>
 <p><code>spark.read</code> e <code>DataFrame.write</code> conectam o pipeline a arquivos, tabelas e bancos externos. As opções escolhidas definem custo de leitura, paralelismo, tratamento de registros inválidos e layout físico do resultado.</p>
-<h2>Arquivos com schema explícito</h2>
+<h2 id="pyspark-02-arquivos-com-schema-explicito">Arquivos com schema explícito</h2>
 <p>Sem schema, o Spark precisa inferir tipos (passada extra sobre os dados e tipos instáveis entre cargas). Declare o schema em ingestões recorrentes.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import types as T
 
@@ -1454,7 +1454,7 @@ df_parquet = spark.read.parquet("/Volumes/main/bronze/landing/parquet/")
 <li>Para a coluna <code>_corrupt</code> ser preenchida, ela precisa estar no schema.</li>
 <li>Com Unity Catalog, arquivos ficam em <strong>Volumes</strong> (<code>/Volumes/&lt;catálogo&gt;/&lt;schema&gt;/&lt;volume&gt;/</code>); mounts em <code>/mnt</code> são legado.</li>
 </ul>
-<h2>Tabelas</h2>
+<h2 id="pyspark-02-tabelas">Tabelas</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df = spark.read.table("main.silver.clientes")
 
 (
@@ -1467,7 +1467,7 @@ df_parquet = spark.read.parquet("/Volumes/main/bronze/landing/parquet/")
 <li>Em Databricks, <code>saveAsTable</code> grava Delta por padrão e registra a tabela no catálogo.</li>
 <li>Para sobrescrever só parte da tabela, use <code>.option("replaceWhere", "mes = '2025-10'")</code> em vez de <code>overwrite</code> total.</li>
 </ul>
-<h2>JDBC paralelizado</h2>
+<h2 id="pyspark-02-jdbc-paralelizado">JDBC paralelizado</h2>
 <p>Sem particionamento, uma leitura JDBC usa uma única conexão. Com <code>column</code>, <code>lowerBound</code>, <code>upperBound</code> e <code>numPartitions</code>, o Spark divide a consulta em faixas.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_erp = spark.read.jdbc(
     url="jdbc:sqlserver://servidor.database.windows.net:1433;database=DB",
@@ -1488,7 +1488,7 @@ df_parquet = spark.read.parquet("/Volumes/main/bronze/landing/parquet/")
 <li>Escolha uma coluna numérica/data bem distribuída; uma coluna com skew concentra o trabalho.</li>
 <li>Alternativa no Databricks: Lakehouse Federation consulta a origem como catálogo, sem código JDBC.</li>
 </ul>
-<h2>Particionamento físico e arquivos pequenos</h2>
+<h2 id="pyspark-02-particionamento-fisico-e-arquivos-pequenos">Particionamento físico e arquivos pequenos</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">(
     df_resultado.write
     .mode("overwrite")
@@ -1500,7 +1500,7 @@ df_parquet = spark.read.parquet("/Volumes/main/bronze/landing/parquet/")
 <li>Particionar por coluna de alta cardinalidade (ex.: <code>id_cliente</code>) gera milhares de diretórios e arquivos pequenos, degradando leitura e manutenção.</li>
 <li>O Databricks recomenda não particionar tabelas pequenas (orientação oficial: menos de ~1 TB) e, em tabelas novas, preferir <strong>liquid clustering</strong> (ver <a href="#pyspark-10">Delta Lake API</a>).</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="pyspark-02-checklist">Checklist</h2>
 <ul>
 <li>[ ] Ingestões recorrentes têm schema declarado?</li>
 <li>[ ] Registros inválidos são capturados e medidos?</li>
@@ -1511,9 +1511,9 @@ df_parquet = spark.read.parquet("/Volumes/main/bronze/landing/parquet/")
 
 <section id="pyspark-03" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 03</span> Exploração e Tipagem (PySpark)</h2>
-<h2>O que é</h2>
+<h2 id="pyspark-03-o-que-e">O que é</h2>
 <p>Antes de transformar dados, inspecione schema, amostras, estatísticas e valores inválidos. Casts explícitos estabilizam joins e escritas; conversões incompatíveis produzem nulos ou erros conforme o modo ANSI e a função usada.</p>
-<h2>Inspeção rápida</h2>
+<h2 id="pyspark-03-inspecao-rapida">Inspeção rápida</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df.printSchema()                                  # árvore de tipos, inclusive structs e arrays
 df.limit(20).show(truncate=False)
 df.select("idade", "faturamento").describe().show()   # count, mean, stddev, min, max
@@ -1524,7 +1524,7 @@ display(df)                                       # Databricks: grade interativa
 <li><code>describe</code> e <code>summary</code> são ações: percorrem os dados. Em tabelas grandes, rode sobre uma amostra (<code>df.sample(0.01, seed=42)</code>).</li>
 <li><code>df.dtypes</code> e <code>df.schema</code> permitem validar o schema por código.</li>
 </ul>
-<h2>Casts explícitos</h2>
+<h2 id="pyspark-03-casts-explicitos">Casts explícitos</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 from pyspark.sql import types as T
 
@@ -1542,7 +1542,7 @@ df_tipado.filter(F.col("faturamento").isNotNull() &amp; F.col("vl_faturamento").
 <li>Com ANSI ligado (padrão no Spark 4.x e no serverless), <code>cast</code> de valor inválido gera erro. <code>F.try_to_number</code>, <code>F.try_to_timestamp</code> ou <code>expr("try_cast(x AS INT)")</code> devolvem <code>NULL</code>.</li>
 <li>Use <code>DecimalType</code> para dinheiro; <code>DoubleType</code> é aproximado.</li>
 </ul>
-<h2>Datas e timezone</h2>
+<h2 id="pyspark-03-datas-e-timezone">Datas e timezone</h2>
 <p><code>current_timestamp()</code> segue o timezone da sessão (<code>spark.sql.session.timeZone</code>). Converta explicitamente quando a origem e a sessão estiverem em fusos diferentes.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_datas = (
     df_logs
@@ -1555,7 +1555,7 @@ df_tipado.filter(F.col("faturamento").isNotNull() &amp; F.col("vl_faturamento").
 <li>Os padrões de data são os mesmos do Spark SQL: <code>MM</code> = mês, <code>mm</code> = minuto, <code>HH</code> = 0–23.</li>
 <li>Só aplique <code>from_utc_timestamp</code> se a coluna estiver de fato em UTC.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="pyspark-03-checklist">Checklist</h2>
 <ul>
 <li>[ ] O schema lido confere com o contrato esperado?</li>
 <li>[ ] Perdas por cast são contadas?</li>
@@ -1566,9 +1566,9 @@ df_tipado.filter(F.col("faturamento").isNotNull() &amp; F.col("vl_faturamento").
 
 <section id="pyspark-04" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 04</span> Transformações e DataFrame API (PySpark)</h2>
-<h2>O que é</h2>
+<h2 id="pyspark-04-o-que-e">O que é</h2>
 <p>As operações do dia a dia: projetar, criar e renomear colunas, filtrar, deduplicar, ordenar, empilhar e limpar textos e datas. DataFrames são imutáveis: cada operação devolve um novo DataFrame, então o código é escrito como uma cadeia de métodos.</p>
-<h2>Projeção, novas colunas e renomeação</h2>
+<h2 id="pyspark-04-projecao-novas-colunas-e-renomeacao">Projeção, novas colunas e renomeação</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 
 df_clientes = (
@@ -1591,7 +1591,7 @@ df_sel = df_bruto.selectExpr("id_pk AS id", "CAST(faturamento AS INT) AS faturam
 <ul>
 <li>Muitos <code>withColumn</code> em loop deixam o plano lento para analisar; prefira <code>withColumns</code> ou um único <code>select</code>.</li>
 </ul>
-<h2>Filtros</h2>
+<h2 id="pyspark-04-filtros">Filtros</h2>
 <p>Em PySpark, <code>&amp;</code> (e), <code>|</code> (ou) e <code>~</code> (não) têm precedência maior que comparações: <strong>cada condição precisa de parênteses</strong>. Agrupe também a mistura de <code>&amp;</code> e <code>|</code> para deixar a regra explícita.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_filtrado = df_clientes.filter(
     (F.col("nome").isNotNull() &amp; (F.col("celular") != ""))
@@ -1603,7 +1603,7 @@ df_sem_banidos = df_filtrado.filter(~F.col("status").isin("BANIDO"))
 <ul>
 <li><code>and</code>/<code>or</code> do Python não funcionam com colunas; use <code>&amp;</code>/<code>|</code>.</li>
 </ul>
-<h2>Deduplicação</h2>
+<h2 id="pyspark-04-deduplicacao">Deduplicação</h2>
 <p><code>dropDuplicates(cols)</code> mantém <strong>uma linha qualquer</strong> por chave. Ordenar antes com <code>orderBy</code> <strong>não garante</strong> qual linha fica. Quando a regra é "a mais recente", use janela com desempate.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql.window import Window
 
@@ -1621,7 +1621,7 @@ df_recente = (
 <ul>
 <li><code>orderBy</code> global faz shuffle e ordenação de tudo; use só quando a ordem do resultado importa.</li>
 </ul>
-<h2>Empilhamento e amostragem</h2>
+<h2 id="pyspark-04-empilhamento-e-amostragem">Empilhamento e amostragem</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python"># Empilha pelo NOME das colunas; colunas ausentes viram NULL
 df_historico = df_janeiro.unionByName(df_fevereiro, allowMissingColumns=True)
 
@@ -1631,7 +1631,7 @@ df_amostra = df_historico.sample(withReplacement=False, fraction=0.01, seed=42)
 <ul>
 <li><code>union</code> empilha por <strong>posição</strong> e não remove duplicatas; prefira <code>unionByName</code>.</li>
 </ul>
-<h2>Textos e datas com funções nativas</h2>
+<h2 id="pyspark-04-textos-e-datas-com-funcoes-nativas">Textos e datas com funções nativas</h2>
 <p>Funções nativas rodam na JVM/Photon e são visíveis ao otimizador; UDFs Python para a mesma tarefa são mais lentas.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_limpo = df_historico.withColumns({
     "data_limite":       F.date_add("data_compra", 15),
@@ -1644,7 +1644,7 @@ df_amostra = df_historico.sample(withReplacement=False, fraction=0.01, seed=42)
 <ul>
 <li>Em Python, use string raw (<code>r"..."</code>) para regex e evitar escapes duplos.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="pyspark-04-checklist">Checklist</h2>
 <ul>
 <li>[ ] Cada condição de filtro está entre parênteses?</li>
 <li>[ ] A deduplicação tem regra determinística quando a linha escolhida importa?</li>
@@ -1655,9 +1655,9 @@ df_amostra = df_historico.sample(withReplacement=False, fraction=0.01, seed=42)
 
 <section id="pyspark-05" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 05</span> Nulos e Condicionais (PySpark)</h2>
-<h2>O que é</h2>
+<h2 id="pyspark-05-o-que-e">O que é</h2>
 <p>Como no SQL, <code>null</code> é ausência de valor. Comparações com <code>null</code> resultam em <code>null</code>, então filtros e joins descartam essas linhas sem aviso. Regras de preenchimento e classificação precisam ser explícitas.</p>
-<h2>when / otherwise e coalesce</h2>
+<h2 id="pyspark-05-when-otherwise-e-coalesce">when / otherwise e coalesce</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 
 df_classificado = df_vendas.withColumn(
@@ -1676,7 +1676,7 @@ df_seguro = df_classificado.withColumn(
 <li>Sem <code>otherwise</code>, linhas que não atendem nenhuma condição recebem <code>null</code>.</li>
 <li><code>F.col("a").eqNullSafe(F.col("b"))</code> compara tratando <code>null</code> como igual (equivale a <code>&lt;=&gt;</code>).</li>
 </ul>
-<h2>dropna, fillna e replace</h2>
+<h2 id="pyspark-05-dropna-fillna-e-replace">dropna, fillna e replace</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python"># Remove linhas com nulo apenas nas colunas exigidas pela regra
 antes = df_logistica.count()
 df_tratado = df_logistica.dropna(how="any", subset=["idade", "cpf"])
@@ -1693,7 +1693,7 @@ df_normalizado = df_logistica.replace(["N/A", "NA", ""], None, subset=["email", 
 <li><code>fillna</code> ignora colunas cujo tipo não combina com o valor informado.</li>
 <li>Preencher com <code>0</code> muda médias e somas; registre a regra.</li>
 </ul>
-<h2>Divisão por zero</h2>
+<h2 id="pyspark-05-divisao-por-zero">Divisão por zero</h2>
 <p>Com ANSI ligado (padrão no Spark 4.x e no serverless), divisão por zero gera erro. Defina a política explicitamente.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_rentabilidade = df.withColumns({
     "rentabilidade":      F.try_divide("receita", "custo"),    # Spark 3.5+: null se custo = 0
@@ -1702,7 +1702,7 @@ df_normalizado = df_logistica.replace(["N/A", "NA", ""], None, subset=["email", 
     "is_custo_zero":      (F.col("custo") == 0).cast("int"),   # flag para medir o caso
 })
 </code></pre></div>
-<h2>Checklist</h2>
+<h2 id="pyspark-05-checklist">Checklist</h2>
 <ul>
 <li>[ ] Toda cadeia <code>when</code> tem <code>otherwise</code>?</li>
 <li>[ ] Strings vazias e marcadores (<code>"N/A"</code>) foram normalizados antes de tratar nulos?</li>
@@ -1713,9 +1713,9 @@ df_normalizado = df_logistica.replace(["N/A", "NA", ""], None, subset=["email", 
 
 <section id="pyspark-06" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 06</span> Agrupamentos, Agregações e Pivots (PySpark)</h2>
-<h2>O que é</h2>
+<h2 id="pyspark-06-o-que-e">O que é</h2>
 <p><code>groupBy().agg()</code> resume linhas em métricas por grupo. <code>pivot</code> gira valores de uma coluna em colunas; <code>unpivot</code> faz o inverso. Calcular todas as métricas em um único <code>agg</code> evita várias passadas sobre os dados.</p>
-<h2>Várias agregações em uma passada</h2>
+<h2 id="pyspark-06-varias-agregacoes-em-uma-passada">Várias agregações em uma passada</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 
 df_resumo = (
@@ -1737,7 +1737,7 @@ total = df_fatos.agg(F.sum("valor").alias("total")).first()["total"]
 <li><code>approx_count_distinct</code> usa HyperLogLog++ com erro relativo padrão de <strong>5%</strong> (<code>rsd=0.05</code>). Valores menores de <code>rsd</code> aumentam precisão e memória. <code>F.count_distinct</code> é exato, porém mais caro em alta cardinalidade.</li>
 <li>Use <code>F.sum</code>, <code>F.max</code>, <code>F.round</code> com o namespace: importar <code>sum</code>/<code>round</code> diretamente sombreia as funções do Python.</li>
 </ul>
-<h2>Pivot</h2>
+<h2 id="pyspark-06-pivot">Pivot</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_pivotado = (
     df_vendas
     .groupBy("categoria")
@@ -1749,7 +1749,7 @@ total = df_fatos.agg(F.sum("valor").alias("total")).first()["total"]
 <ul>
 <li>Sem a lista de valores, o Spark executa uma consulta extra para descobri-los, e o número de colunas passa a depender dos dados.</li>
 </ul>
-<h2>Unpivot (melt)</h2>
+<h2 id="pyspark-06-unpivot-melt">Unpivot (melt)</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_longo = df_planilha.unpivot(          # Spark 3.4+ (alias: melt)
     ids=["regiao"],
     values=["receita_jan", "receita_fev", "receita_mar"],
@@ -1760,7 +1760,7 @@ total = df_fatos.agg(F.sum("valor").alias("total")).first()["total"]
 <ul>
 <li>As colunas em <code>values</code> precisam ter tipos compatíveis.</li>
 </ul>
-<h2>Subtotais: rollup e cube</h2>
+<h2 id="pyspark-06-subtotais-rollup-e-cube">Subtotais: rollup e cube</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_subtotais = (
     df_vendas
     .rollup("pais", "regiao")
@@ -1770,7 +1770,7 @@ total = df_fatos.agg(F.sum("valor").alias("total")).first()["total"]
 <ul>
 <li><code>rollup</code> gera (pais, regiao), (pais) e o total; <code>cube</code> gera todas as combinações. <code>grouping_id</code> distingue subtotal de <code>null</code> real.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="pyspark-06-checklist">Checklist</h2>
 <ul>
 <li>[ ] Todas as métricas do grupo estão em um único <code>agg</code>?</li>
 <li>[ ] O erro aceitável de contagens aproximadas foi definido?</li>
@@ -1781,9 +1781,9 @@ total = df_fatos.agg(F.sum("valor").alias("total")).first()["total"]
 
 <section id="pyspark-07" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 07</span> Joins em PySpark</h2>
-<h2>O que são</h2>
+<h2 id="pyspark-07-o-que-sao">O que são</h2>
 <p><code>DataFrame.join</code> combina DataFrames por nomes de colunas ou expressões. Em escala, avalie cardinalidade, volume de shuffle, distribuição das chaves e estratégia física.</p>
-<h2>Chaves com o mesmo nome</h2>
+<h2 id="pyspark-07-chaves-com-o-mesmo-nome">Chaves com o mesmo nome</h2>
 <p>Passar os nomes em <code>on</code> mantém uma única cópia dessas colunas no resultado. Isso resolve a ambiguidade de nomes, mas não remove linhas duplicadas nem altera a cardinalidade.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_resultado = df_vendas.join(
     df_lojas,
@@ -1807,12 +1807,12 @@ df_convertido = (
     .select("v.*", F.col("c.taxa").alias("taxa_cambio"))
 )
 </code></pre></div>
-<h2>Semi e anti join</h2>
+<h2 id="pyspark-07-semi-e-anti-join">Semi e anti join</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_com_acesso = df_clientes.join(df_acessos, "cliente_id", "left_semi")
 df_sem_acesso = df_clientes.join(df_acessos, "cliente_id", "left_anti")
 </code></pre></div>
 <p>Essas estratégias filtram a esquerda sem transportar colunas da direita.</p>
-<h2>Broadcast</h2>
+<h2 id="pyspark-07-broadcast">Broadcast</h2>
 <p><code>broadcast()</code> é apropriado quando o DataFrame transmitido cabe com folga na memória de cada executor. Estatísticas desatualizadas ou dados maiores que o esperado podem tornar a decisão pior que um shuffle join.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql.functions import broadcast
 
@@ -1824,7 +1824,7 @@ df_resultado = df_fato.join(
 
 df_resultado.explain("formatted")
 </code></pre></div>
-<h2>Cuidados</h2>
+<h2 id="pyspark-07-cuidados">Cuidados</h2>
 <ul>
 <li>Valide duplicidades por chave antes de assumir relação 1:1.</li>
 <li>Alinhe os tipos das chaves antes do join.</li>
@@ -1832,7 +1832,7 @@ df_resultado.explain("formatted")
 <li>Compare contagens e métricas segundo o grão esperado.</li>
 <li>Para skew, meça a distribuição e avalie AQE antes de aplicar salting.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="pyspark-07-checklist">Checklist</h2>
 <ul>
 <li>[ ] O grão de cada DataFrame é conhecido?</li>
 <li>[ ] O tipo de join preserva as linhas pretendidas?</li>
@@ -1843,9 +1843,9 @@ df_resultado.explain("formatted")
 
 <section id="pyspark-08" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 08</span> Window Functions em PySpark</h2>
-<h2>O que são</h2>
+<h2 id="pyspark-08-o-que-sao">O que são</h2>
 <p>Uma <code>WindowSpec</code> define o grupo lógico, a ordenação e o frame usados por funções como <code>row_number</code>, <code>lag</code> e agregações acumuladas.</p>
-<h2>Deduplicação determinística</h2>
+<h2 id="pyspark-08-deduplicacao-deterministica">Deduplicação determinística</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
@@ -1862,7 +1862,7 @@ df_atual = (
 )
 </code></pre></div>
 <p>O desempate evita escolher linhas arbitrárias quando timestamps são iguais.</p>
-<h2>Lag e acumulado</h2>
+<h2 id="pyspark-08-lag-e-acumulado">Lag e acumulado</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">ordem_cliente = Window.partitionBy("cliente_id").orderBy("evento_em", "evento_id")
 
 df_variacao = df_eventos.withColumn(
@@ -1878,7 +1878,7 @@ acumulado_conta = (
 
 df_saldo = df_movimentos.withColumn("saldo", F.sum("valor").over(acumulado_conta))
 </code></pre></div>
-<h2>Frames e tempo</h2>
+<h2 id="pyspark-08-frames-e-tempo">Frames e tempo</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">ultimas_sete_linhas = (
     Window.partitionBy("segmento")
     .orderBy("data_referencia")
@@ -1886,7 +1886,7 @@ df_saldo = df_movimentos.withColumn("saldo", F.sum("valor").over(acumulado_conta
 )
 </code></pre></div>
 <p>Esse frame cobre sete linhas, não sete dias. Se houver datas ausentes ou múltiplas linhas por dia, agregue previamente no grão diário ou use um <code>rangeBetween</code> coerente com a expressão numérica de ordenação.</p>
-<h2>Cuidados de escala</h2>
+<h2 id="pyspark-08-cuidados-de-escala">Cuidados de escala</h2>
 <p>Uma janela ordenada sem <code>partitionBy</code> cria uma partição lógica global. Isso pode ser correto para ranking global, mas concentra a ordenação; confirme o custo no plano e na Spark UI. Acrescentar uma partição artificial muda a semântica e não é uma correção neutra.</p>
 <ul>
 <li>Observe skew e volume dentro de cada grupo.</li>
@@ -1894,7 +1894,7 @@ df_saldo = df_movimentos.withColumn("saldo", F.sum("valor").over(acumulado_conta
 <li>Use ordem determinística.</li>
 <li>Meça sort, shuffle e spill.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="pyspark-08-checklist">Checklist</h2>
 <ul>
 <li>[ ] Partição e ordenação representam a regra de negócio?</li>
 <li>[ ] Empates têm critério explícito?</li>
@@ -1905,9 +1905,9 @@ df_saldo = df_movimentos.withColumn("saldo", F.sum("valor").over(acumulado_conta
 
 <section id="pyspark-09" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 09</span> JSON, Structs e Schemas (PySpark)</h2>
-<h2>O que é</h2>
+<h2 id="pyspark-09-o-que-e">O que é</h2>
 <p>Dados semiestruturados exigem distinguir <strong>texto JSON</strong> (<code>StringType</code>) de colunas já tipadas (<code>StructType</code>, <code>ArrayType</code>, <code>MapType</code>). Um schema explícito torna o contrato observável; registros incompatíveis ainda precisam ser medidos e tratados.</p>
-<h2>Acessar campos de structs e de texto JSON</h2>
+<h2 id="pyspark-09-acessar-campos-de-structs-e-de-texto-json">Acessar campos de structs e de texto JSON</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 
 # Coluna struct já tipada: notação de ponto
@@ -1925,7 +1925,7 @@ df_ids = df_bronze.withColumn(
 <ul>
 <li><code>get_json_object</code> reprocessa o texto a cada chamada. Para vários campos, converta uma vez com <code>from_json</code>.</li>
 </ul>
-<h2>Explode de arrays</h2>
+<h2 id="pyspark-09-explode-de-arrays">Explode de arrays</h2>
 <p><code>explode</code> gera uma linha por elemento e muda o grão do DataFrame.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_tags = (
     df_receitas
@@ -1947,7 +1947,7 @@ df_itens = df_pedidos.withColumns({
 <li><code>explode</code> descarta linhas com array vazio ou nulo; <code>explode_outer</code> as preserva com <code>null</code>.</li>
 <li><code>posexplode</code> também devolve a posição do elemento.</li>
 </ul>
-<h2>Schema explícito na leitura e from_json</h2>
+<h2 id="pyspark-09-schema-explicito-na-leitura-e-from-json">Schema explícito na leitura e from_json</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import types as T
 
 schema_vendas = T.StructType([
@@ -1972,7 +1972,7 @@ df_evento = df_bronze.withColumn("evento", F.from_json("payload_txt", schema_eve
 <li><code>nullable=False</code> no schema de leitura <strong>não</strong> rejeita nulos em arquivos: valide depois.</li>
 <li><code>F.schema_of_json</code> ajuda a sugerir um schema a partir de um exemplo; fixe o resultado no código em vez de inferir em produção.</li>
 </ul>
-<h2>Colunas obrigatórias ausentes</h2>
+<h2 id="pyspark-09-colunas-obrigatorias-ausentes">Colunas obrigatórias ausentes</h2>
 <p>Quando cargas diárias podem omitir campos, adicione os ausentes com tipo explícito para manter o schema estável.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">colunas_obrigatorias = {"id": "bigint", "nome": "string", "campo_opcional": "string"}
 
@@ -1985,9 +1985,9 @@ df_estavel = df_evento.withColumns({
 <ul>
 <li><code>F.lit(None)</code> sem <code>cast</code> cria uma coluna <code>void</code>, que falha ao gravar em Delta.</li>
 </ul>
-<h2>VARIANT</h2>
+<h2 id="pyspark-09-variant">VARIANT</h2>
 <p>Para JSON de estrutura instável, o tipo <code>VARIANT</code> (Databricks Runtime 15.3+) armazena o documento de forma binária e consulta caminhos sem schema fixo: <code>F.parse_json("payload_txt")</code> e <code>F.try_variant_get(col, "$.campo", "int")</code>, disponíveis na API Python a partir do Spark 4.0 (ver <a href="#sql-09">JSON e structs em SQL</a>).</p>
-<h2>Checklist</h2>
+<h2 id="pyspark-09-checklist">Checklist</h2>
 <ul>
 <li>[ ] Está claro quais colunas são texto JSON e quais são structs?</li>
 <li>[ ] Registros corrompidos são capturados e contados?</li>
@@ -1998,9 +1998,9 @@ df_estavel = df_evento.withColumns({
 
 <section id="pyspark-10" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 10</span> Delta Lake API em PySpark</h2>
-<h2>O que é</h2>
+<h2 id="pyspark-10-o-que-e">O que é</h2>
 <p><code>DeltaTable</code> expõe operações transacionais em Python. SQL continua sendo uma alternativa válida; escolha a interface que deixa a transformação mais clara e testável.</p>
-<h2>Merge</h2>
+<h2 id="pyspark-10-merge">Merge</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from delta.tables import DeltaTable
 
 target = DeltaTable.forName(spark, "gold.vendas")
@@ -2029,7 +2029,7 @@ target = DeltaTable.forName(spark, "gold.vendas")
 )
 </code></pre></div>
 <p>Garanta que a origem tenha no máximo uma linha por chave de merge e defina uma política de desempate antes da escrita.</p>
-<h2>Evolução de schema</h2>
+<h2 id="pyspark-10-evolucao-de-schema">Evolução de schema</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">(
     df_com_novas_colunas.write
     .format("delta")
@@ -2039,12 +2039,12 @@ target = DeltaTable.forName(spark, "gold.vendas")
 )
 </code></pre></div>
 <p><code>mergeSchema</code> pode adicionar colunas compatíveis, mas não substitui contrato de dados. Valide nomes inesperados, tipos, nulabilidade e impacto nos consumidores. O comportamento exato depende da versão e da operação.</p>
-<h2>Restore e vacuum</h2>
+<h2 id="pyspark-10-restore-e-vacuum">Restore e vacuum</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">target.restoreToVersion(42)
 target.vacuum(168)
 </code></pre></div>
 <p>Restore depende dos arquivos ainda estarem disponíveis. Vacuum remove arquivos antigos não referenciados e pode invalidar time travel; alinhe retenção com jobs concorrentes e recuperação.</p>
-<h2>Otimização e layout</h2>
+<h2 id="pyspark-10-otimizacao-e-layout">Otimização e layout</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">target.optimize().executeCompaction()          # compacta arquivos pequenos
 
 (
@@ -2054,7 +2054,7 @@ target.vacuum(168)
 )
 </code></pre></div>
 <p>Em tabelas novas, o Databricks recomenda liquid clustering no lugar de <code>partitionBy</code> e <code>ZORDER</code> (ver <a href="#sql-10">Delta DML em SQL</a>). APIs programáticas de otimização e clustering variam por versão do Delta Lake e do runtime; confirme a compatibilidade antes de usar.</p>
-<h2>Checklist</h2>
+<h2 id="pyspark-10-checklist">Checklist</h2>
 <ul>
 <li>[ ] A origem é única pela chave de merge?</li>
 <li>[ ] O processamento é idempotente?</li>
@@ -2066,9 +2066,9 @@ target.vacuum(168)
 
 <section id="pyspark-11" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 11</span> Databricks Utilities (dbutils)</h2>
-<h2>O que é</h2>
+<h2 id="pyspark-11-o-que-e">O que é</h2>
 <p><code>dbutils</code> é a biblioteca de utilitários dos notebooks e jobs Databricks: manipula arquivos, recebe parâmetros (widgets) e lê segredos. Existe apenas no Databricks; código que depende dele não roda em Spark local sem adaptação.</p>
-<h2>Arquivos: dbutils.fs e Volumes</h2>
+<h2 id="pyspark-11-arquivos-dbutils-fs-e-volumes">Arquivos: dbutils.fs e Volumes</h2>
 <p>Com Unity Catalog, arquivos não tabulares ficam em <strong>Volumes</strong> (<code>/Volumes/&lt;catálogo&gt;/&lt;schema&gt;/&lt;volume&gt;/</code>), com permissões governadas pelo catálogo. Mounts (<code>/mnt</code>) e a raiz do DBFS são legado.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">arquivos = dbutils.fs.ls("/Volumes/main/silver/arquivos/lotes_com_falha/")
 for f in arquivos:
@@ -2084,7 +2084,7 @@ dbutils.fs.rm("/Volumes/main/bronze/arquivos/tmp_carga/", recurse=True)   # irre
 <li><code>rm</code> com <code>recurse=True</code> apaga sem lixeira: confira o caminho (de preferência parametrizado e validado) antes.</li>
 <li>Nunca apague com <code>dbutils.fs.rm</code> arquivos dentro do diretório de uma tabela Delta; use <code>DELETE</code>/<code>VACUUM</code>.</li>
 </ul>
-<h2>Parâmetros: widgets e job parameters</h2>
+<h2 id="pyspark-11-parametros-widgets-e-job-parameters">Parâmetros: widgets e job parameters</h2>
 <p>Widgets recebem valores do usuário no notebook ou de parâmetros do job, evitando datas e ambientes fixos no código.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 
@@ -2100,7 +2100,7 @@ df = spark.read.table(f"{ambiente}.silver.cargas").filter(F.col("dt_carga") == d
 <li>O valor sempre chega como string: converta e valide (<code>datetime.date.fromisoformat(data_corte)</code>).</li>
 <li>Em jobs, parâmetros do job e de tarefa preenchem os widgets de mesmo nome.</li>
 </ul>
-<h2>Segredos</h2>
+<h2 id="pyspark-11-segredos">Segredos</h2>
 <p>Credenciais ficam em secret scopes (gerenciados pelo Databricks ou ligados a Azure Key Vault), nunca no código ou no repositório.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">usuario = dbutils.secrets.get(scope="erp-prod", key="usuario")
 senha = dbutils.secrets.get(scope="erp-prod", key="senha")
@@ -2115,7 +2115,7 @@ df_erp = spark.read.jdbc(
 <li>O notebook mostra <code>[REDACTED]</code> ao imprimir um segredo, mas isso não é proteção completa: transformar o valor (ex.: imprimir caractere por caractere) o expõe. Controle quem pode ler o scope.</li>
 <li><code>dbutils.secrets.list("erp-prod")</code> lista chaves sem revelar valores.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="pyspark-11-checklist">Checklist</h2>
 <ul>
 <li>[ ] Caminhos usam Volumes do Unity Catalog em vez de <code>/mnt</code>?</li>
 <li>[ ] Parâmetros são convertidos e validados?</li>
@@ -2126,9 +2126,9 @@ df_erp = spark.read.jdbc(
 
 <section id="pyspark-12" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 12</span> Data Quality Operacional (PySpark)</h2>
-<h2>O que é</h2>
+<h2 id="pyspark-12-o-que-e">O que é</h2>
 <p>Checagens executadas no próprio pipeline, antes de publicar Silver ou Gold: unicidade do grão, nulos em campos críticos, perda de linhas em joins e variação de volume. A regra precisa definir o limite aceitável e a ação (alertar, isolar ou falhar).</p>
-<h2>Unicidade do grão</h2>
+<h2 id="pyspark-12-unicidade-do-grao">Unicidade do grão</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 
 resumo = df_final.agg(
@@ -2145,7 +2145,7 @@ if resumo["linhas"] != resumo["chaves"]:
 <li>Faça as métricas em um único <code>agg</code>: cada ação separada relê os dados.</li>
 <li><code>print</code> não interrompe um job; para bloquear a publicação, levante exceção.</li>
 </ul>
-<h2>Percentual de nulos por coluna</h2>
+<h2 id="pyspark-12-percentual-de-nulos-por-coluna">Percentual de nulos por coluna</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">def percentual_nulos(df, colunas):
     linha = df.select([
         (F.avg(F.col(c).isNull().cast("int")) * 100).alias(c) for c in colunas
@@ -2160,7 +2160,7 @@ if violacoes:
 <ul>
 <li>O limite (25% acima) é exemplo: defina-o com o consumidor do dado.</li>
 </ul>
-<h2>Perda de linhas em joins</h2>
+<h2 id="pyspark-12-perda-de-linhas-em-joins">Perda de linhas em joins</h2>
 <p>Compare a origem com o resultado e isole as linhas sem correspondência, em vez de só contar.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">sem_dimensao = df_vendas.join(df_produtos, "id_produto", "left_anti")
 qtd_orfas = sem_dimensao.count()
@@ -2173,14 +2173,14 @@ if total and qtd_orfas / total &gt; 0.01:
 <ul>
 <li>Para um <code>inner join</code>, a diferença de contagem também pode vir de duplicidade do lado direito (que <strong>aumenta</strong> linhas); verifique as duas direções.</li>
 </ul>
-<h2>Frameworks e expectativas declarativas</h2>
+<h2 id="pyspark-12-frameworks-e-expectativas-declarativas">Frameworks e expectativas declarativas</h2>
 <p>Para regras recorrentes, prefira declarar em vez de codificar <code>if</code> a cada pipeline:</p>
 <ul>
 <li><strong>Lakeflow Declarative Pipelines (DLT):</strong> <code>@dlt.expect</code>, <code>@dlt.expect_or_drop</code>, <code>@dlt.expect_or_fail</code>, com métricas por regra.</li>
 <li><strong>Restrições Delta:</strong> <code>CHECK</code> e <code>NOT NULL</code> na tabela (ver <a href="#sql-11">Data quality em SQL</a>).</li>
 <li>Bibliotecas como DQX (Databricks Labs) e Great Expectations, quando o projeto as adota.</li>
 </ul>
-<h2>Checklist</h2>
+<h2 id="pyspark-12-checklist">Checklist</h2>
 <ul>
 <li>[ ] Cada regra tem limite e ação definidos?</li>
 <li>[ ] Violações bloqueiam a publicação quando deveriam?</li>
@@ -2191,11 +2191,11 @@ if total and qtd_orfas / total &gt; 0.01:
 
 <section id="pyspark-13" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 13</span> Performance, Arquitetura e Testes em PySpark</h2>
-<h2>Diagnóstico antes da otimização</h2>
+<h2 id="pyspark-13-diagnostico-antes-da-otimizacao">Diagnóstico antes da otimização</h2>
 <p>Use <code>explain("formatted")</code>, Spark UI e métricas do job para identificar leitura, exchanges, sorts, skew, spill e tarefas lentas. Compare resultado e custo antes e depois de cada mudança.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_resultado.explain("formatted")
 </code></pre></div>
-<h2>AQE e partições</h2>
+<h2 id="pyspark-13-aqe-e-particoes">AQE e partições</h2>
 <p>AQE pode ajustar o plano com estatísticas de runtime, coalescer partições pós-shuffle e tratar alguns skew joins. Em runtimes gerenciados, confira os defaults antes de sobrescrever configurações.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">spark.conf.set("spark.sql.adaptive.enabled", "true")
 spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
@@ -2208,13 +2208,13 @@ spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_por_cliente = df.repartition(200, "cliente_id")
 df_saida = df_filtrado.coalesce(20)
 </code></pre></div>
-<h2>Skew e salting</h2>
+<h2 id="pyspark-13-skew-e-salting">Skew e salting</h2>
 <p>Meça frequência das chaves e duração das tarefas. Primeiro avalie filtros, AQE, broadcast do lado pequeno e revisão da chave. Salting replica ou transforma dados e deve ser reservado para skew comprovado.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 
 df.groupBy("chave").count().orderBy(F.desc("count")).show(20, truncate=False)
 </code></pre></div>
-<h2>Funções nativas, Python UDF e Pandas UDF</h2>
+<h2 id="pyspark-13-funcoes-nativas-python-udf-e-pandas-udf">Funções nativas, Python UDF e Pandas UDF</h2>
 <p>Prefira expressões nativas do Spark: elas são visíveis ao otimizador e evitam fronteiras Python desnecessárias. Pandas UDF processa lotes via Arrow e pode ser melhor que uma Python UDF linha a linha, mas ainda tem serialização, memória e restrições de tipos. Use-a apenas quando não houver expressão nativa adequada e meça.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 
@@ -2223,21 +2223,21 @@ df_classificado = df.withColumn(
     F.when(F.col("saldo") &gt; 2_500_000, "VIP").otherwise("STANDARD"),
 )
 </code></pre></div>
-<h2>Separação de responsabilidades</h2>
+<h2 id="pyspark-13-separacao-de-responsabilidades">Separação de responsabilidades</h2>
 <p>Mantenha transformação pura separada de leitura, escrita e configuração. Isso facilita testes e evita acoplar regra de negócio ao notebook.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
 
 def aplicar_imposto(df):
     return df.withColumn("imposto", F.col("valor") * F.lit(0.17))
 </code></pre></div>
-<h2>Teste local</h2>
+<h2 id="pyspark-13-teste-local">Teste local</h2>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">def test_aplicar_imposto(spark):
     entrada = spark.createDataFrame([(100.0,)], ["valor"])
     resultado = aplicar_imposto(entrada).first()
     assert resultado.imposto == 17.0
 </code></pre></div>
 <p>Sessões Spark locais são integrações leves, não mocks. Para comparações decimais, use tipos decimais ou tolerância apropriada.</p>
-<h2>Checklist</h2>
+<h2 id="pyspark-13-checklist">Checklist</h2>
 <ul>
 <li>[ ] O gargalo foi observado no plano ou na UI?</li>
 <li>[ ] Funções nativas foram consideradas antes de UDFs?</li>
@@ -2249,7 +2249,7 @@ def aplicar_imposto(df):
 
 <section id="pyspark-14" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 14</span> Medalhao: Bronze, Silver e Gold no Databricks</h2>
-<h2>O que e</h2>
+<h2 id="pyspark-14-o-que-e">O que e</h2>
 <p>A arquitetura medalhao organiza os dados em camadas com papeis diferentes ao longo do pipeline. Ela ajuda a separar ingestao, confiabilidade estrutural e consumo analitico, reduzindo acoplamento e melhorando rastreabilidade.</p>
 <p>No contexto Databricks, essa separacao tambem ajuda a decidir:
 - onde aplicar limpeza
@@ -2258,7 +2258,7 @@ def aplicar_imposto(df):
 - onde enriquecer
 - onde agregar
 - onde expor para BI ou consumo final</p>
-<h2>1. Papel de cada camada</h2>
+<h2 id="pyspark-14-1-papel-de-cada-camada">1. Papel de cada camada</h2>
 <h3>Bronze</h3>
 <p>Camada mais proxima da origem.</p>
 <p><strong>Objetivo</strong>
@@ -2308,7 +2308,7 @@ def aplicar_imposto(df):
 - virar deposito de toda regra da empresa sem criterio
 - duplicar muitas versoes do mesmo dataset sem necessidade
 - carregar complexidade tecnica que deveria ter sido resolvida na Silver</p>
-<h2>2. Como pensar granularidade</h2>
+<h2 id="pyspark-14-2-como-pensar-granularidade">2. Como pensar granularidade</h2>
 <p>Granularidade deve ficar clara em cada camada.</p>
 <h3>Bronze</h3>
 <ul>
@@ -2327,7 +2327,7 @@ def aplicar_imposto(df):
 <li>pode ser transacional, snapshot, acumulativo ou agregado</li>
 <li>precisa estar explicito para evitar KPI errado</li>
 </ul>
-<h2>3. O que costuma ser feito em cada camada</h2>
+<h2 id="pyspark-14-3-o-que-costuma-ser-feito-em-cada-camada">3. O que costuma ser feito em cada camada</h2>
 <h3>Bronze</h3>
 <ul>
 <li>ingestao de arquivos/tabelas</li>
@@ -2355,7 +2355,7 @@ def aplicar_imposto(df):
 <li>semanticas de indicadores</li>
 <li>tabelas finais para BI, analytics e reporting</li>
 </ul>
-<h2>4. Colunas tecnicas uteis</h2>
+<h2 id="pyspark-14-4-colunas-tecnicas-uteis">4. Colunas tecnicas uteis</h2>
 <p>Nem toda coluna tecnica precisa existir em toda camada, mas estas sao comuns:</p>
 <ul>
 <li><code>ingestion_ts</code></li>
@@ -2374,7 +2374,7 @@ def aplicar_imposto(df):
 <li>Silver: priorize confiabilidade e controle</li>
 <li>Gold: mantenha apenas o que ajuda consumo, auditoria ou historizacao</li>
 </ul>
-<h2>5. Regras praticas de qualidade por camada</h2>
+<h2 id="pyspark-14-5-regras-praticas-de-qualidade-por-camada">5. Regras praticas de qualidade por camada</h2>
 <h3>Bronze</h3>
 <ul>
 <li>o dado chegou?</li>
@@ -2394,7 +2394,7 @@ def aplicar_imposto(df):
 <li>o join preserva a cardinalidade esperada?</li>
 <li>o dataset final esta pronto para consumo sem ambiguidade?</li>
 </ul>
-<h2>6. Erros comuns</h2>
+<h2 id="pyspark-14-6-erros-comuns">6. Erros comuns</h2>
 <ul>
 <li>fazer limpeza destrutiva na Bronze</li>
 <li>pular a Silver e transformar a Bronze direto em dataset final</li>
@@ -2403,13 +2403,13 @@ def aplicar_imposto(df):
 <li>deixar Gold com cara de camada tecnica, e nao de consumo</li>
 <li>nao explicitar o grao final da tabela</li>
 </ul>
-<h2>7. Heuristica de decisao rapida</h2>
+<h2 id="pyspark-14-7-heuristica-de-decisao-rapida">7. Heuristica de decisao rapida</h2>
 <ul>
 <li>Se a tabela existe para preservar a origem: Bronze</li>
 <li>Se a tabela existe para tornar o dado confiavel e reutilizavel: Silver</li>
 <li>Se a tabela existe para analise, KPI ou BI: Gold</li>
 </ul>
-<h2>8. Relacao com outros cheatsheets</h2>
+<h2 id="pyspark-14-8-relacao-com-outros-cheatsheets">8. Relacao com outros cheatsheets</h2>
 <p>Este material conversa diretamente com:</p>
 <ul>
 <li><a href="#pyspark-02"><code>02_leitura-escrita-io.md</code></a></li>

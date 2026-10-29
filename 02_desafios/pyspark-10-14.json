@@ -1,0 +1,513 @@
+{
+  "desafios": [
+    {
+      "id": "spk-10-merge",
+      "ref": "02_pyspark/10_delta-lake-api.md#merge",
+      "ferramenta": "DeltaTable.merge",
+      "niveis": {
+        "basico": {
+          "enunciado": "Com `DeltaTable`, faça upsert de `df_incremental` em `gold.vendas` pela chave `venda_id` (atualiza preço ou insere).",
+          "dados": null,
+          "solucao": "from delta.tables import DeltaTable\n\ntarget = DeltaTable.forName(spark, \"gold.vendas\")\n(\n    target.alias(\"t\")\n    .merge(df_incremental.alias(\"s\"), \"t.venda_id = s.venda_id\")\n    .whenMatchedUpdate(set={\"preco\": \"s.preco\"})\n    .whenNotMatchedInsert(values={\"venda_id\": \"s.venda_id\", \"preco\": \"s.preco\"})\n    .execute()\n)"
+        },
+        "intermediario": {
+          "enunciado": "Antes do merge, deduplique a origem (mais recente por `venda_id`) e só atualize quando o preço mudou, inclusive de/para nulo. Prepare a origem e mostre o resultado do passo de deduplicação.",
+          "dados": [{"tabela": "df_incremental", "colunas": ["venda_id", "preco", "extraido_em"], "tipos": ["INT", "DECIMAL(10,2)", "TIMESTAMP"], "linhas": [[2, 22.0, "2025-01-01T10:00:00"], [2, 25.0, "2025-01-01T11:00:00"], [3, 30.0, "2025-01-01T10:00:00"]]}],
+          "solucao": "ultima = Window.partitionBy(\"venda_id\").orderBy(F.col(\"extraido_em\").desc())\nresultado = (\n    df_incremental.withColumn(\"rn\", F.row_number().over(ultima))\n    .filter(\"rn = 1\").drop(\"rn\", \"extraido_em\")\n)\n# Depois:\n# target.alias(\"t\").merge(resultado.alias(\"s\"), \"t.venda_id = s.venda_id\")\n#   .whenMatchedUpdate(condition=\"NOT (t.preco <=> s.preco)\", set={\"preco\": \"s.preco\"})\n#   .whenNotMatchedInsertAll().execute()"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, envolva um merge real numa função que valide a unicidade da origem pela chave antes de executar e registre as métricas da operação (`history(1)`) depois.",
+          "dados": null,
+          "solucao": "from delta.tables import DeltaTable\n\ndef merge_seguro(df_origem, tabela, chave):\n    dup = df_origem.groupBy(chave).count().filter(\"count > 1\").limit(1).count()\n    if dup:\n        raise ValueError(f\"Origem com chaves duplicadas em {chave}\")\n    alvo = DeltaTable.forName(spark, tabela)\n    cond = \" AND \".join(f\"t.{c} = s.{c}\" for c in chave)\n    (alvo.alias(\"t\").merge(df_origem.alias(\"s\"), cond)\n         .whenMatchedUpdateAll().whenNotMatchedInsertAll().execute())\n    return alvo.history(1).select(\"version\", \"operationMetrics\").first()"
+        }
+      }
+    },
+    {
+      "id": "spk-10-mergeschema",
+      "ref": "02_pyspark/10_delta-lake-api.md#evolucao-de-schema",
+      "ferramenta": "mergeSchema",
+      "niveis": {
+        "basico": {
+          "enunciado": "Acrescente linhas com uma coluna nova em `silver.clientes`, permitindo a evolução de schema.",
+          "dados": null,
+          "solucao": "(\n    df_com_novas_colunas.write\n    .format(\"delta\")\n    .mode(\"append\")\n    .option(\"mergeSchema\", \"true\")\n    .saveAsTable(\"silver.clientes\")\n)"
+        },
+        "intermediario": {
+          "enunciado": "Antes de habilitar `mergeSchema`, compare o schema da origem com o da tabela e liste colunas novas e colunas com tipo diferente.",
+          "dados": [
+            {"tabela": "tabela_atual", "colunas": ["id", "nome"], "tipos": ["BIGINT", "STRING"], "linhas": [[1, "Ana"]]},
+            {"tabela": "origem", "colunas": ["id", "nome", "email"], "tipos": ["STRING", "STRING", "STRING"], "linhas": [["2", "Bia", "b@x"]]}
+          ],
+          "solucao": "atual = dict(tabela_atual.dtypes)\nnovo = dict(origem.dtypes)\nresultado = {\n    \"colunas_novas\": sorted(set(novo) - set(atual)),\n    \"tipo_diferente\": {c: (atual[c], novo[c]) for c in atual.keys() & novo.keys() if atual[c] != novo[c]},\n}\n# id chegou como string: corrigir o cast antes de gravar, não deixar o merge decidir."
+        },
+        "avancado": {
+          "enunciado": "Na sua base, crie uma checagem que bloqueie a escrita se a origem trouxer colunas fora de uma lista aprovada, e só então grave com `mergeSchema`.",
+          "dados": null,
+          "solucao": "aprovadas = {\"id\", \"nome\", \"email\", \"telefone\"}\nnao_aprovadas = set(df.columns) - aprovadas\nif nao_aprovadas:\n    raise ValueError(f\"Colunas não aprovadas: {sorted(nao_aprovadas)}\")\ndf.write.mode(\"append\").option(\"mergeSchema\", \"true\").saveAsTable(\"silver.clientes\")"
+        }
+      }
+    },
+    {
+      "id": "spk-10-restore-vacuum",
+      "ref": "02_pyspark/10_delta-lake-api.md#restore-e-vacuum",
+      "ferramenta": "history, restoreToVersion, vacuum",
+      "niveis": {
+        "basico": {
+          "enunciado": "Mostre as últimas 5 operações da tabela `gold.vendas` com versão, operação e data.",
+          "dados": null,
+          "solucao": "from delta.tables import DeltaTable\n\nDeltaTable.forName(spark, \"gold.vendas\").history(5).select(\"version\", \"timestamp\", \"operation\").show()"
+        },
+        "intermediario": {
+          "enunciado": "Leia a versão anterior da tabela, compare a contagem com a atual e restaure se a versão atual perdeu mais de 10% das linhas.",
+          "dados": null,
+          "solucao": "from delta.tables import DeltaTable\n\nalvo = DeltaTable.forName(spark, \"gold.vendas\")\natual = alvo.history(1).first()[\"version\"]\nn_atual = spark.read.table(\"gold.vendas\").count()\nn_anterior = spark.read.option(\"versionAsOf\", atual - 1).table(\"gold.vendas\").count()\nif n_anterior and n_atual < 0.9 * n_anterior:\n    alvo.restoreToVersion(atual - 1)"
+        },
+        "avancado": {
+          "enunciado": "Antes de rodar `vacuum`, verifique se a retenção configurada cobre a janela de time travel que o time precisa (ex.: 14 dias) e só então execute.",
+          "dados": null,
+          "solucao": "from delta.tables import DeltaTable\n\nprops = {r[\"key\"]: r[\"value\"] for r in spark.sql(\"SHOW TBLPROPERTIES gold.vendas\").collect()}\nretencao = props.get(\"delta.deletedFileRetentionDuration\", \"interval 7 days\")\nprint(retencao)\n# Se for menor que 14 dias, ajuste antes:\n# ALTER TABLE gold.vendas SET TBLPROPERTIES ('delta.deletedFileRetentionDuration' = 'interval 14 days')\nDeltaTable.forName(spark, \"gold.vendas\").vacuum(14 * 24)"
+        }
+      }
+    },
+    {
+      "id": "spk-10-optimize-clustering",
+      "ref": "02_pyspark/10_delta-lake-api.md#otimizacao-e-layout",
+      "ferramenta": "optimize().executeCompaction() e clusterBy",
+      "niveis": {
+        "basico": {
+          "enunciado": "Compacte os arquivos pequenos de `gold.vendas` pela API Python.",
+          "dados": null,
+          "solucao": "from delta.tables import DeltaTable\n\nDeltaTable.forName(spark, \"gold.vendas\").optimize().executeCompaction()"
+        },
+        "intermediario": {
+          "enunciado": "Crie a tabela `main.gold.vendas_lc` a partir de um DataFrame já com liquid clustering por data e loja.",
+          "dados": null,
+          "solucao": "(\n    df_vendas.writeTo(\"main.gold.vendas_lc\")\n    .clusterBy(\"dt_venda\", \"loja_id\")\n    .createOrReplace()\n)"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, meça o número de arquivos e o tamanho médio antes e depois de `executeCompaction()` em uma tabela com muitas escritas pequenas e registre o ganho em uma consulta típica.",
+          "dados": null,
+          "solucao": "def resumo(tabela):\n    d = spark.sql(f\"DESCRIBE DETAIL {tabela}\").first()\n    return d[\"numFiles\"], d[\"sizeInBytes\"] / max(d[\"numFiles\"], 1) / 1024**2\n\nprint(\"antes\", resumo(\"gold.vendas\"))\nDeltaTable.forName(spark, \"gold.vendas\").optimize().executeCompaction()\nprint(\"depois\", resumo(\"gold.vendas\"))"
+        }
+      }
+    },
+    {
+      "id": "spk-11-dbutils-fs",
+      "ref": "02_pyspark/11_dbutils-workspace.md#arquivos-dbutils-fs-e-volumes",
+      "ferramenta": "dbutils.fs e Volumes",
+      "niveis": {
+        "basico": {
+          "enunciado": "Liste os arquivos de um Volume mostrando nome, tamanho em KB e data de modificação.",
+          "dados": null,
+          "solucao": "from datetime import datetime\n\nfor f in dbutils.fs.ls(\"/Volumes/main/silver/arquivos/lotes/\"):\n    print(f.name, round(f.size / 1024, 1), datetime.fromtimestamp(f.modificationTime / 1000))"
+        },
+        "intermediario": {
+          "enunciado": "Mova para a pasta `processados/` os arquivos `.csv` da pasta de entrada que já foram carregados (lista recebida em `carregados`).",
+          "dados": null,
+          "solucao": "entrada = \"/Volumes/main/bronze/landing/entrada/\"\ndestino = \"/Volumes/main/bronze/landing/processados/\"\ncarregados = {\"lote_01.csv\", \"lote_02.csv\"}\n\nfor f in dbutils.fs.ls(entrada):\n    if f.name.endswith(\".csv\") and f.name in carregados:\n        dbutils.fs.mv(f.path, destino + f.name)"
+        },
+        "avancado": {
+          "enunciado": "Escreva uma função de limpeza que apague uma pasta temporária com `rm(recurse=True)` só se o caminho estiver dentro de um prefixo permitido e não for uma tabela Delta.",
+          "dados": null,
+          "solucao": "PREFIXO_PERMITIDO = \"/Volumes/main/tmp/\"\n\ndef limpar(caminho):\n    if not caminho.startswith(PREFIXO_PERMITIDO) or \"..\" in caminho:\n        raise ValueError(f\"Caminho fora do permitido: {caminho}\")\n    nomes = {f.name.rstrip(\"/\") for f in dbutils.fs.ls(caminho)}\n    if \"_delta_log\" in nomes:\n        raise ValueError(\"Pasta é uma tabela Delta: use DROP/DELETE/VACUUM\")\n    dbutils.fs.rm(caminho, recurse=True)"
+        }
+      }
+    },
+    {
+      "id": "spk-11-widgets",
+      "ref": "02_pyspark/11_dbutils-workspace.md#parametros-widgets-e-job-parameters",
+      "ferramenta": "dbutils.widgets",
+      "niveis": {
+        "basico": {
+          "enunciado": "Crie um widget de texto `data_corte` (padrão 2025-01-01) e um dropdown `ambiente` (dev, hml, prod) e leia os valores.",
+          "dados": null,
+          "solucao": "dbutils.widgets.text(\"data_corte\", \"2025-01-01\", \"Data de corte\")\ndbutils.widgets.dropdown(\"ambiente\", \"dev\", [\"dev\", \"hml\", \"prod\"], \"Ambiente\")\n\ndata_corte = dbutils.widgets.get(\"data_corte\")\nambiente = dbutils.widgets.get(\"ambiente\")"
+        },
+        "intermediario": {
+          "enunciado": "Valide os parâmetros: a data deve ser ISO válida e não futura; o ambiente deve estar na lista. Falhe com mensagem clara.",
+          "dados": null,
+          "solucao": "import datetime as dt\n\ntry:\n    data_corte = dt.date.fromisoformat(dbutils.widgets.get(\"data_corte\"))\nexcept ValueError:\n    raise ValueError(\"data_corte deve estar no formato AAAA-MM-DD\")\nif data_corte > dt.date.today():\n    raise ValueError(\"data_corte não pode ser futura\")\n\nambiente = dbutils.widgets.get(\"ambiente\")\nif ambiente not in {\"dev\", \"hml\", \"prod\"}:\n    raise ValueError(f\"Ambiente inválido: {ambiente}\")"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha um notebook com datas ou ambientes fixos no código. Transforme-os em parâmetros, configure-os como job parameters na tarefa do job e rode-o para dois valores diferentes.",
+          "dados": null,
+          "solucao": "# No notebook: widgets com padrão seguro (dev) e validação como no nível intermediário.\n# No job (Workflows > tarefa > Parameters): data_corte = {{job.start_time.iso_date}}, ambiente = prod\n# Rode 'Run now with different parameters' para testar outra data sem editar o código."
+        }
+      }
+    },
+    {
+      "id": "spk-11-secrets",
+      "ref": "02_pyspark/11_dbutils-workspace.md#segredos",
+      "ferramenta": "dbutils.secrets",
+      "niveis": {
+        "basico": {
+          "enunciado": "Leia usuário e senha do scope `erp-prod` e use-os em uma leitura JDBC.",
+          "dados": null,
+          "solucao": "usuario = dbutils.secrets.get(scope=\"erp-prod\", key=\"usuario\")\nsenha = dbutils.secrets.get(scope=\"erp-prod\", key=\"senha\")\n\ndf = spark.read.jdbc(\n    url=\"jdbc:oracle:thin:@servidor:1521/XDB\",\n    table=\"VENDAS\",\n    properties={\"user\": usuario, \"password\": senha},\n)"
+        },
+        "intermediario": {
+          "enunciado": "Liste os scopes disponíveis e as chaves do scope `erp-prod` sem revelar valores.",
+          "dados": null,
+          "solucao": "for s in dbutils.secrets.listScopes():\n    print(s.name)\nfor k in dbutils.secrets.list(\"erp-prod\"):\n    print(k.key)"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, procure credenciais escritas em notebooks, arquivos de configuração ou parâmetros de job. Para cada uma, proponha o scope/chave de destino e quem deve ter permissão de leitura.",
+          "dados": null,
+          "solucao": "# Busca no repositório: grep -rniE 'password|senha|token|secret|apikey' --include=*.py --include=*.json .\n# Para cada ocorrência: criar a chave no scope (CLI: databricks secrets put-secret <scope> <chave>),\n# substituir no código por dbutils.secrets.get e conceder READ só ao grupo/service principal do job."
+        }
+      }
+    },
+    {
+      "id": "spk-12-unicidade",
+      "ref": "02_pyspark/12_data-quality-operacional.md#unicidade-do-grao",
+      "ferramenta": "count × count_distinct com raise",
+      "niveis": {
+        "basico": {
+          "enunciado": "Verifique se cada `id_transacao` aparece uma vez e levante erro se houver duplicidade.",
+          "dados": [{"tabela": "df_final", "colunas": ["id_transacao", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20], [3, 30]]}],
+          "solucao": "resumo = df_final.agg(\n    F.count(\"*\").alias(\"linhas\"),\n    F.count_distinct(\"id_transacao\").alias(\"chaves\"),\n).first()\nif resumo[\"linhas\"] != resumo[\"chaves\"]:\n    raise ValueError(f\"Grão violado: {resumo['linhas']} linhas para {resumo['chaves']} chaves\")\nresultado = resumo"
+        },
+        "intermediario": {
+          "enunciado": "Em vez de só falhar, mostre as 10 chaves mais duplicadas para facilitar o diagnóstico.",
+          "dados": [{"tabela": "df_final", "colunas": ["id_transacao", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20], [2, 20], [3, 30], [3, 31], [3, 32]]}],
+          "solucao": "resultado = (\n    df_final.groupBy(\"id_transacao\").count()\n    .filter(\"count > 1\")\n    .orderBy(F.desc(\"count\"))\n    .limit(10)\n)"
+        },
+        "avancado": {
+          "enunciado": "Generalize em uma função `checar_grao(df, chaves)` para chave composta, que retorne um dicionário com linhas, chaves distintas e excedente, e levante erro quando o excedente for maior que zero.",
+          "dados": [{"tabela": "itens", "colunas": ["id_pedido", "id_item", "qtd"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 1, 2], [1, 2, 1], [2, 1, 5]]}],
+          "solucao": "def checar_grao(df, chaves):\n    linhas = df.count()\n    distintas = df.select(*chaves).distinct().count()\n    resumo = {\"linhas\": linhas, \"chaves\": distintas, \"excedente\": linhas - distintas}\n    if resumo[\"excedente\"] > 0:\n        raise ValueError(f\"Grão {chaves} violado: {resumo}\")\n    return resumo\n\nresultado = checar_grao(itens, [\"id_pedido\", \"id_item\"])"
+        }
+      }
+    },
+    {
+      "id": "spk-12-nulos-coluna",
+      "ref": "02_pyspark/12_data-quality-operacional.md#percentual-de-nulos-por-coluna",
+      "ferramenta": "Percentual de nulos em uma ação",
+      "niveis": {
+        "basico": {
+          "enunciado": "Calcule o percentual de nulos da coluna telefone.",
+          "dados": [{"tabela": "clientes", "colunas": ["id", "telefone"], "tipos": ["INT", "STRING"], "linhas": [[1, "9"], [2, null], [3, null], [4, "8"]]}],
+          "solucao": "resultado = clientes.select((F.avg(F.col(\"telefone\").isNull().cast(\"int\")) * 100).alias(\"pct_nulo\"))"
+        },
+        "intermediario": {
+          "enunciado": "Calcule o percentual de nulos de todas as colunas em uma única ação e liste as que passam de 25%.",
+          "dados": [{"tabela": "clientes", "colunas": ["id", "telefone", "email", "cpf"], "tipos": ["INT", "STRING", "STRING", "STRING"], "linhas": [[1, "9", null, "1"], [2, null, null, "2"], [3, null, "c@x", "3"], [4, "8", "d@x", "4"]]}],
+          "solucao": "linha = clientes.select([\n    (F.avg(F.col(c).isNull().cast(\"int\")) * 100).alias(c) for c in clientes.columns\n]).first().asDict()\nresultado = {c: p for c, p in linha.items() if p > 25.0}"
+        },
+        "avancado": {
+          "enunciado": "Trate também strings vazias e só espaços como ausência, e produza o resultado em formato longo (coluna, pct_ausente) ordenado.",
+          "dados": [{"tabela": "clientes", "colunas": ["id", "telefone", "email"], "tipos": ["INT", "STRING", "STRING"], "linhas": [[1, " ", "a@x"], [2, null, ""], [3, "9", "c@x"], [4, "", null]]}],
+          "solucao": "def ausente(c, tipo):\n    col = F.col(c)\n    return (col.isNull() | (F.trim(col) == \"\")) if tipo == \"string\" else col.isNull()\n\nlarga = clientes.select([\n    (F.avg(ausente(c, t).cast(\"int\")) * 100).alias(c) for c, t in clientes.dtypes\n])\nresultado = (\n    larga.unpivot([], larga.columns, \"coluna\", \"pct_ausente\")\n    .orderBy(F.desc(\"pct_ausente\"))\n)"
+        }
+      }
+    },
+    {
+      "id": "spk-12-perda-join",
+      "ref": "02_pyspark/12_data-quality-operacional.md#perda-de-linhas-em-joins",
+      "ferramenta": "Reconciliação com left_anti",
+      "niveis": {
+        "basico": {
+          "enunciado": "Encontre as vendas cujo produto não existe na dimensão.",
+          "dados": [
+            {"tabela": "vendas", "colunas": ["id_venda", "id_produto"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20], [3, 99]]},
+            {"tabela": "produtos", "colunas": ["id_produto", "nome"], "tipos": ["INT", "STRING"], "linhas": [[10, "A"], [20, "B"]]}
+          ],
+          "solucao": "resultado = vendas.join(produtos, \"id_produto\", \"left_anti\")"
+        },
+        "intermediario": {
+          "enunciado": "Calcule o percentual de vendas órfãs e falhe se passar de 1%. Os dados de exemplo devem falhar; trate a exceção para mostrar a mensagem.",
+          "dados": [
+            {"tabela": "vendas", "colunas": ["id_venda", "id_produto"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20], [3, 99]]},
+            {"tabela": "produtos", "colunas": ["id_produto", "nome"], "tipos": ["INT", "STRING"], "linhas": [[10, "A"], [20, "B"]]}
+          ],
+          "solucao": "orfas = vendas.join(produtos, \"id_produto\", \"left_anti\").count()\ntotal = vendas.count()\ntry:\n    if total and orfas / total > 0.01:\n        raise ValueError(f\"{orfas} de {total} vendas sem produto ({orfas / total:.1%})\")\nexcept ValueError as erro:\n    resultado = str(erro)"
+        },
+        "avancado": {
+          "enunciado": "Um `inner join` com a dimensão manteve a contagem igual, mas a soma do valor mudou. Explique como isso é possível e escreva a checagem que detecta perda e duplicação ao mesmo tempo.",
+          "dados": [
+            {"tabela": "vendas", "colunas": ["id_venda", "id_produto", "valor"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 10, 100], [2, 99, 50]]},
+            {"tabela": "produtos", "colunas": ["id_produto", "nome"], "tipos": ["INT", "STRING"], "linhas": [[10, "A"], [10, "A-v2"]]}
+          ],
+          "solucao": "# A venda 2 foi perdida (sem produto) e a venda 1 duplicou (produto com 2 versões):\n# a contagem empatou por coincidência.\njuntado = vendas.join(produtos, \"id_produto\")\nantes = vendas.agg(F.count(\"*\").alias(\"n\"), F.sum(\"valor\").alias(\"s\")).first()\ndepois = juntado.agg(F.count(\"*\").alias(\"n\"), F.count_distinct(\"id_venda\").alias(\"vendas\"), F.sum(\"valor\").alias(\"s\")).first()\nresultado = {\n    \"perdidas\": antes[\"n\"] - depois[\"vendas\"],\n    \"duplicadas\": depois[\"n\"] - depois[\"vendas\"],\n    \"soma_antes\": antes[\"s\"], \"soma_depois\": depois[\"s\"],\n}"
+        }
+      }
+    },
+    {
+      "id": "spk-12-expectativas",
+      "ref": "02_pyspark/12_data-quality-operacional.md#frameworks-e-expectativas-declarativas",
+      "ferramenta": "Expectations (Lakeflow/DLT) e restrições Delta",
+      "niveis": {
+        "basico": {
+          "enunciado": "Em um pipeline declarativo (Lakeflow/DLT), defina uma tabela Silver que descarte linhas com `id_cliente` nulo e falhe se aparecer idade negativa.",
+          "dados": null,
+          "solucao": "import dlt\n\n@dlt.table(name=\"clientes_silver\")\n@dlt.expect_or_drop(\"id_preenchido\", \"id_cliente IS NOT NULL\")\n@dlt.expect_or_fail(\"idade_nao_negativa\", \"idade >= 0\")\ndef clientes_silver():\n    return spark.read.table(\"main.bronze.clientes\")"
+        },
+        "intermediario": {
+          "enunciado": "Sem DLT, implemente o mesmo comportamento em PySpark: separe as linhas válidas, as descartadas (com motivo) e falhe na regra crítica.",
+          "dados": [{"tabela": "bronze", "colunas": ["id_cliente", "idade"], "tipos": ["INT", "INT"], "linhas": [[1, 30], [null, 20], [3, 40]]}],
+          "solucao": "if bronze.filter(F.col(\"idade\") < 0).limit(1).count():\n    raise ValueError(\"idade negativa encontrada\")\nvalida = F.col(\"id_cliente\").isNotNull()\nresultado = bronze.filter(valida)\ndescartadas = bronze.filter(~valida).withColumn(\"motivo\", F.lit(\"id_cliente nulo\"))"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha um pipeline com checagens em `if`/`print`. Liste as regras, classifique cada uma em warn/drop/fail e proponha onde cada uma deve morar (restrição Delta, expectation ou código).",
+          "dados": null,
+          "solucao": "| regra | ação | onde |\n|---|---|---|\n| id não nulo | fail | ALTER TABLE ... ALTER COLUMN id SET NOT NULL |\n| idade 0–120 | drop + quarentena | expectation / código com left_anti |\n| % e-mail nulo < 25% | warn | métrica do pipeline + alerta |"
+        }
+      }
+    },
+    {
+      "id": "spk-13-diagnostico",
+      "ref": "02_pyspark/13_performance-e-arquitetura.md#diagnostico-antes-da-otimizacao",
+      "ferramenta": "explain(\"formatted\") e Spark UI",
+      "niveis": {
+        "basico": {
+          "enunciado": "Gere o plano formatado de uma agregação com join e identifique os `Exchange` (shuffles).",
+          "dados": [
+            {"tabela": "vendas", "colunas": ["id", "loja_id", "valor"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 10, 5], [2, 20, 7]]},
+            {"tabela": "lojas", "colunas": ["loja_id", "uf"], "tipos": ["INT", "STRING"], "linhas": [[10, "SP"], [20, "RJ"]]}
+          ],
+          "solucao": "resultado = vendas.join(lojas, \"loja_id\").groupBy(\"uf\").agg(F.sum(\"valor\").alias(\"total\"))\nresultado.explain(\"formatted\")"
+        },
+        "intermediario": {
+          "enunciado": "Compare o plano de um filtro aplicado antes do join com o de um filtro aplicado depois. O otimizador empurrou o filtro nos dois casos?",
+          "dados": [
+            {"tabela": "vendas", "colunas": ["id", "loja_id", "valor"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 10, 5], [2, 20, 7]]},
+            {"tabela": "lojas", "colunas": ["loja_id", "uf"], "tipos": ["INT", "STRING"], "linhas": [[10, "SP"], [20, "RJ"]]}
+          ],
+          "solucao": "antes = vendas.filter(F.col(\"valor\") > 6).join(lojas, \"loja_id\")\ndepois = vendas.join(lojas, \"loja_id\").filter(F.col(\"valor\") > 6)\nantes.explain()\ndepois.explain()\n# Em geral o Catalyst empurra o filtro para antes do join nos dois casos (predicate pushdown).\nresultado = depois"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, rode um job lento e, na Spark UI, registre: estágio mais longo, nº de tarefas, duração máxima vs mediana, shuffle read/write e spill. Formule uma hipótese de gargalo baseada nesses números antes de mudar qualquer coisa.",
+          "dados": null,
+          "solucao": "# Spark UI > Jobs > job lento > Stages > estágio mais longo > Summary Metrics\n# Hipóteses típicas:\n#   max >> mediana             -> skew\n#   spill alto                 -> partições grandes demais / memória\n#   shuffle muito maior que entrada -> join explodindo linhas\n#   muitas tarefas minúsculas  -> partições demais / arquivos pequenos"
+        }
+      }
+    },
+    {
+      "id": "spk-13-aqe-particoes",
+      "ref": "02_pyspark/13_performance-e-arquitetura.md#aqe-e-particoes",
+      "ferramenta": "repartition × coalesce e AQE",
+      "niveis": {
+        "basico": {
+          "enunciado": "Confira se o AQE está ligado na sessão e qual o número padrão de partições de shuffle.",
+          "dados": null,
+          "solucao": "print(spark.conf.get(\"spark.sql.adaptive.enabled\"))\nprint(spark.conf.get(\"spark.sql.shuffle.partitions\"))"
+        },
+        "intermediario": {
+          "enunciado": "Redistribua por `cliente_id` em 4 partições e, depois de um filtro forte, reduza para 1 partição sem shuffle completo. Mostre o número de partições em cada passo com `spark_partition_id`.",
+          "dados": [{"tabela": "df", "colunas": ["cliente_id", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20], [3, 30], [4, 40], [5, 50], [6, 60]]}],
+          "solucao": "por_cliente = df.repartition(4, \"cliente_id\")\nfiltrado = por_cliente.filter(F.col(\"valor\") > 40).coalesce(1)\n\nconta = lambda d: d.select(F.spark_partition_id().alias(\"p\")).distinct().count()\nprint(conta(por_cliente), conta(filtrado))\nresultado = filtrado"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, encontre um `repartition(n)` ou `coalesce(n)` com número fixo. Explique o objetivo dele, remova-o num teste e compare duração, número de tarefas e número de arquivos escritos. Decida se ele fica.",
+          "dados": null,
+          "solucao": "# Antes/depois: Spark UI (nº de tarefas e duração do estágio) e\n# DESCRIBE DETAIL <tabela_destino> (numFiles, tamanho médio).\n# Com AQE e escrita otimizada (optimizeWrite/auto compaction) o número fixo muitas vezes é desnecessário."
+        }
+      }
+    },
+    {
+      "id": "spk-13-skew-salting",
+      "ref": "02_pyspark/13_performance-e-arquitetura.md#skew-e-salting",
+      "ferramenta": "Frequência de chaves e salting",
+      "niveis": {
+        "basico": {
+          "enunciado": "Liste as 5 chaves mais frequentes para avaliar skew.",
+          "dados": [{"tabela": "df", "colunas": ["chave"], "tipos": ["STRING"], "linhas": [["A"], ["A"], ["A"], ["A"], ["B"], ["C"], ["A"], ["B"]]}],
+          "solucao": "resultado = df.groupBy(\"chave\").count().orderBy(F.desc(\"count\")).limit(5)"
+        },
+        "intermediario": {
+          "enunciado": "Calcule a razão entre a chave mais frequente e a mediana das frequências. Acima de quanto você investigaria skew?",
+          "dados": [{"tabela": "df", "colunas": ["chave"], "tipos": ["STRING"], "linhas": [["A"], ["A"], ["A"], ["A"], ["A"], ["A"], ["B"], ["C"], ["D"]]}],
+          "solucao": "freq = df.groupBy(\"chave\").count()\nresultado = freq.agg(\n    F.max(\"count\").alias(\"maior\"),\n    F.percentile_approx(\"count\", 0.5).alias(\"mediana\"),\n).withColumn(\"razao\", F.col(\"maior\") / F.col(\"mediana\"))\n# Não há número universal: compare com a duração das tarefas na Spark UI."
+        },
+        "avancado": {
+          "enunciado": "Aplique salting numa agregação com skew: some o valor por chave em duas etapas (com sal de 0 a 3 e depois sem sal) e confirme que o resultado é igual ao da agregação direta.",
+          "dados": [{"tabela": "df", "colunas": ["chave", "valor"], "tipos": ["STRING", "INT"], "linhas": [["A", 1], ["A", 2], ["A", 3], ["A", 4], ["B", 5], ["C", 6]]}],
+          "solucao": "N = 4\nparcial = (\n    df.withColumn(\"sal\", (F.rand(seed=42) * N).cast(\"int\"))\n    .groupBy(\"chave\", \"sal\").agg(F.sum(\"valor\").alias(\"parcial\"))\n)\nresultado = parcial.groupBy(\"chave\").agg(F.sum(\"parcial\").alias(\"total\"))\ndireto = df.groupBy(\"chave\").agg(F.sum(\"valor\").alias(\"total\"))\nassert resultado.exceptAll(direto).count() == 0"
+        }
+      }
+    },
+    {
+      "id": "spk-13-udfs",
+      "ref": "02_pyspark/13_performance-e-arquitetura.md#funcoes-nativas-python-udf-e-pandas-udf",
+      "ferramenta": "Funções nativas × UDF × Pandas UDF",
+      "niveis": {
+        "basico": {
+          "enunciado": "Classifique clientes com saldo acima de 2.500.000 como VIP usando função nativa.",
+          "dados": [{"tabela": "df", "colunas": ["id", "saldo"], "tipos": ["INT", "BIGINT"], "linhas": [[1, 3000000], [2, 10]]}],
+          "solucao": "resultado = df.withColumn(\"classificacao\", F.when(F.col(\"saldo\") > 2_500_000, \"VIP\").otherwise(\"STANDARD\"))"
+        },
+        "intermediario": {
+          "enunciado": "Reescreva com funções nativas a UDF que padroniza CEP (só dígitos, 8 posições com zeros à esquerda):\n`@udf('string') def cep(x): return re.sub(r'\\D', '', x).zfill(8) if x else None`",
+          "dados": [{"tabela": "enderecos", "colunas": ["cep"], "tipos": ["STRING"], "linhas": [["01310-100"], ["1310100"], [null]]}],
+          "solucao": "resultado = enderecos.withColumn(\n    \"cep_padrao\",\n    F.lpad(F.regexp_replace(\"cep\", r\"\\D\", \"\"), 8, \"0\"),\n)"
+        },
+        "avancado": {
+          "enunciado": "Implemente o mesmo cálculo (valor com imposto de 17%) como Python UDF e como Pandas UDF, confirme que os resultados batem com a versão nativa e explique a ordem esperada de desempenho.",
+          "dados": [{"tabela": "df", "colunas": ["valor"], "tipos": ["DOUBLE"], "linhas": [[100.0], [50.0]]}],
+          "executavel": false,
+          "solucao": "import pandas as pd\nfrom pyspark.sql.functions import udf, pandas_udf\n\n@udf(\"double\")\ndef imposto_udf(v):\n    return v * 1.17 if v is not None else None\n\n@pandas_udf(\"double\")\ndef imposto_pandas(v: pd.Series) -> pd.Series:\n    return v * 1.17\n\nresultado = df.select(\n    (F.col(\"valor\") * 1.17).alias(\"nativo\"),\n    imposto_udf(\"valor\").alias(\"udf\"),\n    imposto_pandas(\"valor\").alias(\"pandas\"),\n)\n# Esperado: nativo < Pandas UDF (lotes Arrow) < Python UDF (linha a linha). Meça no volume real."
+        }
+      }
+    },
+    {
+      "id": "spk-13-separacao",
+      "ref": "02_pyspark/13_performance-e-arquitetura.md#separacao-de-responsabilidades",
+      "ferramenta": "Transformações puras e testáveis",
+      "niveis": {
+        "basico": {
+          "enunciado": "Extraia para uma função pura a regra que calcula imposto de 17% e aplique-a.",
+          "dados": [{"tabela": "df", "colunas": ["valor"], "tipos": ["DOUBLE"], "linhas": [[100.0], [10.0]]}],
+          "solucao": "def aplicar_imposto(df):\n    return df.withColumn(\"imposto\", F.col(\"valor\") * F.lit(0.17))\n\nresultado = aplicar_imposto(df)"
+        },
+        "intermediario": {
+          "enunciado": "Encadeie duas funções puras (`limpar` e `aplicar_imposto`) com `DataFrame.transform`, recebendo a alíquota como parâmetro.",
+          "dados": [{"tabela": "df", "colunas": ["valor"], "tipos": ["DOUBLE"], "linhas": [[100.0], [-5.0], [null]]}],
+          "solucao": "def limpar(df):\n    return df.filter(F.col(\"valor\").isNotNull() & (F.col(\"valor\") >= 0))\n\ndef aplicar_imposto(df, aliquota):\n    return df.withColumn(\"imposto\", F.col(\"valor\") * F.lit(aliquota))\n\nresultado = df.transform(limpar).transform(aplicar_imposto, 0.17)"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha um notebook que mistura leitura, regra e escrita na mesma célula. Separe em: leitura (função), regras (funções puras), escrita (função), e um bloco principal que só orquestra.",
+          "dados": null,
+          "solucao": "def ler(spark, data):\n    return spark.read.table(\"main.bronze.vendas\").filter(F.col(\"dt\") == data)\n\ndef transformar(df):\n    return df.transform(limpar).transform(aplicar_imposto, 0.17)\n\ndef gravar(df):\n    df.write.mode(\"overwrite\").option(\"replaceWhere\", \"dt = ...\").saveAsTable(\"main.silver.vendas\")\n\nif __name__ == \"__main__\":\n    gravar(transformar(ler(spark, dbutils.widgets.get(\"data\"))))"
+        }
+      }
+    },
+    {
+      "id": "spk-13-teste-local",
+      "ref": "02_pyspark/13_performance-e-arquitetura.md#teste-local",
+      "ferramenta": "Testes com SparkSession local",
+      "niveis": {
+        "basico": {
+          "enunciado": "Escreva um teste para `aplicar_imposto` com uma linha de entrada e o valor esperado.",
+          "dados": [{"tabela": "df", "colunas": ["valor"], "tipos": ["DOUBLE"], "linhas": [[100.0]]}],
+          "solucao": "def aplicar_imposto(df):\n    return df.withColumn(\"imposto\", F.col(\"valor\") * F.lit(0.17))\n\ndef test_aplicar_imposto(spark):\n    entrada = spark.createDataFrame([(100.0,)], [\"valor\"])\n    assert aplicar_imposto(entrada).first().imposto == 17.0\n\ntest_aplicar_imposto(spark)\nresultado = aplicar_imposto(df)"
+        },
+        "intermediario": {
+          "enunciado": "Teste a função `limpar` com casos de borda (nulo, negativo, zero) comparando o DataFrame inteiro com o esperado via `assertDataFrameEqual`.",
+          "dados": [{"tabela": "df", "colunas": ["valor"], "tipos": ["DOUBLE"], "linhas": [[0.0]]}],
+          "solucao": "from pyspark.testing import assertDataFrameEqual\n\ndef limpar(df):\n    return df.filter(F.col(\"valor\").isNotNull() & (F.col(\"valor\") >= 0))\n\nentrada = spark.createDataFrame([(None,), (-1.0,), (0.0,), (5.0,)], \"valor double\")\nesperado = spark.createDataFrame([(0.0,), (5.0,)], \"valor double\")\nassertDataFrameEqual(limpar(entrada), esperado)\nresultado = limpar(entrada)"
+        },
+        "avancado": {
+          "enunciado": "Monte a estrutura de testes do projeto: fixture `spark` de sessão em `conftest.py`, um teste por regra e execução com `pytest`. Garanta que nenhum teste lê tabelas reais.",
+          "dados": null,
+          "solucao": "# conftest.py\nimport pytest\nfrom pyspark.sql import SparkSession\n\n@pytest.fixture(scope=\"session\")\ndef spark():\n    s = (SparkSession.builder.master(\"local[2]\")\n         .config(\"spark.sql.shuffle.partitions\", \"2\")\n         .config(\"spark.ui.enabled\", \"false\").getOrCreate())\n    yield s\n    s.stop()\n\n# tests/test_regras.py usa spark.createDataFrame(...) e as funções puras.\n# Rode: python -m pytest -q"
+        }
+      }
+    },
+    {
+      "id": "spk-14-papel-camadas",
+      "ref": "02_pyspark/14_medallion-architecture.md#1-papel-de-cada-camada",
+      "ferramenta": "Bronze, Silver e Gold",
+      "niveis": {
+        "basico": {
+          "enunciado": "Classifique cada tabela na camada correta: (a) JSON da API como chegou + data de carga; (b) clientes tipados e deduplicados; (c) receita mensal por região para o dashboard.",
+          "dados": null,
+          "solucao": "(a) Bronze: preserva a origem e o contexto de carga.\n(b) Silver: dado confiável e reutilizável.\n(c) Gold: consumo analítico com grão definido pelo caso de uso."
+        },
+        "intermediario": {
+          "enunciado": "Escreva o fluxo mínimo das três camadas para pedidos: Bronze com metadados de carga, Silver tipada e deduplicada, Gold agregada por dia.",
+          "dados": [{"tabela": "bruto", "colunas": ["id_pedido", "valor_txt", "dt_txt"], "tipos": ["STRING", "STRING", "STRING"], "linhas": [["1", "10.50", "2025-01-01"], ["1", "10.50", "2025-01-01"], ["2", "7", "2025-01-02"]]}],
+          "solucao": "bronze = bruto.withColumns({\"ingestion_ts\": F.current_timestamp(), \"source_system\": F.lit(\"api_pedidos\")})\nsilver = (\n    bronze.select(\n        F.col(\"id_pedido\").cast(\"bigint\").alias(\"id_pedido\"),\n        F.col(\"valor_txt\").cast(\"decimal(12,2)\").alias(\"valor\"),\n        F.to_date(\"dt_txt\").alias(\"dt_pedido\"),\n    ).dropDuplicates([\"id_pedido\"])\n)\nresultado = silver.groupBy(\"dt_pedido\").agg(F.sum(\"valor\").alias(\"receita\"), F.count(\"*\").alias(\"pedidos\"))"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, mapeie um pipeline real nas três camadas. Para cada tabela, registre camada, grão, dono e consumidores, e aponte tabelas que estão na camada errada (ex.: regra de dashboard na Silver).",
+          "dados": null,
+          "solucao": "| tabela | camada | grão | dono | consumidores | observação |\n|---|---|---|---|---|---|\n| bronze.pedidos_api | Bronze | 1 payload por chamada | eng. dados | silver.pedidos | ok |\n| silver.pedidos_kpi | Silver | 1 linha por dia | ... | dashboard | regra de dashboard: mover para Gold |"
+        }
+      }
+    },
+    {
+      "id": "spk-14-granularidade",
+      "ref": "02_pyspark/14_medallion-architecture.md#2-como-pensar-granularidade",
+      "ferramenta": "Grão por camada",
+      "niveis": {
+        "basico": {
+          "enunciado": "Declare o grão de cada tabela em uma frase ('uma linha por ...'): eventos de clique crus, sessões de usuário, visitas por dia e canal.",
+          "dados": null,
+          "solucao": "Bronze cliques: uma linha por evento recebido (pode ter duplicatas).\nSilver sessões: uma linha por sessão de usuário.\nGold visitas: uma linha por dia e canal."
+        },
+        "intermediario": {
+          "enunciado": "Verifique se a tabela Gold respeita o grão declarado 'uma linha por dia e canal'.",
+          "dados": [{"tabela": "gold_visitas", "colunas": ["dia", "canal", "visitas"], "tipos": ["DATE", "STRING", "INT"], "linhas": [["2025-01-01", "APP", 10], ["2025-01-01", "WEB", 5], ["2025-01-01", "APP", 3]]}],
+          "solucao": "resultado = (\n    gold_visitas.groupBy(\"dia\", \"canal\").count()\n    .filter(\"count > 1\")\n)\n# Linhas retornadas = violações do grão (APP em 2025-01-01)."
+        },
+        "avancado": {
+          "enunciado": "Um KPI de ticket médio está errado porque a Gold mistura linhas de pedido e de item. Mostre a diferença entre média por item e por pedido e corrija ajustando o grão.",
+          "dados": [{"tabela": "itens", "colunas": ["id_pedido", "id_item", "valor_item"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 1, 10], [1, 2, 10], [1, 3, 10], [2, 1, 50]]}],
+          "solucao": "media_item = itens.agg(F.avg(\"valor_item\")).first()[0]          # 20.0 (errado para ticket)\npedidos = itens.groupBy(\"id_pedido\").agg(F.sum(\"valor_item\").alias(\"valor_pedido\"))\nresultado = pedidos.agg(F.avg(\"valor_pedido\").alias(\"ticket_medio\"))   # 40.0"
+        }
+      }
+    },
+    {
+      "id": "spk-14-colunas-tecnicas",
+      "ref": "02_pyspark/14_medallion-architecture.md#4-colunas-tecnicas-uteis",
+      "ferramenta": "ingestion_ts, source_file, record_hash",
+      "niveis": {
+        "basico": {
+          "enunciado": "Adicione na Bronze `ingestion_ts`, `load_date` e `source_system`.",
+          "dados": [{"tabela": "bruto", "colunas": ["id", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10]]}],
+          "solucao": "resultado = bruto.withColumns({\n    \"ingestion_ts\": F.current_timestamp(),\n    \"load_date\": F.current_date(),\n    \"source_system\": F.lit(\"erp\"),\n})"
+        },
+        "intermediario": {
+          "enunciado": "Gere um `record_hash` das colunas de negócio para detectar mudança entre cargas, tratando nulos de forma estável.",
+          "dados": [{"tabela": "clientes", "colunas": ["id", "nome", "email"], "tipos": ["INT", "STRING", "STRING"], "linhas": [[1, "Ana", null], [2, "Bia", "b@x"]]}],
+          "solucao": "colunas_negocio = [\"nome\", \"email\"]\nresultado = clientes.withColumn(\n    \"record_hash\",\n    F.sha2(F.concat_ws(\"||\", *[F.coalesce(F.col(c).cast(\"string\"), F.lit(\"<null>\")) for c in colunas_negocio]), 256),\n)"
+        },
+        "avancado": {
+          "enunciado": "Use o `record_hash` para classificar os registros da carga nova em NOVO, ALTERADO ou INALTERADO em relação à versão atual.",
+          "dados": [
+            {"tabela": "atual", "colunas": ["id", "nome"], "tipos": ["INT", "STRING"], "linhas": [[1, "Ana"], [2, "Bia"]]},
+            {"tabela": "nova", "colunas": ["id", "nome"], "tipos": ["INT", "STRING"], "linhas": [[1, "Ana"], [2, "Beatriz"], [3, "Caio"]]}
+          ],
+          "solucao": "h = lambda df: df.withColumn(\"record_hash\", F.sha2(F.coalesce(F.col(\"nome\"), F.lit(\"<null>\")), 256))\na, n = h(atual).alias(\"a\"), h(nova).alias(\"n\")\nresultado = (\n    n.join(a, \"id\", \"left\")\n    .select(\"id\", F.col(\"n.nome\"),\n        F.when(F.col(\"a.record_hash\").isNull(), \"NOVO\")\n         .when(F.col(\"a.record_hash\") != F.col(\"n.record_hash\"), \"ALTERADO\")\n         .otherwise(\"INALTERADO\").alias(\"situacao\"))\n)"
+        }
+      }
+    },
+    {
+      "id": "spk-14-qualidade-camada",
+      "ref": "02_pyspark/14_medallion-architecture.md#5-regras-praticas-de-qualidade-por-camada",
+      "ferramenta": "Checagens por camada",
+      "niveis": {
+        "basico": {
+          "enunciado": "Para a Bronze: verifique se a carga do dia chegou e se tem linhas.",
+          "dados": [{"tabela": "bronze", "colunas": ["id", "load_date"], "tipos": ["INT", "DATE"], "linhas": [[1, "2025-01-01"], [2, "2025-01-02"]]}],
+          "solucao": "hoje = \"2025-01-02\"\nresultado = bronze.filter(F.col(\"load_date\") == hoje).count()\nif resultado == 0:\n    raise ValueError(f\"Carga de {hoje} não chegou\")"
+        },
+        "intermediario": {
+          "enunciado": "Para a Silver: em uma única ação, verifique tipos inválidos (id não numérico na origem), nulos críticos e duplicidade do grão.",
+          "dados": [{"tabela": "bronze", "colunas": ["id_txt", "email"], "tipos": ["STRING", "STRING"], "linhas": [["1", "a@x"], ["x", "b@x"], ["2", null], ["2", "c@x"]]}],
+          "solucao": "silver = bronze.withColumn(\"id\", F.expr(\"try_cast(id_txt AS BIGINT)\"))\nresultado = silver.agg(\n    F.count_if(F.col(\"id_txt\").isNotNull() & F.col(\"id\").isNull()).alias(\"id_invalido\"),\n    F.count_if(F.col(\"email\").isNull()).alias(\"email_nulo\"),\n    (F.count(\"id\") - F.count_distinct(\"id\")).alias(\"ids_duplicados\"),\n)"
+        },
+        "avancado": {
+          "enunciado": "Para a Gold: confira que a receita total da Gold bate com a soma da Silver no mesmo período (reconciliação entre camadas) e falhe se a diferença passar de 0,01.",
+          "dados": [
+            {"tabela": "silver", "colunas": ["dt", "valor"], "tipos": ["DATE", "DECIMAL(12,2)"], "linhas": [["2025-01-01", 10.5], ["2025-01-01", 4.5], ["2025-01-02", 7.0]]},
+            {"tabela": "gold", "colunas": ["dt", "receita"], "tipos": ["DATE", "DECIMAL(12,2)"], "linhas": [["2025-01-01", 15.0], ["2025-01-02", 7.0]]}
+          ],
+          "solucao": "s = silver.agg(F.sum(\"valor\")).first()[0]\ng = gold.agg(F.sum(\"receita\")).first()[0]\nif abs(s - g) > 0.01:\n    raise ValueError(f\"Gold ({g}) diverge da Silver ({s})\")\nresultado = {\"silver\": s, \"gold\": g}"
+        }
+      }
+    },
+    {
+      "id": "spk-14-erros-comuns",
+      "ref": "02_pyspark/14_medallion-architecture.md#6-erros-comuns",
+      "ferramenta": "Antipadrões de arquitetura",
+      "niveis": {
+        "basico": {
+          "enunciado": "Para cada situação, diga qual erro comum ela ilustra: (a) a Bronze descarta linhas com e-mail inválido; (b) o dashboard lê direto da Bronze; (c) a Silver só tem a receita mensal agregada.",
+          "dados": null,
+          "solucao": "(a) Limpeza destrutiva na Bronze: perde-se a origem para reprocessar.\n(b) Pular a Silver: regras de tipagem e deduplicação ficam espalhadas no consumo.\n(c) Agregar cedo demais: perde-se o detalhe para outras análises."
+        },
+        "intermediario": {
+          "enunciado": "A Bronze filtrou e-mails inválidos. Reescreva para preservar tudo na Bronze e marcar a validade, aplicando o filtro só na Silver.",
+          "dados": [{"tabela": "origem", "colunas": ["id", "email"], "tipos": ["INT", "STRING"], "linhas": [[1, "a@x.com"], [2, "invalido"], [3, null]]}],
+          "solucao": "bronze = origem.withColumn(\"ingestion_ts\", F.current_timestamp())   # sem filtro\nsilver = (\n    bronze.withColumn(\"is_email_valido\", F.col(\"email\").rlike(r\"^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$\"))\n    .filter(F.col(\"is_email_valido\"))\n)\nresultado = silver"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha uma tabela Gold e verifique: o grão está documentado? Ela tem colunas técnicas que só servem à engenharia? Existem versões duplicadas do mesmo dataset? Registre os achados e uma proposta.",
+          "dados": null,
+          "solucao": "DESCRIBE TABLE EXTENDED <gold>;            -- comentário da tabela documenta o grão?\nSHOW TABLES IN <schema_gold> LIKE '*vendas*';   -- versões duplicadas?\n-- Proposta: COMMENT ON TABLE com o grão; remover colunas técnicas não usadas pelo consumo;\n-- consolidar versões duplicadas em uma tabela oficial."
+        }
+      }
+    }
+  ]
+}

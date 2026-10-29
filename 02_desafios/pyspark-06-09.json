@@ -1,0 +1,356 @@
+{
+  "desafios": [
+    {
+      "id": "spk-06-agg-uma-passada",
+      "ref": "02_pyspark/06_agrupamentos-e-pivots.md#varias-agregacoes-em-uma-passada",
+      "ferramenta": "groupBy().agg com várias métricas",
+      "niveis": {
+        "basico": {
+          "enunciado": "Por UF: quantidade de vendas, lucro médio (2 casas) e quantidade de erros, em um único `agg`.",
+          "dados": [{"tabela": "fatos", "colunas": ["uf", "id_transacao", "lucro", "status"], "tipos": ["STRING", "INT", "DOUBLE", "STRING"], "linhas": [["SP", 1, 10.0, "OK"], ["SP", 2, 15.555, "ERRO"], ["RJ", 3, 7.0, "OK"]]}],
+          "solucao": "resultado = fatos.groupBy(\"uf\").agg(\n    F.count(\"id_transacao\").alias(\"qtd_vendas\"),\n    F.round(F.avg(\"lucro\"), 2).alias(\"lucro_medio\"),\n    F.count_if(F.col(\"status\") == \"ERRO\").alias(\"qtd_erros\"),\n)"
+        },
+        "intermediario": {
+          "enunciado": "Por UF, some o valor vendido só na LOJA e conte clientes distintos de forma exata e aproximada (`rsd=0.02`).",
+          "dados": [{"tabela": "fatos", "colunas": ["uf", "canal", "valor", "id_cliente"], "tipos": ["STRING", "STRING", "INT", "INT"], "linhas": [["SP", "LOJA", 10, 1], ["SP", "SITE", 20, 2], ["SP", "LOJA", 5, 1], ["RJ", "SITE", 7, 3]]}],
+          "solucao": "resultado = fatos.groupBy(\"uf\").agg(\n    F.sum(F.when(F.col(\"canal\") == \"LOJA\", F.col(\"valor\"))).alias(\"valor_loja\"),\n    F.count_distinct(\"id_cliente\").alias(\"clientes_exato\"),\n    F.approx_count_distinct(\"id_cliente\", rsd=0.02).alias(\"clientes_aprox\"),\n)"
+        },
+        "avancado": {
+          "enunciado": "O código abaixo usa as funções nativas do Python sem perceber. Explique o erro e corrija:\n`from pyspark.sql.functions import *` seguido, mais adiante, de `total = sum([1, 2, 3])`.",
+          "dados": [{"tabela": "fatos", "colunas": ["uf", "valor"], "tipos": ["STRING", "INT"], "linhas": [["SP", 10], ["RJ", 20]]}],
+          "solucao": "# 'import *' sombreia sum, max, min, round, filter... do Python.\n# sum([1, 2, 3]) passa a chamar pyspark.sql.functions.sum e falha.\nfrom pyspark.sql import functions as F\n\ntotal = sum([1, 2, 3])   # builtin do Python, volta a funcionar\nresultado = fatos.agg(F.sum(\"valor\").alias(\"total\"))"
+        }
+      }
+    },
+    {
+      "id": "spk-06-pivot",
+      "ref": "02_pyspark/06_agrupamentos-e-pivots.md#pivot",
+      "ferramenta": "groupBy().pivot()",
+      "niveis": {
+        "basico": {
+          "enunciado": "Gire a receita por categoria, com uma coluna por ano (2024 e 2025).",
+          "dados": [{"tabela": "vendas", "colunas": ["categoria", "ano", "receita"], "tipos": ["STRING", "INT", "INT"], "linhas": [["A", 2024, 10], ["A", 2025, 20], ["B", 2025, 5]]}],
+          "solucao": "resultado = vendas.groupBy(\"categoria\").pivot(\"ano\", [2024, 2025]).agg(F.sum(\"receita\"))"
+        },
+        "intermediario": {
+          "enunciado": "Gire duas métricas ao mesmo tempo (soma da receita e quantidade de vendas) por canal, e preencha as combinações sem venda com 0.",
+          "dados": [{"tabela": "vendas", "colunas": ["categoria", "canal", "receita"], "tipos": ["STRING", "STRING", "INT"], "linhas": [["A", "LOJA", 10], ["A", "SITE", 20], ["B", "LOJA", 5], ["A", "LOJA", 1]]}],
+          "solucao": "resultado = (\n    vendas.groupBy(\"categoria\")\n    .pivot(\"canal\", [\"LOJA\", \"SITE\"])\n    .agg(F.sum(\"receita\").alias(\"receita\"), F.count(\"receita\").alias(\"qtd\"))\n    .fillna(0)\n)\n# Colunas: LOJA_receita, LOJA_qtd, SITE_receita, SITE_qtd"
+        },
+        "avancado": {
+          "enunciado": "O domínio de anos muda todo janeiro. Obtenha a lista de anos de forma controlada (consulta separada e ordenada), limite a no máximo 5 anos mais recentes e use-a no `pivot`.",
+          "dados": [{"tabela": "vendas", "colunas": ["categoria", "ano", "receita"], "tipos": ["STRING", "INT", "INT"], "linhas": [["A", 2020, 1], ["A", 2021, 2], ["A", 2022, 3], ["A", 2023, 4], ["A", 2024, 5], ["B", 2025, 6]]}],
+          "solucao": "anos = [r[\"ano\"] for r in vendas.select(\"ano\").distinct().orderBy(F.desc(\"ano\")).limit(5).collect()]\nanos = sorted(anos)\nresultado = vendas.groupBy(\"categoria\").pivot(\"ano\", anos).agg(F.sum(\"receita\"))"
+        }
+      }
+    },
+    {
+      "id": "spk-06-unpivot",
+      "ref": "02_pyspark/06_agrupamentos-e-pivots.md#unpivot-melt",
+      "ferramenta": "DataFrame.unpivot (melt)",
+      "niveis": {
+        "basico": {
+          "enunciado": "Transforme as colunas de receita mensal em linhas (`mes`, `receita`).",
+          "dados": [{"tabela": "planilha", "colunas": ["regiao", "receita_jan", "receita_fev"], "tipos": ["STRING", "INT", "INT"], "linhas": [["N", 10, 20], ["S", 30, 40]]}],
+          "solucao": "resultado = planilha.unpivot(\n    ids=[\"regiao\"],\n    values=[\"receita_jan\", \"receita_fev\"],\n    variableColumnName=\"mes\",\n    valueColumnName=\"receita\",\n)"
+        },
+        "intermediario": {
+          "enunciado": "Faça o unpivot de todas as colunas que começam com `receita_` (sem listá-las à mão) e transforme `receita_jan` em `jan`.",
+          "dados": [{"tabela": "planilha", "colunas": ["regiao", "receita_jan", "receita_fev", "receita_mar"], "tipos": ["STRING", "INT", "INT", "INT"], "linhas": [["N", 10, 20, 30]]}],
+          "solucao": "colunas_mes = [c for c in planilha.columns if c.startswith(\"receita_\")]\nresultado = (\n    planilha.unpivot([\"regiao\"], colunas_mes, \"mes\", \"receita\")\n    .withColumn(\"mes\", F.regexp_replace(\"mes\", \"^receita_\", \"\"))\n)"
+        },
+        "avancado": {
+          "enunciado": "As colunas de valor têm tipos diferentes (int e decimal) e o unpivot falha. Corrija padronizando os tipos e descarte os meses sem valor.",
+          "dados": [{"tabela": "planilha", "colunas": ["regiao", "receita_jan", "receita_fev"], "tipos": ["STRING", "INT", "DECIMAL(10,2)"], "linhas": [["N", 10, 20.5], ["S", null, 3.0]]}],
+          "solucao": "colunas_mes = [\"receita_jan\", \"receita_fev\"]\npadronizada = planilha.withColumns({c: F.col(c).cast(\"decimal(12,2)\") for c in colunas_mes})\nresultado = (\n    padronizada.unpivot([\"regiao\"], colunas_mes, \"mes\", \"receita\")\n    .filter(F.col(\"receita\").isNotNull())\n)"
+        }
+      }
+    },
+    {
+      "id": "spk-06-rollup-cube",
+      "ref": "02_pyspark/06_agrupamentos-e-pivots.md#subtotais-rollup-e-cube",
+      "ferramenta": "rollup, cube, grouping_id",
+      "niveis": {
+        "basico": {
+          "enunciado": "Calcule o valor por país e região com subtotal por país e total geral.",
+          "dados": [{"tabela": "vendas", "colunas": ["pais", "regiao", "valor"], "tipos": ["STRING", "STRING", "INT"], "linhas": [["BR", "SUL", 10], ["BR", "NE", 20], ["AR", "NORTE", 5]]}],
+          "solucao": "resultado = vendas.rollup(\"pais\", \"regiao\").agg(F.sum(\"valor\").alias(\"valor\"))"
+        },
+        "intermediario": {
+          "enunciado": "Use `cube` por ano e canal e rotule cada linha (DETALHE, SUBTOTAL_ANO, SUBTOTAL_CANAL, TOTAL) com `grouping_id`.",
+          "dados": [{"tabela": "vendas", "colunas": ["ano", "canal", "valor"], "tipos": ["INT", "STRING", "INT"], "linhas": [[2024, "LOJA", 10], [2024, "SITE", 20], [2025, "LOJA", 5]]}],
+          "solucao": "nivel = F.grouping_id()\nresultado = (\n    vendas.cube(\"ano\", \"canal\")\n    .agg(F.sum(\"valor\").alias(\"valor\"), nivel.alias(\"gid\"))\n    .withColumn(\"rotulo\",\n        F.when(F.col(\"gid\") == 0, \"DETALHE\")\n         .when(F.col(\"gid\") == 1, \"SUBTOTAL_ANO\")\n         .when(F.col(\"gid\") == 2, \"SUBTOTAL_CANAL\")\n         .otherwise(\"TOTAL\"))\n)"
+        },
+        "avancado": {
+          "enunciado": "A região tem valores nulos reais. Produza o rollup e substitua o nulo de subtotal por 'TOTAL PAÍS', mantendo o nulo real como 'SEM REGIÃO'.",
+          "dados": [{"tabela": "vendas", "colunas": ["pais", "regiao", "valor"], "tipos": ["STRING", "STRING", "INT"], "linhas": [["BR", "SUL", 10], ["BR", null, 20], ["AR", "NORTE", 5]]}],
+          "solucao": "resultado = (\n    vendas.rollup(\"pais\", \"regiao\")\n    .agg(F.sum(\"valor\").alias(\"valor\"), F.grouping(\"regiao\").alias(\"g_regiao\"), F.grouping(\"pais\").alias(\"g_pais\"))\n    .withColumn(\"regiao\",\n        F.when(F.col(\"g_pais\") == 1, \"TOTAL GERAL\")\n         .when(F.col(\"g_regiao\") == 1, \"TOTAL PAÍS\")\n         .otherwise(F.coalesce(\"regiao\", F.lit(\"SEM REGIÃO\"))))\n    .drop(\"g_regiao\", \"g_pais\")\n)"
+        }
+      }
+    },
+    {
+      "id": "spk-07-join-on",
+      "ref": "02_pyspark/07_joins-relacionais.md#chaves-com-o-mesmo-nome",
+      "ferramenta": "join com on=[...] e com aliases",
+      "niveis": {
+        "basico": {
+          "enunciado": "Junte vendas e lojas por `loja_id` mantendo todas as vendas e sem duplicar a coluna da chave.",
+          "dados": [
+            {"tabela": "vendas", "colunas": ["id_venda", "loja_id"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 99]]},
+            {"tabela": "lojas", "colunas": ["loja_id", "uf"], "tipos": ["INT", "STRING"], "linhas": [[10, "SP"]]}
+          ],
+          "solucao": "resultado = vendas.join(lojas, on=[\"loja_id\"], how=\"left\")"
+        },
+        "intermediario": {
+          "enunciado": "Converta o valor das vendas pela taxa de câmbio da mesma moeda e data. As chaves têm nomes diferentes nos dois lados.",
+          "dados": [
+            {"tabela": "vendas", "colunas": ["id", "moeda", "data_venda", "valor"], "tipos": ["INT", "STRING", "DATE", "DOUBLE"], "linhas": [[1, "USD", "2025-01-01", 10.0], [2, "EUR", "2025-01-01", 5.0], [3, "USD", "2025-01-02", 1.0]]},
+            {"tabela": "cambio", "colunas": ["codigo", "data_referencia", "taxa"], "tipos": ["STRING", "DATE", "DOUBLE"], "linhas": [["USD", "2025-01-01", 5.0], ["EUR", "2025-01-01", 6.0]]}
+          ],
+          "solucao": "v, c = vendas.alias(\"v\"), cambio.alias(\"c\")\nresultado = (\n    v.join(c,\n           (F.col(\"v.moeda\") == F.col(\"c.codigo\")) & (F.col(\"v.data_venda\") == F.col(\"c.data_referencia\")),\n           \"left\")\n    .select(\"v.*\", F.col(\"c.taxa\"), (F.col(\"v.valor\") * F.col(\"c.taxa\")).alias(\"valor_brl\"))\n)"
+        },
+        "avancado": {
+          "enunciado": "Faça um self-join para comparar cada venda com a venda anterior do mesmo cliente (por `seq`). Use aliases para evitar ambiguidade. Depois compare com a solução por janela (`lag`) e diga qual é mais simples.",
+          "dados": [{"tabela": "vendas", "colunas": ["id_cliente", "seq", "valor"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 1, 10], [1, 2, 30], [2, 1, 5]]}],
+          "solucao": "a, b = vendas.alias(\"a\"), vendas.alias(\"b\")\nresultado = (\n    a.join(b, (F.col(\"a.id_cliente\") == F.col(\"b.id_cliente\")) & (F.col(\"b.seq\") == F.col(\"a.seq\") - 1), \"left\")\n    .select(\"a.id_cliente\", \"a.seq\", \"a.valor\", F.col(\"b.valor\").alias(\"valor_anterior\"))\n)\n# Equivalente mais simples e sem join:\njanela = vendas.withColumn(\"valor_anterior\", F.lag(\"valor\").over(Window.partitionBy(\"id_cliente\").orderBy(\"seq\")))"
+        }
+      }
+    },
+    {
+      "id": "spk-07-semi-anti",
+      "ref": "02_pyspark/07_joins-relacionais.md#semi-e-anti-join",
+      "ferramenta": "left_semi e left_anti",
+      "niveis": {
+        "basico": {
+          "enunciado": "Liste os clientes que acessaram o app e os que nunca acessaram.",
+          "dados": [
+            {"tabela": "clientes", "colunas": ["cliente_id", "nome"], "tipos": ["INT", "STRING"], "linhas": [[1, "Ana"], [2, "Bia"], [3, "Caio"]]},
+            {"tabela": "acessos", "colunas": ["cliente_id", "ts"], "tipos": ["INT", "STRING"], "linhas": [[1, "a"], [1, "b"], [3, "c"]]}
+          ],
+          "solucao": "com_acesso = clientes.join(acessos, \"cliente_id\", \"left_semi\")\nresultado = clientes.join(acessos, \"cliente_id\", \"left_anti\")"
+        },
+        "intermediario": {
+          "enunciado": "Mostre que `left_semi` não duplica clientes com vários acessos, ao contrário de um `inner join` seguido de `select`.",
+          "dados": [
+            {"tabela": "clientes", "colunas": ["cliente_id", "nome"], "tipos": ["INT", "STRING"], "linhas": [[1, "Ana"], [2, "Bia"]]},
+            {"tabela": "acessos", "colunas": ["cliente_id", "ts"], "tipos": ["INT", "STRING"], "linhas": [[1, "a"], [1, "b"], [1, "c"]]}
+          ],
+          "solucao": "via_inner = clientes.join(acessos, \"cliente_id\").select(clientes.columns)   # 3 linhas da Ana\nresultado = clientes.join(acessos, \"cliente_id\", \"left_semi\")              # 1 linha da Ana"
+        },
+        "avancado": {
+          "enunciado": "Encontre as vendas cujo produto não existe no catálogo **considerando o mesmo país** (chave composta) e grave-as em uma tabela de quarentena junto com o motivo.",
+          "dados": [
+            {"tabela": "vendas", "colunas": ["id", "produto_id", "pais"], "tipos": ["INT", "INT", "STRING"], "linhas": [[1, 10, "BR"], [2, 10, "AR"], [3, 20, "BR"]]},
+            {"tabela": "catalogo", "colunas": ["produto_id", "pais"], "tipos": ["INT", "STRING"], "linhas": [[10, "BR"], [20, "BR"]]}
+          ],
+          "solucao": "resultado = (\n    vendas.join(catalogo, [\"produto_id\", \"pais\"], \"left_anti\")\n    .withColumn(\"motivo\", F.lit(\"produto_inexistente_no_pais\"))\n    .withColumn(\"detectado_em\", F.current_timestamp())\n)\n# resultado.write.mode(\"append\").saveAsTable(\"main.quarentena.vendas\")"
+        }
+      }
+    },
+    {
+      "id": "spk-07-broadcast",
+      "ref": "02_pyspark/07_joins-relacionais.md#broadcast",
+      "ferramenta": "broadcast() e explain",
+      "niveis": {
+        "basico": {
+          "enunciado": "Faça o join da fato com a dimensão pequena usando `broadcast` e confirme no plano a estratégia `BroadcastHashJoin`.",
+          "dados": [
+            {"tabela": "fato", "colunas": ["id", "produto_id"], "tipos": ["INT", "INT"], "linhas": [[1, 1], [2, 2]]},
+            {"tabela": "dimensao", "colunas": ["produto_id", "nome"], "tipos": ["INT", "STRING"], "linhas": [[1, "A"], [2, "B"]]}
+          ],
+          "solucao": "resultado = fato.join(F.broadcast(dimensao), \"produto_id\", \"left\")\nresultado.explain(\"formatted\")"
+        },
+        "intermediario": {
+          "enunciado": "Desligue o broadcast automático, rode o mesmo join sem hint e compare os dois planos (quantos `Exchange` cada um tem).",
+          "dados": [
+            {"tabela": "fato", "colunas": ["id", "produto_id"], "tipos": ["INT", "INT"], "linhas": [[1, 1], [2, 2]]},
+            {"tabela": "dimensao", "colunas": ["produto_id", "nome"], "tipos": ["INT", "STRING"], "linhas": [[1, "A"], [2, "B"]]}
+          ],
+          "solucao": "spark.conf.set(\"spark.sql.autoBroadcastJoinThreshold\", \"-1\")\nsem_hint = fato.join(dimensao, \"produto_id\")\ncom_hint = fato.join(F.broadcast(dimensao), \"produto_id\")\n\nsem_hint.explain()   # SortMergeJoin com Exchange nos dois lados\ncom_hint.explain()   # BroadcastHashJoin com BroadcastExchange\nspark.conf.unset(\"spark.sql.autoBroadcastJoinThreshold\")\nresultado = com_hint"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, encontre um `broadcast()` fixo no código. Meça o tamanho atual do DataFrame transmitido (após filtros) e o crescimento nos últimos meses. Decida se o hint deve ficar, sair (deixar o AQE decidir) ou ganhar uma checagem de tamanho.",
+          "dados": null,
+          "solucao": "tamanho = spark.sql(\"DESCRIBE DETAIL main.silver.dim_produto\").first()[\"sizeInBytes\"] / 1024**2\nprint(f\"{tamanho:.1f} MB\")\n# Histórico de crescimento: DESCRIBE HISTORY + operationMetrics (numOutputBytes)\n# Se o tamanho pode passar da memória dos executores, remova o hint e deixe o AQE\n# converter para broadcast quando as estatísticas de runtime permitirem."
+        }
+      }
+    },
+    {
+      "id": "spk-08-dedup-row-number",
+      "ref": "02_pyspark/08_window-functions.md#deduplicacao-deterministica",
+      "ferramenta": "Window + row_number com desempate",
+      "niveis": {
+        "basico": {
+          "enunciado": "Mantenha o evento mais recente de cada dispositivo.",
+          "dados": [{"tabela": "eventos", "colunas": ["dispositivo_id", "evento_id", "extraido_em"], "tipos": ["INT", "INT", "TIMESTAMP"], "linhas": [[1, 1, "2025-01-01T10:00:00"], [1, 2, "2025-01-02T10:00:00"], [2, 3, "2025-01-01T08:00:00"]]}],
+          "solucao": "por_dispositivo = Window.partitionBy(\"dispositivo_id\").orderBy(F.col(\"extraido_em\").desc())\nresultado = (\n    eventos.withColumn(\"ordem\", F.row_number().over(por_dispositivo))\n    .filter(F.col(\"ordem\") == 1)\n    .drop(\"ordem\")\n)"
+        },
+        "intermediario": {
+          "enunciado": "Dois eventos do dispositivo 1 têm o mesmo `extraido_em`. Garanta resultado determinístico e mostre a diferença entre `row_number`, `rank` e `dense_rank` nesse empate.",
+          "dados": [{"tabela": "eventos", "colunas": ["dispositivo_id", "evento_id", "extraido_em"], "tipos": ["INT", "INT", "TIMESTAMP"], "linhas": [[1, 1, "2025-01-02T10:00:00"], [1, 2, "2025-01-02T10:00:00"], [1, 3, "2025-01-01T10:00:00"]]}],
+          "solucao": "so_data = Window.partitionBy(\"dispositivo_id\").orderBy(F.col(\"extraido_em\").desc())\ncom_desempate = Window.partitionBy(\"dispositivo_id\").orderBy(F.col(\"extraido_em\").desc(), F.col(\"evento_id\").desc())\nresultado = eventos.withColumns({\n    \"row_number\": F.row_number().over(com_desempate),\n    \"rank\": F.rank().over(so_data),          # 1, 1, 3\n    \"dense_rank\": F.dense_rank().over(so_data),  # 1, 1, 2\n})"
+        },
+        "avancado": {
+          "enunciado": "Implemente uma função reutilizável `ultima_versao(df, chaves, ordem)` que devolva a última versão por chave e falhe se alguma coluna de ordenação tiver nulo (o que tornaria a escolha ambígua).",
+          "dados": [{"tabela": "eventos", "colunas": ["id", "versao", "ts"], "tipos": ["INT", "INT", "TIMESTAMP"], "linhas": [[1, 1, "2025-01-01T00:00:00"], [1, 2, "2025-01-02T00:00:00"], [2, 1, "2025-01-01T00:00:00"]]}],
+          "solucao": "def ultima_versao(df, chaves, ordem):\n    nulos = df.filter(\" OR \".join(f\"{c} IS NULL\" for c in ordem)).limit(1).count()\n    if nulos:\n        raise ValueError(f\"Colunas de ordenação com nulo: {ordem}\")\n    janela = Window.partitionBy(*chaves).orderBy(*[F.col(c).desc() for c in ordem])\n    return df.withColumn(\"_rn\", F.row_number().over(janela)).filter(\"_rn = 1\").drop(\"_rn\")\n\nresultado = ultima_versao(eventos, [\"id\"], [\"ts\", \"versao\"])"
+        }
+      }
+    },
+    {
+      "id": "spk-08-lag-acumulado",
+      "ref": "02_pyspark/08_window-functions.md#lag-e-acumulado",
+      "ferramenta": "lag, lead e soma acumulada",
+      "niveis": {
+        "basico": {
+          "enunciado": "Para cada cliente, traga o valor do evento anterior.",
+          "dados": [{"tabela": "eventos", "colunas": ["cliente_id", "evento_em", "evento_id", "valor"], "tipos": ["INT", "TIMESTAMP", "INT", "INT"], "linhas": [[1, "2025-01-01T00:00:00", 1, 100], [1, "2025-01-02T00:00:00", 2, 80], [2, "2025-01-01T00:00:00", 3, 10]]}],
+          "solucao": "ordem_cliente = Window.partitionBy(\"cliente_id\").orderBy(\"evento_em\", \"evento_id\")\nresultado = eventos.withColumn(\"valor_anterior\", F.lag(\"valor\").over(ordem_cliente))"
+        },
+        "intermediario": {
+          "enunciado": "Calcule o saldo acumulado por conta e a variação de cada movimento em relação ao próximo (`lead`).",
+          "dados": [{"tabela": "movimentos", "colunas": ["conta_id", "data_movimento", "movimento_id", "valor"], "tipos": ["INT", "DATE", "INT", "INT"], "linhas": [[1, "2025-01-01", 1, 100], [1, "2025-01-02", 2, -30], [1, "2025-01-03", 3, 50], [2, "2025-01-01", 4, 10]]}],
+          "solucao": "ordem = Window.partitionBy(\"conta_id\").orderBy(\"data_movimento\", \"movimento_id\")\nacumulado = ordem.rowsBetween(Window.unboundedPreceding, Window.currentRow)\nresultado = movimentos.withColumns({\n    \"saldo\": F.sum(\"valor\").over(acumulado),\n    \"proximo_valor\": F.lead(\"valor\").over(ordem),\n})"
+        },
+        "avancado": {
+          "enunciado": "Identifique sessões: um novo evento abre sessão quando passa mais de 30 minutos desde o evento anterior do mesmo usuário. Numere as sessões por usuário.",
+          "dados": [{"tabela": "cliques", "colunas": ["usuario", "ts"], "tipos": ["STRING", "TIMESTAMP"], "linhas": [["u1", "2025-01-01T10:00:00"], ["u1", "2025-01-01T10:20:00"], ["u1", "2025-01-01T11:30:00"], ["u2", "2025-01-01T09:00:00"]]}],
+          "solucao": "ordem = Window.partitionBy(\"usuario\").orderBy(\"ts\")\nresultado = (\n    cliques\n    .withColumn(\"gap_min\", (F.col(\"ts\").cast(\"long\") - F.lag(F.col(\"ts\").cast(\"long\")).over(ordem)) / 60)\n    .withColumn(\"nova_sessao\", F.when(F.col(\"gap_min\").isNull() | (F.col(\"gap_min\") > 30), 1).otherwise(0))\n    .withColumn(\"sessao\", F.sum(\"nova_sessao\").over(ordem.rowsBetween(Window.unboundedPreceding, Window.currentRow)))\n)"
+        }
+      }
+    },
+    {
+      "id": "spk-08-frames-tempo",
+      "ref": "02_pyspark/08_window-functions.md#frames-e-tempo",
+      "ferramenta": "rowsBetween × rangeBetween",
+      "niveis": {
+        "basico": {
+          "enunciado": "Calcule a média móvel das últimas 3 linhas por segmento.",
+          "dados": [{"tabela": "metricas", "colunas": ["segmento", "data_referencia", "valor"], "tipos": ["STRING", "DATE", "INT"], "linhas": [["A", "2025-01-01", 10], ["A", "2025-01-02", 20], ["A", "2025-01-03", 30], ["A", "2025-01-04", 40]]}],
+          "solucao": "ultimas_tres = Window.partitionBy(\"segmento\").orderBy(\"data_referencia\").rowsBetween(-2, Window.currentRow)\nresultado = metricas.withColumn(\"media_3_linhas\", F.avg(\"valor\").over(ultimas_tres))"
+        },
+        "intermediario": {
+          "enunciado": "A série tem dias faltando. Calcule a soma dos últimos 7 dias corridos com `rangeBetween` sobre o número de dias da data.",
+          "dados": [{"tabela": "metricas", "colunas": ["segmento", "data_referencia", "valor"], "tipos": ["STRING", "DATE", "INT"], "linhas": [["A", "2025-01-01", 10], ["A", "2025-01-05", 20], ["A", "2025-01-09", 30], ["A", "2025-01-10", 40]]}],
+          "solucao": "dias = F.datediff(F.col(\"data_referencia\"), F.lit(\"1970-01-01\"))\nsete_dias = Window.partitionBy(\"segmento\").orderBy(dias).rangeBetween(-6, 0)\nresultado = metricas.withColumn(\"soma_7_dias\", F.sum(\"valor\").over(sete_dias))"
+        },
+        "avancado": {
+          "enunciado": "Com eventos de timestamp, calcule a quantidade de eventos do mesmo usuário na última hora (janela deslizante de 3600 segundos) em cada evento.",
+          "dados": [{"tabela": "eventos", "colunas": ["usuario", "ts"], "tipos": ["STRING", "TIMESTAMP"], "linhas": [["u1", "2025-01-01T10:00:00"], ["u1", "2025-01-01T10:30:00"], ["u1", "2025-01-01T11:15:00"], ["u1", "2025-01-01T12:20:00"]]}],
+          "solucao": "segundos = F.col(\"ts\").cast(\"long\")\nultima_hora = Window.partitionBy(\"usuario\").orderBy(segundos).rangeBetween(-3600, 0)\nresultado = eventos.withColumn(\"eventos_ultima_hora\", F.count(\"*\").over(ultima_hora))\n# 10:00 -> 1; 10:30 -> 2; 11:15 -> 2; 12:20 -> 1"
+        }
+      }
+    },
+    {
+      "id": "spk-09-struct-json-texto",
+      "ref": "02_pyspark/09_json-structs-schemas.md#acessar-campos-de-structs-e-de-texto-json",
+      "ferramenta": "Notação de ponto e get_json_object",
+      "niveis": {
+        "basico": {
+          "enunciado": "A coluna `metadata` já é struct. Projete a versão TLS aninhada em `metadata.rede.versao_tls`.",
+          "dados": null,
+          "solucao": "resultado = df_ingestao.select(\n    \"id_registro\",\n    F.col(\"metadata.rede.versao_tls\").alias(\"versao_tls\"),\n)"
+        },
+        "intermediario": {
+          "enunciado": "A coluna `payload_txt` é texto JSON. Extraia o primeiro identificador e o nome do cliente.",
+          "dados": [{"tabela": "bronze", "colunas": ["id", "payload_txt"], "tipos": ["INT", "STRING"], "linhas": [[1, "{\"root\":{\"ids\":[\"A1\",\"A2\"]},\"cliente\":{\"nome\":\"Ana\"}}"], [2, "{\"root\":{\"ids\":[]}}"]]}],
+          "solucao": "resultado = bronze.select(\n    \"id\",\n    F.get_json_object(\"payload_txt\", \"$.root.ids[0]\").alias(\"primeiro_id\"),\n    F.get_json_object(\"payload_txt\", \"$.cliente.nome\").alias(\"nome\"),\n)"
+        },
+        "avancado": {
+          "enunciado": "Converta o texto para struct uma única vez e expanda todos os campos do cliente em colunas com `cliente.*`. Compare o plano com a versão que chama `get_json_object` três vezes.",
+          "dados": [{"tabela": "bronze", "colunas": ["payload_txt"], "tipos": ["STRING"], "linhas": [["{\"cliente\":{\"id\":1,\"nome\":\"Ana\",\"uf\":\"SP\"}}"]]}],
+          "solucao": "schema = \"STRUCT<cliente: STRUCT<id: INT, nome: STRING, uf: STRING>>\"\nresultado = bronze.select(F.from_json(\"payload_txt\", schema).alias(\"j\")).select(\"j.cliente.*\")\nresultado.explain()\n# Uma conversão (from_json) em vez de três parsings do mesmo texto."
+        }
+      }
+    },
+    {
+      "id": "spk-09-explode",
+      "ref": "02_pyspark/09_json-structs-schemas.md#explode-de-arrays",
+      "ferramenta": "split, explode_outer, filter/aggregate",
+      "niveis": {
+        "basico": {
+          "enunciado": "Transforme a lista de tags separada por vírgula em uma linha por tag.",
+          "dados": [{"tabela": "receitas", "colunas": ["id", "tags_texto"], "tipos": ["INT", "STRING"], "linhas": [[1, "livro,caneta"], [2, "lapis"]]}],
+          "solucao": "resultado = (\n    receitas\n    .withColumn(\"tag\", F.explode(F.split(\"tags_texto\", \",\")))\n    .select(\"id\", \"tag\")\n)"
+        },
+        "intermediario": {
+          "enunciado": "Gere uma linha por item com a posição, mantendo pedidos sem itens (array vazio ou nulo).",
+          "dados": [{"tabela": "pedidos", "colunas": ["id_pedido", "itens"], "tipos": ["INT", "ARRAY<STRING>"], "linhas": [[1, ["A", "B"]], [2, []], [3, null]]}],
+          "solucao": "resultado = pedidos.select(\"id_pedido\", F.posexplode_outer(\"itens\").alias(\"pos\", \"item\"))"
+        },
+        "avancado": {
+          "enunciado": "Sem explodir, calcule por pedido o total dos itens (decimal) e a lista de itens caros (valor > 25).",
+          "dados": [{"tabela": "pedidos", "colunas": ["id_pedido", "itens"], "tipos": ["INT", "ARRAY<STRUCT<cod: INT, valor: DECIMAL(10,2)>>"], "linhas": [[1, [{"cod": 1, "valor": 20.0}, {"cod": 2, "valor": 30.0}]], [2, [{"cod": 3, "valor": 50.0}]]]}],
+          "executavel": false,
+          "solucao": "resultado = pedidos.withColumns({\n    \"itens_caros\": F.filter(\"itens\", lambda x: x[\"valor\"] > 25),\n    \"total\": F.aggregate(\n        \"itens\",\n        F.lit(0).cast(\"decimal(12,2)\"),\n        lambda acc, x: (acc + x[\"valor\"]).cast(\"decimal(12,2)\"),\n    ),\n})"
+        }
+      }
+    },
+    {
+      "id": "spk-09-schema-from-json",
+      "ref": "02_pyspark/09_json-structs-schemas.md#schema-explicito-na-leitura-e-from-json",
+      "ferramenta": "StructType, from_json e registros corrompidos",
+      "niveis": {
+        "basico": {
+          "enunciado": "Converta o JSON em texto para struct usando um schema DDL e projete nome e idade.",
+          "dados": [{"tabela": "bronze", "colunas": ["payload_txt"], "tipos": ["STRING"], "linhas": [["{\"nome\":\"Ana\",\"idade\":30,\"ativo\":true}"], ["{\"nome\":\"Bia\",\"idade\":25}"]]}],
+          "solucao": "schema_evento = \"STRUCT<nome: STRING, idade: INT, ativo: BOOLEAN>\"\nresultado = bronze.select(F.from_json(\"payload_txt\", schema_evento).alias(\"e\")).select(\"e.nome\", \"e.idade\")"
+        },
+        "intermediario": {
+          "enunciado": "Use `schema_of_json` em um exemplo para sugerir o schema, imprima-o e então aplique um schema fixo revisado (com `valor` decimal).",
+          "dados": [{"tabela": "bronze", "colunas": ["payload_txt"], "tipos": ["STRING"], "linhas": [["{\"id\":1,\"valor\":10.5}"], ["{\"id\":2,\"valor\":3}"]]}],
+          "solucao": "sugerido = spark.range(1).select(F.schema_of_json(F.lit('{\"id\":1,\"valor\":10.5}'))).first()[0]\nprint(sugerido)   # STRUCT<id: BIGINT, valor: DOUBLE>\nschema_fixo = \"STRUCT<id: BIGINT, valor: DECIMAL(10,2)>\"\nresultado = bronze.select(F.from_json(\"payload_txt\", schema_fixo).alias(\"v\")).select(\"v.*\")"
+        },
+        "avancado": {
+          "enunciado": "Leia arquivos JSON de vendas com schema explícito capturando registros fora do schema em `_corrupt`, conte-os e grave os inválidos em quarentena.",
+          "dados": null,
+          "solucao": "schema_vendas = T.StructType([\n    T.StructField(\"id_venda\", T.StringType()),\n    T.StructField(\"valor\", T.DecimalType(12, 2)),\n    T.StructField(\"_corrupt\", T.StringType()),\n])\ndf = (\n    spark.read.schema(schema_vendas)\n    .option(\"columnNameOfCorruptRecord\", \"_corrupt\")\n    .json(\"/Volumes/main/bronze/landing/vendas/\")\n)\ninvalidos = df.filter(F.col(\"_corrupt\").isNotNull())\nprint(invalidos.count())\ninvalidos.write.mode(\"append\").saveAsTable(\"main.quarentena.vendas_json\")\nresultado = df.filter(F.col(\"_corrupt\").isNull()).drop(\"_corrupt\")"
+        }
+      }
+    },
+    {
+      "id": "spk-09-colunas-ausentes",
+      "ref": "02_pyspark/09_json-structs-schemas.md#colunas-obrigatorias-ausentes",
+      "ferramenta": "Completar schema com lit(None).cast",
+      "niveis": {
+        "basico": {
+          "enunciado": "A carga de hoje não trouxe a coluna `campo_opcional` (string). Adicione-a como nula com o tipo correto.",
+          "dados": [{"tabela": "evento", "colunas": ["id", "nome"], "tipos": ["BIGINT", "STRING"], "linhas": [[1, "Ana"]]}],
+          "solucao": "resultado = evento.withColumn(\"campo_opcional\", F.lit(None).cast(\"string\"))"
+        },
+        "intermediario": {
+          "enunciado": "Garanta todas as colunas obrigatórias de um contrato (dicionário nome → tipo), adicionando só as ausentes, e entregue as colunas na ordem do contrato.",
+          "dados": [{"tabela": "evento", "colunas": ["nome", "id"], "tipos": ["STRING", "BIGINT"], "linhas": [["Ana", 1]]}],
+          "solucao": "contrato = {\"id\": \"bigint\", \"nome\": \"string\", \"campo_opcional\": \"string\", \"valor\": \"decimal(10,2)\"}\nresultado = (\n    evento\n    .withColumns({c: F.lit(None).cast(t) for c, t in contrato.items() if c not in evento.columns})\n    .select(*contrato)\n)"
+        },
+        "avancado": {
+          "enunciado": "Estenda a função para também converter as colunas existentes ao tipo do contrato e reportar colunas que vieram a mais (fora do contrato) em vez de descartá-las silenciosamente.",
+          "dados": [{"tabela": "evento", "colunas": ["id", "valor", "extra"], "tipos": ["STRING", "STRING", "STRING"], "linhas": [["1", "10.5", "x"]]}],
+          "solucao": "def conformar(df, contrato):\n    extras = sorted(set(df.columns) - set(contrato))\n    if extras:\n        print(f\"Colunas fora do contrato: {extras}\")\n    return df.select(*[\n        (F.col(c).cast(t) if c in df.columns else F.lit(None).cast(t)).alias(c)\n        for c, t in contrato.items()\n    ])\n\nresultado = conformar(evento, {\"id\": \"bigint\", \"valor\": \"decimal(10,2)\", \"nome\": \"string\"})"
+        }
+      }
+    },
+    {
+      "id": "spk-09-variant",
+      "ref": "02_pyspark/09_json-structs-schemas.md#variant",
+      "ferramenta": "parse_json e try_variant_get (Python)",
+      "niveis": {
+        "basico": {
+          "enunciado": "Converta o texto JSON para VARIANT e extraia o campo `a.b` como inteiro.",
+          "dados": [{"tabela": "bronze", "colunas": ["payload_txt"], "tipos": ["STRING"], "linhas": [["{\"a\":{\"b\":2}}"], ["{\"a\":{}}"]]}],
+          "solucao": "resultado = bronze.select(F.try_variant_get(F.parse_json(\"payload_txt\"), \"$.a.b\", \"int\").alias(\"b\"))"
+        },
+        "intermediario": {
+          "enunciado": "O campo `valor` vem em formatos diferentes. Extraia-o como decimal e conte quantos não puderam ser convertidos.",
+          "dados": [{"tabela": "bronze", "colunas": ["payload_txt"], "tipos": ["STRING"], "linhas": [["{\"valor\":10.5}"], ["{\"valor\":\"x\"}"], ["{\"valor\":null}"], ["{}"]]}],
+          "solucao": "v = F.parse_json(\"payload_txt\")\nresultado = bronze.select(\n    F.try_variant_get(v, \"$.valor\", \"decimal(10,2)\").alias(\"valor\"),\n    F.variant_get(v, \"$.valor\", \"string\").alias(\"valor_bruto\"),\n).agg(F.count_if(F.col(\"valor_bruto\").isNotNull() & F.col(\"valor\").isNull()).alias(\"nao_convertidos\"))"
+        },
+        "avancado": {
+          "enunciado": "Na sua base (Spark 4.0+ ou DBR 15.3+), grave uma tabela com coluna VARIANT a partir de um JSON instável e escreva a consulta que lista as chaves de primeiro nível presentes e sua frequência.",
+          "dados": null,
+          "solucao": "df = spark.read.table(\"main.bronze.eventos\").withColumn(\"v\", F.parse_json(\"payload\"))\ndf.write.mode(\"overwrite\").saveAsTable(\"main.tmp.eventos_variant\")\nspark.sql(\"\"\"\n    SELECT key, COUNT(*) AS n\n    FROM main.tmp.eventos_variant, LATERAL variant_explode(v)\n    GROUP BY key ORDER BY n DESC\n\"\"\").show()"
+        }
+      }
+    }
+  ]
+}

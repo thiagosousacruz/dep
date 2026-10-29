@@ -1,0 +1,346 @@
+{
+  "desafios": [
+    {
+      "id": "sql-09-get-json-object",
+      "ref": "01_sql/09_json-structs.md#extracao-direta-de-texto-json",
+      "ferramenta": "get_json_object, operador :, split",
+      "niveis": {
+        "basico": {
+          "enunciado": "Extraia o código IBGE do primeiro endereço do JSON.",
+          "dados": [{"tabela": "dados_api", "colunas": ["id", "payload"], "tipos": ["INT", "STRING"], "linhas": [[1, "{\"enderecos\":[{\"geografia\":{\"codigo\":\"2611606\"}}]}"], [2, "{\"enderecos\":[]}"]]}],
+          "solucao": "SELECT id, get_json_object(payload, '$.enderecos[0].geografia.codigo') AS cod_ibge\nFROM dados_api;"
+        },
+        "intermediario": {
+          "enunciado": "Extraia o nome do cliente com o operador `:` do Databricks (convertendo para STRING) e a primeira tag de uma lista separada por vírgula.",
+          "dados": [{"tabela": "dados_api", "colunas": ["id", "payload", "tags"], "tipos": ["INT", "STRING", "STRING"], "linhas": [[1, "{\"cliente\":{\"nome\":\"Ana\"}}", "vip,novo"], [2, "{\"cliente\":{}}", "padrao"]]}],
+          "executavel": false,
+          "solucao": "SELECT id,\n       payload:cliente.nome::STRING           AS nome_cliente,\n       element_at(split(tags, ','), 1)        AS tag_principal\nFROM dados_api;"
+        },
+        "avancado": {
+          "enunciado": "Conte, por campo, quantos registros têm o caminho ausente (nulo após a extração). Use os campos `$.cliente.id`, `$.cliente.email` e `$.pedido.valor`.",
+          "dados": [{"tabela": "dados_api", "colunas": ["payload"], "tipos": ["STRING"], "linhas": [["{\"cliente\":{\"id\":1,\"email\":\"a@x.com\"},\"pedido\":{\"valor\":10}}"], ["{\"cliente\":{\"id\":2},\"pedido\":{}}"], ["{\"cliente\":{\"email\":\"c@x.com\"}}"]]}],
+          "solucao": "SELECT\n    count_if(get_json_object(payload, '$.cliente.id') IS NULL)    AS sem_cliente_id,\n    count_if(get_json_object(payload, '$.cliente.email') IS NULL) AS sem_email,\n    count_if(get_json_object(payload, '$.pedido.valor') IS NULL)  AS sem_valor\nFROM dados_api;"
+        }
+      }
+    },
+    {
+      "id": "sql-09-from-json",
+      "ref": "01_sql/09_json-structs.md#from-json-texto-para-tipos-nativos",
+      "ferramenta": "from_json e schema_of_json",
+      "niveis": {
+        "basico": {
+          "enunciado": "Converta o JSON do cliente para struct e projete `id` e `nome` como colunas.",
+          "dados": [{"tabela": "eventos", "colunas": ["payload"], "tipos": ["STRING"], "linhas": [["{\"cliente\":{\"id\":1,\"nome\":\"Ana\"}}"], ["{\"cliente\":{\"id\":2,\"nome\":\"Bruno\"}}"]]}],
+          "solucao": "WITH t AS (\n    SELECT from_json(payload, 'STRUCT<cliente: STRUCT<id: INT, nome: STRING>>') AS dados FROM eventos\n)\nSELECT dados.cliente.id, dados.cliente.nome FROM t;"
+        },
+        "intermediario": {
+          "enunciado": "Descubra o schema do payload com `schema_of_json` a partir de um exemplo e use-o para tipar os itens do pedido. Retorne a quantidade de itens por pedido.",
+          "dados": [{"tabela": "pedidos_json", "colunas": ["id_pedido", "payload"], "tipos": ["INT", "STRING"], "linhas": [[1, "{\"itens\":[{\"cod\":1,\"valor\":20.5},{\"cod\":2,\"valor\":30}]}"], [2, "{\"itens\":[]}"]]}],
+          "solucao": "SELECT schema_of_json('{\"itens\":[{\"cod\":1,\"valor\":20.5}]}') AS schema_sugerido;\n\nSELECT id_pedido,\n       size(from_json(payload, 'STRUCT<itens: ARRAY<STRUCT<cod: BIGINT, valor: DOUBLE>>>').itens) AS qtd_itens\nFROM pedidos_json;"
+        },
+        "avancado": {
+          "enunciado": "Alguns registros não seguem o schema (`valor` como texto não numérico). Tipifique com `from_json` e liste os registros cujo `valor` estava presente no texto mas virou nulo no struct.",
+          "dados": [{"tabela": "eventos", "colunas": ["id", "payload"], "tipos": ["INT", "STRING"], "linhas": [[1, "{\"valor\": 10.5}"], [2, "{\"valor\": \"abc\"}"], [3, "{}"]]}],
+          "solucao": "WITH t AS (\n    SELECT id, payload,\n           from_json(payload, 'STRUCT<valor: DECIMAL(10,2)>') AS dados\n    FROM eventos\n)\nSELECT id, payload\nFROM t\nWHERE get_json_object(payload, '$.valor') IS NOT NULL\n  AND dados.valor IS NULL;"
+        }
+      }
+    },
+    {
+      "id": "sql-09-explode",
+      "ref": "01_sql/09_json-structs.md#explode-uma-linha-por-elemento",
+      "ferramenta": "explode, explode_outer, posexplode, transform/filter/aggregate",
+      "niveis": {
+        "basico": {
+          "enunciado": "Gere uma linha por item de cada pedido, com o código e o valor do item.",
+          "dados": [{"tabela": "pedidos_json", "colunas": ["id_pedido", "payload"], "tipos": ["INT", "STRING"], "linhas": [[10, "[{\"cod\":1,\"valor\":20},{\"cod\":2,\"valor\":30}]"], [11, "[{\"cod\":3,\"valor\":5}]"]]}],
+          "solucao": "WITH pedidos AS (\n    SELECT id_pedido, from_json(payload, 'ARRAY<STRUCT<cod: INT, valor: INT>>') AS itens FROM pedidos_json\n)\nSELECT p.id_pedido, item.cod, item.valor\nFROM pedidos AS p\nLATERAL VIEW explode(p.itens) t AS item;"
+        },
+        "intermediario": {
+          "enunciado": "O pedido 12 não tem itens e precisa continuar aparecendo. Gere uma linha por item com a posição do item no pedido, mantendo pedidos vazios.",
+          "dados": [{"tabela": "pedidos_json", "colunas": ["id_pedido", "payload"], "tipos": ["INT", "STRING"], "linhas": [[10, "[{\"cod\":1},{\"cod\":2}]"], [12, "[]"]]}],
+          "solucao": "WITH pedidos AS (\n    SELECT id_pedido, from_json(payload, 'ARRAY<STRUCT<cod: INT>>') AS itens FROM pedidos_json\n)\nSELECT p.id_pedido, pos, item.cod\nFROM pedidos AS p\nLATERAL VIEW OUTER posexplode(p.itens) t AS pos, item;"
+        },
+        "avancado": {
+          "enunciado": "Sem explodir (mantendo uma linha por pedido), calcule o total dos itens e a lista de códigos dos itens com valor acima de 25.",
+          "dados": [{"tabela": "pedidos_json", "colunas": ["id_pedido", "payload"], "tipos": ["INT", "STRING"], "linhas": [[10, "[{\"cod\":1,\"valor\":20.00},{\"cod\":2,\"valor\":30.00}]"], [11, "[{\"cod\":3,\"valor\":50.00}]"]]}],
+          "solucao": "WITH pedidos AS (\n    SELECT id_pedido, from_json(payload, 'ARRAY<STRUCT<cod: INT, valor: DECIMAL(10,2)>>') AS itens FROM pedidos_json\n)\nSELECT id_pedido,\n       aggregate(itens, CAST(0 AS DECIMAL(12,2)), (acc, x) -> CAST(acc + x.valor AS DECIMAL(12,2))) AS total,\n       transform(filter(itens, x -> x.valor > 25), x -> x.cod) AS itens_caros\nFROM pedidos;"
+        }
+      }
+    },
+    {
+      "id": "sql-09-variant",
+      "ref": "01_sql/09_json-structs.md#variant-para-json-semiestruturado",
+      "ferramenta": "VARIANT, parse_json, try_variant_get",
+      "niveis": {
+        "basico": {
+          "enunciado": "Converta o payload para `VARIANT` e extraia o nome do cliente como STRING.",
+          "dados": [{"tabela": "eventos", "colunas": ["payload"], "tipos": ["STRING"], "linhas": [["{\"cliente\":{\"nome\":\"Ana\"}}"], ["{\"cliente\":{\"nome\":\"Bruno\"}}"]]}],
+          "solucao": "SELECT parse_json(payload):cliente.nome::STRING AS nome\nFROM eventos;"
+        },
+        "intermediario": {
+          "enunciado": "O campo `valor` às vezes vem como número e às vezes como texto inválido. Extraia-o como DECIMAL sem derrubar a consulta.",
+          "dados": [{"tabela": "eventos", "colunas": ["id", "payload"], "tipos": ["INT", "STRING"], "linhas": [[1, "{\"valor\": 10.5}"], [2, "{\"valor\": \"n/d\"}"], [3, "{}"]]}],
+          "solucao": "SELECT id, try_variant_get(parse_json(payload), '$.valor', 'DECIMAL(10,2)') AS valor\nFROM eventos;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base (DBR 15.3+), escolha uma tabela Bronze com JSON em STRING. Crie uma versão com coluna `VARIANT`, compare o tempo de uma consulta que extrai 3 campos nas duas versões e avalie se vale migrar.",
+          "dados": null,
+          "solucao": "CREATE OR REPLACE TABLE main.tmp.eventos_variant AS\nSELECT *, parse_json(payload) AS v FROM main.bronze.eventos;\n\n-- Versão STRING\nSELECT get_json_object(payload, '$.a'), get_json_object(payload, '$.b'), get_json_object(payload, '$.c') FROM main.bronze.eventos;\n-- Versão VARIANT\nSELECT v:a, v:b, v:c FROM main.tmp.eventos_variant;\n-- Compare duração e bytes lidos no Query Profile."
+        }
+      }
+    },
+    {
+      "id": "sql-10-merge",
+      "ref": "01_sql/10_delta-dml.md#merge",
+      "ferramenta": "MERGE INTO",
+      "niveis": {
+        "basico": {
+          "enunciado": "Escreva um `MERGE` que atualize o preço quando a venda já existe e insira quando não existe.",
+          "dados": [
+            {"tabela": "gold_vendas", "colunas": ["venda_id", "preco"], "tipos": ["INT", "DECIMAL(10,2)"], "linhas": [[1, 10.0], [2, 20.0]]},
+            {"tabela": "incremental", "colunas": ["venda_id", "preco"], "tipos": ["INT", "DECIMAL(10,2)"], "linhas": [[2, 25.0], [3, 30.0]]}
+          ],
+          "executavel": false,
+          "solucao": "MERGE INTO gold_vendas AS t\nUSING incremental AS s\nON t.venda_id = s.venda_id\nWHEN MATCHED THEN UPDATE SET t.preco = s.preco\nWHEN NOT MATCHED THEN INSERT (venda_id, preco) VALUES (s.venda_id, s.preco);"
+        },
+        "intermediario": {
+          "enunciado": "A origem tem duas linhas para a venda 2 e o `MERGE` falha. Deduplique a origem ficando com a atualização mais recente e só atualize quando o preço mudou (inclusive de/para nulo).",
+          "dados": [
+            {"tabela": "gold_vendas", "colunas": ["venda_id", "preco"], "tipos": ["INT", "DECIMAL(10,2)"], "linhas": [[1, 10.0], [2, 20.0]]},
+            {"tabela": "incremental", "colunas": ["venda_id", "preco", "extraido_em"], "tipos": ["INT", "DECIMAL(10,2)", "TIMESTAMP"], "linhas": [[2, 22.0, "2025-01-01T10:00:00"], [2, 25.0, "2025-01-01T11:00:00"], [1, 10.0, "2025-01-01T10:00:00"]]}
+          ],
+          "executavel": false,
+          "solucao": "MERGE INTO gold_vendas AS t\nUSING (\n    SELECT * FROM incremental\n    QUALIFY row_number() OVER (PARTITION BY venda_id ORDER BY extraido_em DESC) = 1\n) AS s\nON t.venda_id = s.venda_id\nWHEN MATCHED AND NOT (t.preco <=> s.preco) THEN UPDATE SET t.preco = s.preco\nWHEN NOT MATCHED THEN INSERT (venda_id, preco) VALUES (s.venda_id, s.preco);"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha um `MERGE` real. Prove que ele é idempotente: rode-o duas vezes com a mesma origem e compare `DESCRIBE HISTORY` (métricas `numTargetRowsUpdated`/`numTargetRowsInserted`) das duas execuções.",
+          "dados": null,
+          "solucao": "-- Execução 1 e 2 do mesmo MERGE com a mesma origem\nDESCRIBE HISTORY <tabela> LIMIT 2;\n-- Em operationMetrics, a 2ª execução deve ter numTargetRowsUpdated = 0 e\n-- numTargetRowsInserted = 0. Se não tiver, a condição de match ou de mudança\n-- (WHEN MATCHED AND ...) não está isolando as linhas já aplicadas."
+        }
+      }
+    },
+    {
+      "id": "sql-10-time-travel",
+      "ref": "01_sql/10_delta-dml.md#time-travel-e-restore",
+      "ferramenta": "VERSION AS OF, TIMESTAMP AS OF, RESTORE",
+      "niveis": {
+        "basico": {
+          "enunciado": "Consulte a tabela `gold.vendas` como estava na versão 3 e como estava ontem às 08:00.",
+          "dados": null,
+          "solucao": "SELECT * FROM gold.vendas VERSION AS OF 3;\nSELECT * FROM gold.vendas TIMESTAMP AS OF '2025-10-28 08:00:00';"
+        },
+        "intermediario": {
+          "enunciado": "Uma carga errada foi gravada. Descubra pelo histórico qual versão era a anterior à carga e liste as linhas que a carga adicionou.",
+          "dados": null,
+          "solucao": "DESCRIBE HISTORY gold.vendas LIMIT 10;   -- identifique a versão N da carga errada\n\nSELECT * FROM gold.vendas VERSION AS OF 42   -- N\nEXCEPT ALL\nSELECT * FROM gold.vendas VERSION AS OF 41;  -- N - 1"
+        },
+        "avancado": {
+          "enunciado": "Desfaça a carga errada com `RESTORE` e verifique o resultado. Antes, explique quando `RESTORE` não é possível e o que ele faz com versões posteriores.",
+          "dados": null,
+          "solucao": "RESTORE TABLE gold.vendas TO VERSION AS OF 41;\nDESCRIBE HISTORY gold.vendas LIMIT 1;   -- nova versão com operação RESTORE\n-- Não é possível se os arquivos da versão 41 já foram removidos por VACUUM.\n-- RESTORE cria uma NOVA versão; o histórico posterior continua consultável."
+        }
+      }
+    },
+    {
+      "id": "sql-10-vacuum",
+      "ref": "01_sql/10_delta-dml.md#vacuum",
+      "ferramenta": "VACUUM e retenção",
+      "niveis": {
+        "basico": {
+          "enunciado": "Veja quais arquivos seriam removidos pelo `VACUUM` em `gold.vendas` sem apagar nada.",
+          "dados": null,
+          "solucao": "VACUUM gold.vendas RETAIN 168 HOURS DRY RUN;"
+        },
+        "intermediario": {
+          "enunciado": "Descubra a retenção configurada da tabela e por quantos dias o time travel funciona. Ajuste a retenção de arquivos removidos para 30 dias.",
+          "dados": null,
+          "solucao": "SHOW TBLPROPERTIES gold.vendas;\n-- delta.deletedFileRetentionDuration (padrão 7 dias): limite do VACUUM\n-- delta.logRetentionDuration (padrão 30 dias): histórico do log\nALTER TABLE gold.vendas SET TBLPROPERTIES (\n    'delta.deletedFileRetentionDuration' = 'interval 30 days'\n);"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, levante as tabelas com `VACUUM` agendado (ou com predictive optimization) e verifique se a retenção cobre o job mais longo que lê cada uma e o requisito de recuperação. Registre as divergências.",
+          "dados": null,
+          "solucao": "-- Por tabela:\nSHOW TBLPROPERTIES <tabela>;\nDESCRIBE HISTORY <tabela>;   -- frequência de VACUUM e de escritas\n-- Compare deletedFileRetentionDuration com: duração do job leitor mais longo,\n-- janela de reprocessamento e requisito de auditoria/recuperação."
+        }
+      }
+    },
+    {
+      "id": "sql-10-optimize-clustering",
+      "ref": "01_sql/10_delta-dml.md#optimize-e-layout-de-dados",
+      "ferramenta": "OPTIMIZE e liquid clustering",
+      "niveis": {
+        "basico": {
+          "enunciado": "Crie uma tabela de vendas com liquid clustering por data e loja e rode a otimização.",
+          "dados": null,
+          "solucao": "CREATE TABLE gold.vendas_lc (venda_id BIGINT, loja_id INT, dt_venda DATE, preco DECIMAL(12,2))\nCLUSTER BY (dt_venda, loja_id);\n\nOPTIMIZE gold.vendas_lc;"
+        },
+        "intermediario": {
+          "enunciado": "As consultas passaram a filtrar mais por cliente do que por loja. Troque as chaves de clustering e explique o que acontece com os dados já gravados.",
+          "dados": null,
+          "solucao": "ALTER TABLE gold.vendas_lc CLUSTER BY (dt_venda, cliente_id);\nOPTIMIZE gold.vendas_lc;\n-- Os dados antigos não são reescritos de imediato: novas escritas e OPTIMIZE\n-- aplicam o novo layout de forma incremental."
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha uma tabela particionada ou com ZORDER. Levante os filtros mais usados (histórico de queries), proponha as chaves de liquid clustering e meça arquivos lidos em uma consulta típica antes e depois, numa cópia da tabela.",
+          "dados": null,
+          "solucao": "CREATE TABLE main.tmp.copia_lc CLUSTER BY (<chave1>, <chave2>) AS SELECT * FROM <tabela>;\nOPTIMIZE main.tmp.copia_lc;\n-- Rode a mesma consulta típica nas duas tabelas e compare no Query Profile:\n-- arquivos lidos, arquivos podados, bytes lidos e duração."
+        }
+      }
+    },
+    {
+      "id": "sql-11-grao-unicidade",
+      "ref": "01_sql/11_data-quality-profiling.md#grao-e-unicidade",
+      "ferramenta": "COUNT × COUNT DISTINCT do grão",
+      "niveis": {
+        "basico": {
+          "enunciado": "A tabela deveria ter uma linha por pedido. Compare linhas com pedidos distintos.",
+          "dados": [{"tabela": "fato_pedidos", "colunas": ["id_pedido", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20], [2, 20], [3, 30]]}],
+          "solucao": "SELECT COUNT(*) AS linhas,\n       COUNT(DISTINCT id_pedido) AS pedidos,\n       COUNT(*) - COUNT(DISTINCT id_pedido) AS excedente\nFROM fato_pedidos;"
+        },
+        "intermediario": {
+          "enunciado": "Liste as chaves duplicadas e diga se as duplicatas são idênticas (carga repetida) ou têm valores diferentes (conflito).",
+          "dados": [{"tabela": "fato_pedidos", "colunas": ["id_pedido", "valor"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20], [2, 20], [3, 30], [3, 35]]}],
+          "solucao": "SELECT id_pedido,\n       COUNT(*) AS n,\n       COUNT(DISTINCT valor) AS versoes_distintas,\n       CASE WHEN COUNT(DISTINCT valor) = 1 THEN 'DUPLICATA_IDENTICA' ELSE 'CONFLITO' END AS tipo\nFROM fato_pedidos\nGROUP BY id_pedido\nHAVING COUNT(*) > 1;"
+        },
+        "avancado": {
+          "enunciado": "O grão é (pedido, item). Valide a unicidade da chave composta, sem concatenar colunas (o que pode gerar falsos positivos).",
+          "dados": [{"tabela": "itens", "colunas": ["id_pedido", "id_item", "qtd"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 11, 1], [11, 1, 2], [1, 11, 3]]}],
+          "solucao": "-- concat(1, 11) = concat(11, 1) = '111': por isso não concatenar.\nSELECT id_pedido, id_item, COUNT(*) AS n\nFROM itens\nGROUP BY id_pedido, id_item\nHAVING COUNT(*) > 1;"
+        }
+      }
+    },
+    {
+      "id": "sql-11-nulos-faixas",
+      "ref": "01_sql/11_data-quality-profiling.md#nulos-e-faixas-impossiveis",
+      "ferramenta": "Perfil de nulos e faixas",
+      "niveis": {
+        "basico": {
+          "enunciado": "Calcule a quantidade de clientes sem id, o % de e-mails nulos, e a idade mínima e máxima.",
+          "dados": [{"tabela": "cadastro", "colunas": ["id_cliente", "email", "idade"], "tipos": ["INT", "STRING", "INT"], "linhas": [[1, "a@x.com", 30], [null, null, 25], [3, null, 140], [4, "d@x.com", -1]]}],
+          "solucao": "SELECT count_if(id_cliente IS NULL) AS sem_id,\n       ROUND(100 * AVG(CASE WHEN email IS NULL THEN 1 ELSE 0 END), 2) AS pct_email_nulo,\n       MIN(idade) AS idade_min,\n       MAX(idade) AS idade_max\nFROM cadastro;"
+        },
+        "intermediario": {
+          "enunciado": "Conte valores impossíveis: idade fora de 0–120, valor negativo e data de evento no futuro (considere hoje = 2025-06-30).",
+          "dados": [{"tabela": "cadastro", "colunas": ["idade", "valor", "dt_evento"], "tipos": ["INT", "INT", "DATE"], "linhas": [[30, 10, "2025-01-01"], [140, -5, "2025-07-10"], [-1, 0, "2025-06-30"]]}],
+          "solucao": "SELECT count_if(idade NOT BETWEEN 0 AND 120)       AS idade_invalida,\n       count_if(valor < 0)                          AS valor_negativo,\n       count_if(dt_evento > DATE '2025-06-30')      AS data_futura\nFROM cadastro;"
+        },
+        "avancado": {
+          "enunciado": "Gere o perfil de nulos de **todas** as colunas da tabela em formato longo (coluna, % nulo), sem escrever uma expressão por coluna à mão.",
+          "dados": [{"tabela": "cadastro", "colunas": ["id", "email", "telefone"], "tipos": ["INT", "STRING", "STRING"], "linhas": [[1, null, "1"], [2, "b@x", null], [3, null, null]]}],
+          "solucao": "SELECT coluna, ROUND(100 * AVG(CASE WHEN valor IS NULL THEN 1 ELSE 0 END), 1) AS pct_nulo\nFROM (\n    SELECT * FROM (SELECT CAST(id AS STRING) AS id, email, telefone FROM cadastro)\n    UNPIVOT INCLUDE NULLS (valor FOR coluna IN (id, email, telefone))\n)\nGROUP BY coluna\nORDER BY pct_nulo DESC;"
+        }
+      }
+    },
+    {
+      "id": "sql-11-distribuicao",
+      "ref": "01_sql/11_data-quality-profiling.md#distribuicao-por-categoria",
+      "ferramenta": "Distribuição com SUM(COUNT(*)) OVER ()",
+      "niveis": {
+        "basico": {
+          "enunciado": "Mostre a quantidade e o percentual de contratos por tipo de assinatura.",
+          "dados": [{"tabela": "contratos", "colunas": ["id", "tipo"], "tipos": ["INT", "STRING"], "linhas": [[1, "MENSAL"], [2, "ANUAL"], [3, "MENSAL"], [4, "MENSAL"]]}],
+          "solucao": "SELECT tipo, COUNT(*) AS linhas,\n       ROUND(100 * COUNT(*) / SUM(COUNT(*)) OVER (), 2) AS pct\nFROM contratos\nGROUP BY tipo\nORDER BY linhas DESC;"
+        },
+        "intermediario": {
+          "enunciado": "Compare a distribuição de hoje com a de ontem e marque categorias cuja participação variou mais de 10 pontos percentuais ou que surgiram/sumiram.",
+          "dados": [{"tabela": "contratos", "colunas": ["dt_carga", "tipo"], "tipos": ["DATE", "STRING"], "linhas": [["2025-01-01", "MENSAL"], ["2025-01-01", "ANUAL"], ["2025-01-02", "MENSAL"], ["2025-01-02", "MENSAL"], ["2025-01-02", "TRIAL"]]}],
+          "solucao": "WITH dist AS (\n    SELECT dt_carga, tipo, 100 * COUNT(*) / SUM(COUNT(*)) OVER (PARTITION BY dt_carga) AS pct\n    FROM contratos GROUP BY dt_carga, tipo\n),\nontem AS (SELECT tipo, pct FROM dist WHERE dt_carga = DATE '2025-01-01'),\nhoje  AS (SELECT tipo, pct FROM dist WHERE dt_carga = DATE '2025-01-02')\nSELECT coalesce(h.tipo, o.tipo) AS tipo,\n       ROUND(o.pct, 1) AS pct_ontem, ROUND(h.pct, 1) AS pct_hoje,\n       CASE WHEN o.tipo IS NULL THEN 'NOVA'\n            WHEN h.tipo IS NULL THEN 'SUMIU'\n            WHEN abs(h.pct - o.pct) > 10 THEN 'VARIOU'\n            ELSE 'OK' END AS alerta\nFROM hoje h FULL OUTER JOIN ontem o ON h.tipo = o.tipo;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha uma tabela carregada diariamente e uma coluna categórica de negócio. Crie a consulta de comparação dia a dia e defina, com o consumidor, os limites de alerta. Registre a consulta como checagem recorrente (job ou alerta do DBSQL).",
+          "dados": null,
+          "solucao": "-- Reaproveite a consulta do nível intermediário parametrizando as datas:\n-- WHERE dt_carga IN (current_date(), date_sub(current_date(), 1))\n-- Agende como alerta do Databricks SQL disparando quando COUNT(alerta <> 'OK') > 0."
+        }
+      }
+    },
+    {
+      "id": "sql-11-constraints",
+      "ref": "01_sql/11_data-quality-profiling.md#expectativas-na-propria-tabela",
+      "ferramenta": "CHECK e NOT NULL em Delta",
+      "niveis": {
+        "basico": {
+          "enunciado": "Adicione à tabela `silver.cadastro` uma restrição que exija idade entre 0 e 120 e torne `id_cliente` obrigatório.",
+          "dados": null,
+          "solucao": "ALTER TABLE silver.cadastro ADD CONSTRAINT idade_valida CHECK (idade BETWEEN 0 AND 120);\nALTER TABLE silver.cadastro ALTER COLUMN id_cliente SET NOT NULL;"
+        },
+        "intermediario": {
+          "enunciado": "A criação da restrição falhou porque já existem linhas inválidas. Encontre-as, decida o tratamento e só então crie a restrição. Liste as restrições existentes.",
+          "dados": null,
+          "solucao": "SELECT * FROM silver.cadastro WHERE NOT (idade BETWEEN 0 AND 120) OR idade IS NULL;\n-- Corrigir ou mover para quarentena, por exemplo:\n-- DELETE FROM silver.cadastro WHERE NOT (idade BETWEEN 0 AND 120);\nALTER TABLE silver.cadastro ADD CONSTRAINT idade_valida CHECK (idade BETWEEN 0 AND 120);\nSHOW TBLPROPERTIES silver.cadastro;   -- delta.constraints.*"
+        },
+        "avancado": {
+          "enunciado": "Compare duas estratégias para a mesma regra: restrição `CHECK` (a escrita falha inteira) e quarentena (linhas inválidas vão para outra tabela). Implemente a quarentena com um `INSERT` para cada destino e diga quando usar cada uma.",
+          "dados": null,
+          "solucao": "INSERT INTO silver.cadastro\nSELECT * FROM staging.cadastro WHERE idade BETWEEN 0 AND 120;\n\nINSERT INTO quarentena.cadastro\nSELECT *, 'idade_invalida' AS motivo, current_timestamp() AS detectado_em\nFROM staging.cadastro WHERE NOT (idade BETWEEN 0 AND 120) OR idade IS NULL;\n-- CHECK: regra de contrato que nunca pode ser violada.\n-- Quarentena: dado de origem ruidoso em que o resto da carga deve seguir."
+        }
+      }
+    },
+    {
+      "id": "sql-12-pruning-pushdown",
+      "ref": "01_sql/12_performance-tuning.md#reduzir-leitura-e-transferencia",
+      "ferramenta": "Column pruning e predicate pushdown",
+      "niveis": {
+        "basico": {
+          "enunciado": "Rode `EXPLAIN FORMATTED` de uma consulta que projeta 3 colunas e filtra por data. Encontre no plano as colunas lidas e onde o filtro aparece.",
+          "dados": [{"tabela": "vendas", "colunas": ["id_venda", "loja_id", "valor", "data_venda", "observacao"], "tipos": ["INT", "INT", "INT", "DATE", "STRING"], "linhas": [[1, 10, 100, "2026-01-02", "x"], [2, 20, 50, "2025-12-01", "y"]]}],
+          "solucao": "EXPLAIN FORMATTED\nSELECT id_venda, loja_id, valor\nFROM vendas\nWHERE data_venda >= DATE '2026-01-01';"
+        },
+        "intermediario": {
+          "enunciado": "Compare o plano de um filtro sobre a coluna (`data_venda >= DATE '2026-01-01'`) com o de um filtro sobre função da coluna (`year(data_venda) = 2026`) numa tabela Delta/Parquet da sua base. Qual permite pular arquivos?",
+          "dados": null,
+          "solucao": "EXPLAIN FORMATTED SELECT * FROM <tabela> WHERE data_venda >= DATE '2026-01-01' AND data_venda < DATE '2027-01-01';\nEXPLAIN FORMATTED SELECT * FROM <tabela> WHERE year(data_venda) = 2026;\n-- Procure PushedFilters/DataFilters no Scan. Filtro direto na coluna aproveita estatísticas\n-- de arquivo (data skipping); a função sobre a coluna pode impedir esse aproveitamento."
+        },
+        "avancado": {
+          "enunciado": "Na sua base, encontre uma consulta com `SELECT *` sobre uma tabela larga que alimenta um relatório. Meça bytes lidos antes e depois de projetar só as colunas necessárias e documente o ganho.",
+          "dados": null,
+          "solucao": "-- Antes: SELECT * FROM <tabela> WHERE ...\n-- Depois: SELECT col1, col2, col3 FROM <tabela> WHERE ...\n-- Compare no Query Profile: bytes lidos, colunas lidas, duração.\n-- Em formatos colunares (Delta/Parquet), menos colunas = menos bytes."
+        }
+      }
+    },
+    {
+      "id": "sql-12-shuffle-skew-spill",
+      "ref": "01_sql/12_performance-tuning.md#shuffle-skew-e-spill",
+      "ferramenta": "Diagnóstico de shuffle, skew e spill",
+      "niveis": {
+        "basico": {
+          "enunciado": "Em um plano com join e agregação, conte quantos `Exchange` (shuffles) aparecem e explique por que cada um existe.",
+          "dados": [
+            {"tabela": "fato_vendas", "colunas": ["id_venda", "produto_id", "valor"], "tipos": ["INT", "INT", "INT"], "linhas": [[1, 1, 10], [2, 2, 20]]},
+            {"tabela": "dim_produto", "colunas": ["produto_id", "categoria"], "tipos": ["INT", "STRING"], "linhas": [[1, "A"], [2, "B"]]}
+          ],
+          "solucao": "-- Desliga o broadcast automático só para ver o shuffle join no exemplo\nSET spark.sql.autoBroadcastJoinThreshold = -1;\nEXPLAIN FORMATTED\nSELECT d.categoria, SUM(f.valor)\nFROM fato_vendas f JOIN dim_produto d ON f.produto_id = d.produto_id\nGROUP BY d.categoria;"
+        },
+        "intermediario": {
+          "enunciado": "Meça a distribuição da chave de join para detectar skew: quantas linhas tem a chave mais frequente comparada à mediana?",
+          "dados": [{"tabela": "fato_vendas", "colunas": ["produto_id"], "tipos": ["INT"], "linhas": [[1], [1], [1], [1], [1], [1], [2], [3], [4]]}],
+          "solucao": "WITH freq AS (\n    SELECT produto_id, COUNT(*) AS n FROM fato_vendas GROUP BY produto_id\n)\nSELECT MAX(n) AS maior, percentile_approx(n, 0.5) AS mediana,\n       MAX(n) / percentile_approx(n, 0.5) AS razao\nFROM freq;"
+        },
+        "avancado": {
+          "enunciado": "Na sua base, abra a Spark UI (ou Query Profile) de um job lento. Identifique o estágio mais caro e registre: duração da task mais lenta vs mediana (skew), spill em memória/disco e bytes de shuffle. Proponha uma única mudança e meça de novo.",
+          "dados": null,
+          "solucao": "-- Spark UI > Stages > estágio mais longo > Summary Metrics:\n--   Duration max vs median (skew), Spill (memory/disk), Shuffle Read/Write.\n-- Mudança única, por exemplo: filtrar antes do join, broadcast da dimensão,\n-- ou revisar a chave. Registre antes/depois com as mesmas métricas."
+        }
+      }
+    },
+    {
+      "id": "sql-12-sequencia-diagnostico",
+      "ref": "01_sql/12_performance-tuning.md#sequencia-de-diagnostico",
+      "ferramenta": "Roteiro de diagnóstico de performance",
+      "niveis": {
+        "basico": {
+          "enunciado": "Antes de otimizar uma consulta, confirme resultado e grão: escreva a consulta que verifica o número de linhas e a unicidade da chave do resultado.",
+          "dados": [{"tabela": "resultado", "colunas": ["id_cliente", "total"], "tipos": ["INT", "INT"], "linhas": [[1, 10], [2, 20], [2, 20]]}],
+          "solucao": "SELECT COUNT(*) AS linhas, COUNT(DISTINCT id_cliente) AS chaves FROM resultado;"
+        },
+        "intermediario": {
+          "enunciado": "Compare quanto a consulta lê com quanto ela precisaria ler: use `DESCRIBE DETAIL` para o tamanho total da tabela e o Query Profile para os bytes lidos de uma consulta filtrada.",
+          "dados": null,
+          "solucao": "DESCRIBE DETAIL <tabela>;   -- sizeInBytes, numFiles\n-- Rode a consulta e, no Query Profile, compare 'bytes read' e 'files read/pruned'.\n-- Se lê quase tudo para devolver pouco, revise filtros, layout (clustering) e projeção."
+        },
+        "avancado": {
+          "enunciado": "Na sua base, escolha uma consulta lenta e aplique os 6 passos do roteiro, alterando uma variável por vez. Registre em uma tabela: passo, mudança, métrica antes, métrica depois, resultado preservado (sim/não).",
+          "dados": null,
+          "solucao": "| passo | mudança | métrica | antes | depois | resultado igual? |\n|---|---|---|---|---|---|\n| 2 | projeção de colunas | bytes lidos | ... | ... | sim |\n| 3 | broadcast da dimensão | shuffle | ... | ... | sim |\n-- Valide 'resultado igual' com EXCEPT ALL nos dois sentidos."
+        }
+      }
+    }
+  ]
+}
