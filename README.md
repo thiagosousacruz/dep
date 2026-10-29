@@ -1,66 +1,47 @@
 # Data Engineering Playbook
 
-Base pessoal e evolutiva de consulta rapida para SQL, PySpark e engenharia de dados, com foco em Databricks/Spark, problemas reais do dia a dia e evolucao pratica continua.
+Base pessoal de consulta rápida para SQL e PySpark em Databricks/Spark, orientada a problemas recorrentes de engenharia de dados.
 
-## Indice
-- [Objetivo](#objetivo)
-- [Como navegar](#como-navegar)
-- [Estrutura do repositorio](#estrutura-do-repositorio)
-- [Trilhas rapidas](#trilhas-rapidas)
-- [Pastas principais](#pastas-principais)
-- [Evolucao da base](#evolucao-da-base)
+## Escopo atual
 
-## Objetivo
-O objetivo deste repositorio e transformar conhecimento tecnico disperso em uma base confiavel, pratica e facil de consultar. A ideia e reduzir retrabalho, acelerar resolucao de problemas recorrentes e manter uma trilha continua de aprendizado aplicada ao contexto real de engenharia de dados.
+O núcleo mantido e publicado no HTML cobre:
+
+- **SQL:** fundamentos, transformação, Delta Lake, qualidade e performance;
+- **PySpark:** DataFrame API, I/O, joins, janelas, schemas, Delta Lake, qualidade e arquitetura.
+
+[`01_cheatsheets/03_modeling-e-analytics/`](01_cheatsheets/03_modeling-e-analytics) permanece como material complementar em Markdown. Essa área não faz parte do build principal e não é prioridade de expansão neste ciclo.
 
 ## Como navegar
-Se voce estiver usando o repositorio pelo GitHub, a navegacao mais util costuma ser:
 
-1. Comecar pelos cheatsheets de SQL ou PySpark.
-2. Usar `04_templates/` para manter consistencia na documentacao.
-3. Usar `06_revisao-evolucao/` para enxergar o que ainda falta melhorar na base.
+- [Visão geral de SQL](01_cheatsheets/01_sql/README.md)
+- [Visão geral de PySpark](01_cheatsheets/02_pyspark/README.md)
+- [Modeling e Analytics — complementar](01_cheatsheets/03_modeling-e-analytics/README.md)
+- [Backlog e evolução](06_revisao-evolucao/backlog.md)
+- [`cheatsheets.html`](cheatsheets.html), versão navegável gerada de SQL e PySpark
 
-## Estrutura do repositorio
-O repositorio foi organizado como um pipeline de refinamento de conhecimento focado em referencias rapidas:
+Os arquivos `.md` são a fonte de verdade. O arquivo `cheatsheets.html` é gerado automaticamente e não deve ser editado manualmente.
 
-- [`01_cheatsheets/`](01_cheatsheets): base tecnica reutilizavel, com foco em referencia rapida.
-- [`04_templates/`](04_templates): templates para manter consistencia na documentacao.
-- [`06_revisao-evolucao/`](06_revisao-evolucao): backlog, avaliacoes e pontos de melhoria do playbook.
+## Estrutura
 
-## Trilhas rapidas
+- `01_cheatsheets/`: conteúdo técnico reutilizável;
+- `04_templates/`: padrão editorial para novos cheatsheets;
+- `06_revisao-evolucao/`: avaliações de cobertura e backlog;
+- `template.html`: layout, estilos e comportamento do HTML principal;
+- `build_docs.py`: gerador e validador do HTML;
+- `index.html` e páginas de planos/framework: artefatos independentes, não gerados pelos cheatsheets.
 
-### SQL (01_sql)
-- Visao geral da area: [`01_cheatsheets/01_sql/README.md`](01_cheatsheets/01_sql/README.md)
-- Cheatsheets SQL: [`01_cheatsheets/01_sql/`](01_cheatsheets/01_sql)
+## Gerar o HTML
 
-### PySpark (02_pyspark)
-- Visao geral da area: [`01_cheatsheets/02_pyspark/README.md`](01_cheatsheets/02_pyspark/README.md)
-- Cheatsheets PySpark: [`01_cheatsheets/02_pyspark/`](01_cheatsheets/02_pyspark)
+Requer Python 3.9 ou superior.
 
-### Modeling e Analytics (03_modeling-e-analytics)
-- Visao geral da area: [`01_cheatsheets/03_modeling-e-analytics/README.md`](01_cheatsheets/03_modeling-e-analytics/README.md)
-- Cheatsheets Analiticos: [`01_cheatsheets/03_modeling-e-analytics/`](01_cheatsheets/03_modeling-e-analytics)
+```powershell
+python -m pip install -r requirements.txt
+python build_docs.py
+```
 
-### Revisao e evolucao
-- Backlog atual: [`06_revisao-evolucao/backlog.md`](06_revisao-evolucao/backlog.md)
-- Avaliacao da cobertura SQL: [`06_revisao-evolucao/sql-cobertura-avaliacao.md`](06_revisao-evolucao/sql-cobertura-avaliacao.md)
-- Avaliacao da cobertura PySpark: [`06_revisao-evolucao/pyspark-cobertura-avaliacao.md`](06_revisao-evolucao/pyspark-cobertura-avaliacao.md)
-- Avaliacao de Modeling e Analytics: [`06_revisao-evolucao/modeling-analytics-cobertura-avaliacao.md`](06_revisao-evolucao/modeling-analytics-cobertura-avaliacao.md)
+O comando pode ser executado de qualquer diretório. Antes de gravar a saída, o gerador valida arquivos de entrada, placeholders, quantidade de seções e links internos.
 
-## Pastas principais
+## Critério de qualidade
 
-### `01_cheatsheets`
-Area de consulta rapida. Hoje concentra principalmente:
+O playbook busca ser conciso, tecnicamente seguro e fácil de adaptar. Recomendações sensíveis devem explicar contexto, limites e trade-offs; exemplos dependentes de versão precisam indicar essa dependência.
 
-- **`01_sql:`** Sintaxe, tipos, sanitizacao, nulos, joins, windows, JSON, Delta, data quality e performance.
-- **`02_pyspark:`** Fundamentos do Spark, IO, DataFrame API, joins, windows, JSON, Delta, quality e arquitetura.
-- **`03_modeling-e-analytics:`** Modelagem dimensional, schemas estrela, Slowly Changing Dimensions, semantic layer e design de consumo em BI.
-
-### `04_templates`
-Templates de padronizacao para documentacao e notebooks.
-
-### `06_revisao-evolucao`
-Backlog atual e mapas de avaliacao de cobertura dos assuntos, auxiliando a focar os conteudos que devem ser produzidos e estruturados.
-
-## Evolucao da base
-O repositorio e intencionalmente vivo. Os ajustes e lacunas identificadas ficam concentrados em [`06_revisao-evolucao/`](06_revisao-evolucao).

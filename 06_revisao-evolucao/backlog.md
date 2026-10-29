@@ -1,25 +1,33 @@
-# Backlog de Revisao e Evolucao
+# Backlog de Revisão e Evolução
 
-Registro de problemas identificados, logicas que podem ser melhoradas e pontos falhos na documentacao que precisam ser refeitos ao longo do tempo.
+O núcleo ativo cobre SQL e PySpark. Modeling permanece complementar e streaming, recipes e exercícios estão fora do ciclo atual.
 
-## Duvidas Tecnicas / Backlog
-- [ ] Construir cheatsheet sobre particionamento ideal no PySpark (`repartition` vs `coalesce`).
-- [x] Completar cheatsheet PySpark com operacoes basicas frequentes de DataFrame API (`selectExpr`, `alias`, `orderBy`, `distinct`, `dropDuplicates`, `unionByName`, `sample`).
-- [x] Criar cheatsheet PySpark de data quality operacional (grao, chaves unicas, nulos, comparacao origem vs destino, reconciliacao pos-join).
-- [x] Reforcar cobertura de schema enforcement e evolucao em PySpark (`StructType`, `from_json`, `schema_of_json`, colunas opcionais, mudancas de schema).
-- [x] Revisar exemplos de timezone em PySpark para evitar conversoes ambiguas de sessao vs UTC.
-- [x] Padronizar tecnicamente e editorialmente os cheatsheets de PySpark (estilo, precisao e consistencia).
-- [x] Revisar os cheatsheets de `modeling-e-analytics` para reduzir afirmacoes absolutas e incluir trade-offs de decisao.
-- [x] Reforcar os cheatsheets de `modeling-e-analytics` com heuristicas praticas de escolha (star vs OBT, snapshot vs transacional, SQL/view vs DAX, quando usar SCD2).
-- [x] Melhorar a precisao tecnica da area `modeling-e-analytics` em temas sensiveis como surrogate key, vigencia em SCD2, medidas semi-aditivas e muitos-para-muitos.
-- [x] Reestruturar o README de `01_cheatsheets/modeling-e-analytics` para navegacao no GitHub no mesmo padrao de SQL e PySpark.
-- [ ] Explorar recipe SQL sobre calculo real de dias uteis utilizando referencias cross join da `Dim_Calendario`.
-- [ ] Expandir secao de boas praticas no `joins.md` baseado no uso da Renner.
-- [x] Criar cheatsheet SQL sobre tratamento de tipos (`cast`, `try_cast`, `decimal`, `date`, `timestamp`, `boolean`).
-- [x] Criar cheatsheet SQL sobre nulos e valores default (`coalesce`, `nullif`, `is null`, string vazia).
-- [x] Criar cheatsheet SQL sobre limpeza e padronizacao de strings (`trim`, `upper`, `lower`, `regexp_replace`).
-- [x] Criar cheatsheet SQL sobre renomeacao e padronizacao de colunas na camada Silver.
-- [x] Criar cheatsheet SQL sobre data quality e profiling rapido para tabelas Silver e Gold.
-- [x] Criar recipe SQL para tratamento de nulos.
-- [x] Criar recipe SQL para conversao e validacao de tipos.
-- [x] Criar recipe SQL para diagnostico de duplicidades e exploding joins.
+## Concluído nesta consolidação
+
+- [x] Declarar Markdown como fonte de verdade e HTML como artefato gerado.
+- [x] Corrigir links para áreas inexistentes ou renomeadas.
+- [x] Documentar Modeling como conteúdo complementar fora do build.
+- [x] Revisar joins, windows, Catalyst, spill, repartition/coalesce, skew, Pandas UDF e Delta.
+- [x] Remover recomendações absolutas e números de performance sem evidência.
+- [x] Tornar o build independente do diretório de execução.
+- [x] Validar entradas, placeholders, links internos e contagem de seções.
+- [x] Preservar a estrutura semântica `pre > code` no HTML.
+- [x] Documentar dependências e comando de geração.
+
+## Próximas melhorias
+
+- [ ] Adicionar revisão periódica por versão do Databricks Runtime adotado.
+- [ ] Acrescentar referências oficiais nos temas dependentes de versão.
+- [ ] Automatizar o build e o verificador de links em CI caso o projeto seja publicado.
+- [ ] Expandir exemplos somente a partir de casos reais validados.
+
+## Correções de SQL identificadas (2026-10-28)
+
+Testadas no DBSQL 2026.42 (warehouse serverless).
+
+- [ ] `01_cheatsheets/01_sql/05_ctes.md`: `CACHE VIEW ... AS` não existe (`PARSE_SYNTAX_ERROR`). A sintaxe é `CACHE TABLE nome AS SELECT`. Confirmar se o warehouse serverless executa o comando.
+- [ ] `05_ctes.md` × `12_performance-tuning.md`: o 05 afirma que uma CTE referenciada N vezes é lida N vezes; o 12 orienta a não presumir materialização ou reavaliação sem olhar o plano. Alinhar o 05 ao 12 (o plano pode reaproveitar a leitura, com `ReusedExchange`).
+- [ ] `06_group-by-e-pivots.md`: `approx_count_distinct` citado com "2% taxa de erro". O padrão é `relativeSD = 0.05` (5%), ajustável pelo 2º argumento.
+- [ ] `01_sintaxe-basica.md`: a ordem de execução omite janelas/`QUALIFY` e `DISTINCT`.
+- [ ] `IFF` em `04_nulos-e-condicionais.md`, `05_ctes.md` e `11_data-quality-profiling.md`: funciona no Databricks, mas é específico dele. Considerar `if()` ou `CASE`, ou avisar que não é portável.
+
