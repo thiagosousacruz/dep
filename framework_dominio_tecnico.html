@@ -111,11 +111,11 @@
   footer { margin-top: 2.5rem; font-size: 12px; color: var(--text-muted); text-align: center; }
 </style>
 <script>
-  function switchTab(tabId) {
+  function switchTab(tabId, button) {
     document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tabId).classList.add('active');
     document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-    event.target.classList.add('active');
+    button.classList.add('active');
   }
   function toggleStage(header) {
     header.classList.toggle('open');
@@ -125,39 +125,43 @@
 <body>
 <div class="container">
 <header>
-  <a href="index.html" style="font-family:-apple-system,sans-serif;font-size:12px;color:var(--text-muted);text-decoration:none;text-transform:uppercase;letter-spacing:0.1em;transition:color 0.2s;display:inline-block;margin-bottom:20px;">← Voltar ao Hub</a>
+  <nav style="font-family:-apple-system,sans-serif;font-size:12px;margin-bottom:20px;display:flex;gap:18px;flex-wrap:wrap;">
+    <a href="index.html" style="color:var(--text-muted);text-decoration:none;">← Hub</a>
+    <a href="cheatsheets.html" style="color:var(--text-muted);text-decoration:none;">Cheatsheets</a>
+    <a href="plano-12-semanas.html" style="color:var(--text-muted);text-decoration:none;">Plano de 12 semanas</a>
+  </nav>
   <h1>Framework de Domínio Técnico</h1>
-<p>Como aprender, praticar e masterizar qualquer tópico — exemplo: window functions</p>
+<p>Como construir compreensão, competência operacional e julgamento técnico — exemplo: window functions</p>
 </header>
 <div class="tabs">
-<button class="tab active" onclick="switchTab('processo')">Como fazer</button>
-<button class="tab" onclick="switchTab('niveis')">Níveis de domínio</button>
-<button class="tab" onclick="switchTab('regras')">O que funciona (e o que não)</button>
+<button class="tab active" onclick="switchTab('processo', this)">Como fazer</button>
+<button class="tab" onclick="switchTab('niveis', this)">Níveis de maturidade</button>
+<button class="tab" onclick="switchTab('regras', this)">Princípios de prática</button>
 </div>
 <!-- ══ TAB: PROCESSO ══ -->
 <div class="tab-panel active" id="tab-processo">
-<p class="section-label">5 estágios para qualquer tópico técnico — exemplo: window functions</p>
+<p class="section-label">5 estágios adaptáveis para desenvolver um tópico técnico — exemplo: window functions</p>
 <div class="stages">
 <!-- S1 -->
 <div class="stage s1 open">
 <div class="stage-header" onclick="toggleStage(this.parentElement)">
 <div class="stage-num">1</div>
 <div class="stage-info">
-<div class="stage-title">Entenda o conceito sem tocar em código</div>
-<div class="stage-sub">Construir o modelo mental antes de qualquer sintaxe</div>
+<div class="stage-title">Compreenda o conceito e o problema</div>
+<div class="stage-sub">Construir um modelo mental antes de escolher a sintaxe</div>
 </div>
 <span class="stage-time">30–60 min</span>
 <span class="chevron">›</span>
 </div>
 <div class="stage-body">
-<p>Antes de abrir um notebook, você precisa saber responder: <em>o que essa coisa faz que não conseguiria fazer de outro jeito?</em> Para window functions: a resposta é "calcula sobre um grupo sem colapsar as linhas — ao contrário do GROUP BY".</p>
+<p>Comece pela necessidade: <em>qual resultado preciso preservar e por que uma agregação comum não basta?</em> Window functions calculam dentro de um grupo lógico sem reduzir todas as linhas como um <code>GROUP BY</code>.</p>
 <ul class="action-list">
-<li><span class="bullet">a</span> Leia a documentação oficial (Spark ou SQL) — só a seção conceitual, não os exemplos ainda</li>
+<li><span class="bullet">a</span> Leia conceito e exemplos mínimos na documentação oficial do runtime adotado</li>
 <li><span class="bullet">b</span> Desenhe num papel: "tenho 10 linhas de vendas, o que RANK() faz nelas?"</li>
-<li><span class="bullet">c</span> Escreva com suas palavras o que é PARTITION BY, ORDER BY e ROWS/RANGE — sem copiar da doc</li>
-<li><span class="bullet">d</span> Crie um card no Anki: frente = "diferença entre ROW_NUMBER, RANK e DENSE_RANK", verso = sua explicação com um exemplo numérico</li>
+<li><span class="bullet">c</span> Escreva com suas palavras o que é PARTITION BY, ORDER BY e ROWS/RANGE e compare com a documentação</li>
+<li><span class="bullet">d</span> Se repetição espaçada ajudar, registre a diferença entre ROW_NUMBER, RANK e DENSE_RANK com um exemplo</li>
 </ul>
-<div class="warn-box"><p>⚠ Você não entendeu se só consegue repetir o que a doc diz. Você entendeu quando consegue prever o resultado antes de rodar.</p></div>
+<div class="warn-box"><p>Compreensão melhora quando você consegue prever o resultado e depois confrontar a previsão com uma execução controlada.</p></div>
 </div>
 </div>
 <!-- S2 -->
@@ -165,21 +169,21 @@
 <div class="stage-header" onclick="toggleStage(this.parentElement)">
 <div class="stage-num">2</div>
 <div class="stage-info">
-<div class="stage-title">Escreva do zero sem consultar</div>
-<div class="stage-sub">A primeira linha de código tem que ser sua, do zero</div>
+<div class="stage-title">Implemente uma primeira solução</div>
+<div class="stage-sub">Formule a tentativa, consulte fontes e valide conscientemente</div>
 </div>
 <span class="stage-time">1–2 horas</span>
 <span class="chevron">›</span>
 </div>
 <div class="stage-body">
-<p>Abra um notebook em branco. Crie um DataFrame ou tabela na mão. Tente escrever a query/código sem olhar nada. Vai travar — tudo bem. O travamento é o aprendizado acontecendo.</p>
+<p>Crie um conjunto pequeno com resultado previsível. Esboce a solução antes de consultar, mas use documentação oficial e exemplos quando necessário. Registre o que foi adaptado e por quê.</p>
 <ul class="action-list">
 <li><span class="bullet">a</span> Crie dados simples no próprio notebook — vendas por loja, corridas do Garmin, o que for</li>
-<li><span class="bullet">b</span> Escreva: ranking de vendas por categoria, running total, média móvel de 3 períodos — do zero</li>
-<li><span class="bullet">c</span> Quando travar, consulte só a sintaxe (documentação), nunca o "como resolver esse problema"</li>
+<li><span class="bullet">b</span> Implemente ranking por categoria, acumulado e média móvel de três linhas</li>
+<li><span class="bullet">c</span> Quando travar, formule a dúvida e consulte documentação, cheatsheets ou uma revisão assistida</li>
 <li><span class="bullet">d</span> Rode, veja o resultado, confirme que bate com o que você previu no estágio 1</li>
 </ul>
-<pre><span class="cm">-- Crie isso do zero, sem copiar:</span>
+<pre><span class="cm">-- Implemente e valide com dados de resultado conhecido:</span>
 <span class="kw">SELECT</span>
   produto,
   categoria,
@@ -190,11 +194,11 @@
   ) <span class="kw">AS</span> ranking,
   <span class="fn">SUM</span>(valor) <span class="kw">OVER</span> (
     <span class="kw">PARTITION BY</span> categoria
-    <span class="kw">ORDER BY</span> valor <span class="kw">DESC</span>
+    <span class="kw">ORDER BY</span> valor <span class="kw">DESC</span>, produto
     <span class="kw">ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</span>
   ) <span class="kw">AS</span> acumulado
 <span class="kw">FROM</span> vendas</pre>
-<div class="warn-box"><p>⚠ Se você copiou o código de algum lugar, refaça. A mão digitando o código que o cérebro está pensando é o que cria memória muscular.</p></div>
+<div class="warn-box"><p>Copiar pode acelerar exploração, mas só conta como aprendizagem quando você adapta, testa, explica e consegue reconstruir a lógica depois.</p></div>
 </div>
 </div>
 <!-- S3 -->
@@ -209,13 +213,13 @@
 <span class="chevron">›</span>
 </div>
 <div class="stage-body">
-<p>Especialista conhece o comportamento nos casos difíceis, não só no caminho feliz. Aqui você vai deliberadamente provocar situações problemáticas e observar o que acontece.</p>
+<p>Explore casos de borda para descobrir limites e tornar a regra explícita. Antes de executar, anote o resultado esperado e depois investigue divergências.</p>
 <ul class="action-list">
-<li><span class="bullet">a</span> Coloque NULLs nos dados e observe: RANK ignora? LAG retorna NULL? O que muda com NULLS LAST?</li>
+<li><span class="bullet">a</span> Inclua nulos e compare ordenação padrão com NULLS FIRST/LAST; ranking ordena linhas, não “ignora” nulos</li>
 <li><span class="bullet">b</span> Troque ROWS por RANGE — o que muda quando há empates no ORDER BY?</li>
-<li><span class="bullet">c</span> Remova o PARTITION BY — o que acontece? Quando isso é intencional?</li>
+<li><span class="bullet">c</span> Remova o PARTITION BY: valide a semântica global e observe o custo de uma única partição lógica</li>
 <li><span class="bullet">d</span> Use LAG com offset=2 e um default diferente de NULL — entenda cada parâmetro</li>
-<li><span class="bullet">e</span> Anote cada descoberta: "quando X, acontece Y porque Z". Isso vai para o Anki</li>
+<li><span class="bullet">e</span> Repita o ORDER BY com empates e sem desempate; verifique se o resultado é determinístico</li>
 </ul>
 <pre><span class="cm">-- Quebre de propósito e observe:</span>
 
@@ -229,7 +233,7 @@
 <span class="fn">SUM</span>(valor) <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> valor <span class="kw">ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</span>)
 <span class="fn">SUM</span>(valor) <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> valor <span class="kw">RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</span>)
 <span class="cm">-- resultado diferente! Por quê?</span></pre>
-<div class="ok-box"><p>✓ Você passou nesse estágio quando consegue prever o comportamento antes de rodar — incluindo nos casos de borda.</p></div>
+<div class="ok-box"><p>Você concluiu o estágio quando consegue explicar grão, ordenação, frame, nulos e o motivo de um resultado observado.</p></div>
 </div>
 </div>
 <!-- S4 -->
@@ -244,14 +248,14 @@
 <span class="chevron">›</span>
 </div>
 <div class="stage-body">
-<p>Aqui o conceito encontra a realidade. Use dados da Renner ou do Garmin — algo onde você conhece o negócio e consegue validar se o resultado faz sentido. Problema inventado com dado inventado não treina o julgamento.</p>
+<p>Aplique o conceito em um problema cujo resultado possa ser validado. Use apenas dados e ambientes autorizados da Renner; para estudo pessoal, prefira dados sintéticos ou próprios, como Garmin.</p>
 <ul class="action-list">
 <li><span class="bullet">a</span> <strong>Renner:</strong> rank de cobertura de estoque por subclasse, variação MoM de receita por categoria, top-3 SKUs por canal</li>
 <li><span class="bullet">b</span> <strong>Garmin:</strong> pace médio móvel por semana, rank de corridas por distância dentro do mês, evolução do VO2max</li>
-<li><span class="bullet">c</span> Não use o conceito como fim — use-o para responder uma pergunta de negócio real</li>
+<li><span class="bullet">c</span> Use o conceito para responder uma pergunta e compare com uma agregação ou amostra de controle</li>
 <li><span class="bullet">d</span> Revise o resultado com o olhar de quem conhece o dado: "esse número faz sentido?"</li>
 </ul>
-<div class="warn-box"><p>⚠ Se você precisou consultar a sintaxe para escrever, anote o que travou e volte ao estágio 2 com esse ponto específico. Não pule.</p></div>
+<div class="warn-box"><p>Consultar sintaxe é normal. Volte ao estágio 2 quando não conseguir justificar a escolha ou validar o resultado.</p></div>
 </div>
 </div>
 <!-- S5 -->
@@ -259,28 +263,28 @@
 <div class="stage-header" onclick="toggleStage(this.parentElement)">
 <div class="stage-num">5</div>
 <div class="stage-info">
-<div class="stage-title">Ensine ou explique para alguém</div>
-<div class="stage-sub">O teste final de domínio real</div>
+<div class="stage-title">Explique, receba revisão e refine</div>
+<div class="stage-sub">Testar comunicação e julgamento, não apenas memória</div>
 </div>
 <span class="stage-time">1 hora</span>
 <span class="chevron">›</span>
 </div>
 <div class="stage-body">
-<p>Se você consegue explicar para alguém o conceito do zero — sem consultar nada, com exemplos, e respondendo perguntas — você dominou. Antes disso, você só conhece.</p>
+<p>Explique a solução, as alternativas e os limites. Você pode consultar material; o objetivo é comunicar com precisão, responder perguntas e incorporar feedback.</p>
 <ul class="action-list">
 <li><span class="bullet">a</span> Explique window functions para um colega que não conhece — use um exemplo de negócio real</li>
 <li><span class="bullet">b</span> Se não tiver colega disponível: escreva uma explicação técnica como se fosse para o time</li>
-<li><span class="bullet">c</span> Use Claude como "aluno": peça para fazer perguntas difíceis e responda sem consultar nada</li>
+<li><span class="bullet">c</span> Use IA como revisora: peça contraexemplos, confira as afirmações e não exponha dados internos</li>
 <li><span class="bullet">d</span> Grave um vídeo curto explicando (nem que seja para você mesmo) — ver sua própria explicação revela os buracos</li>
 </ul>
-<div class="ok-box"><p>✓ Quando você consegue explicar ROWS vs RANGE, o comportamento com NULLs, e quando usar LAG vs LEAD sem hesitar — o tópico está dominado.</p></div>
+<div class="ok-box"><p>O tópico atingiu maturidade operacional quando você escolhe a abordagem, valida casos de borda, reconhece limites e explica a decisão.</p></div>
 </div>
 </div>
 </div>
 </div>
 <!-- ══ TAB: NÍVEIS ══ -->
 <div class="tab-panel" id="tab-niveis">
-<p class="section-label">Onde você está — seja honesto, a progressão depende disso</p>
+<p class="section-label">Maturidade no tópico — não equivale automaticamente a cargo ou senioridade</p>
 <div class="levels">
 <div class="level lv0">
 <div class="level-num">0</div>
@@ -293,100 +297,102 @@
 <div class="level lv1">
 <div class="level-num">1</div>
 <div class="level-content">
-<div class="level-title">Já vi / já copiei</div>
-<div class="level-test">Sabe que existe e já usou copiando de algum lugar, mas não consegue escrever do zero nem explicar o PARTITION BY sem consultar.</div>
+<div class="level-title">Reconheço e reproduzo</div>
+<div class="level-test">Reconhece o padrão e adapta um exemplo, mas ainda não explica com segurança o grão, a ordenação e o frame.</div>
 </div>
 <div class="level-badge">Reconhece</div>
 </div>
 <div class="level lv2">
 <div class="level-num">2</div>
 <div class="level-content">
-<div class="level-title">Consigo escrever consultando</div>
-<div class="level-test">Consegue montar uma window function consultando a doc de sintaxe, entende o resultado, mas trava nos casos de borda (ROWS vs RANGE, NULLs, sem PARTITION).</div>
+<div class="level-title">Implemento com apoio</div>
+<div class="level-test">Usa documentação para implementar e valida o caso principal, mas precisa de revisão nos casos de borda.</div>
 </div>
 <div class="level-badge">Funcional</div>
 </div>
 <div class="level lv3">
 <div class="level-num">3</div>
 <div class="level-content">
-<div class="level-title">Escrevo do zero e sei o porquê</div>
-<div class="level-test">Escreve sem consultar, prevê o resultado nos casos de borda, e consegue explicar a diferença entre RANK e DENSE_RANK com um exemplo de empate na cabeça.</div>
+<div class="level-title">Trabalho com autonomia</div>
+<div class="level-test">Escolhe e implementa a janela, valida casos de borda e explica o resultado; consulta referências sem depender de uma solução pronta.</div>
 </div>
 <div class="level-badge">Competente</div>
 </div>
 <div class="level lv4">
 <div class="level-num">4</div>
 <div class="level-content">
-<div class="level-title">Escolho a ferramenta certa e ensino</div>
-<div class="level-test">Dado um problema de negócio, sabe identificar que window function resolve (e qual), sabe quando ela é pior que GROUP BY, e consegue explicar para qualquer pessoa do time sem hesitar.</div>
+<div class="level-title">Exerço julgamento e multiplico</div>
+<div class="level-test">Compara alternativas, reconhece riscos de escala, revisa soluções e ensina o tópico com precisão e contexto.</div>
 </div>
-<div class="level-badge">Especialista</div>
+<div class="level-badge">Referência no tópico</div>
 </div>
 </div>
 <div class="info-box" style="margin-top:14px;">
-<p><strong>A maioria para no nível 2 e acha que está no 3.</strong> O teste real é simples: feche tudo e escreva. Se travou na sintaxe, está no nível 2. Se escreveu mas não consegue explicar o comportamento com NULLs, está no nível 2. O nível 3 é o mínimo aceitável para um especialista.</p>
+<p><strong>Fluência de sintaxe, competência operacional e julgamento são dimensões diferentes.</strong> Consulte referências quando necessário e avalie a maturidade pelas decisões, validações e capacidade de reconhecer limites.</p>
 </div>
 </div>
 <!-- ══ TAB: REGRAS ══ -->
 <div class="tab-panel" id="tab-regras">
-<p class="section-label">O que separa quem domina de quem acha que domina</p>
+<p class="section-label">Heurísticas adaptáveis para prática deliberada e segura</p>
 <div class="rules">
 <div class="rule r-do">
 <div class="rule-icon">✏️</div>
 <div class="rule-text">
-<div class="rule-title">Sempre escreva antes de consultar</div>
-<div class="rule-desc">Tente escrever do zero, trave, anote onde travou. Só então consulte. A consulta antes de tentar cancela o aprendizado — você reconhece o código, não o produz.</div>
+<div class="rule-title">Formule uma tentativa antes de buscar</div>
+<div class="rule-desc">Esboce a solução e suas dúvidas. Depois consulte documentação ou exemplos para corrigir o modelo mental, sem transformar memória de sintaxe em único critério.</div>
 </div>
 <div class="rule-tag">Fazer</div>
 </div>
 <div class="rule r-dont">
 <div class="rule-icon">📋</div>
 <div class="rule-text">
-<div class="rule-title">Nunca copie e cole código de exemplo</div>
-<div class="rule-desc">Se você achou um exemplo bom, feche, e escreva o seu do zero com o mesmo padrão. Copiar não cria memória. Redigitar o que você entendeu, sim.</div>
+<div class="rule-title">Não use código sem compreender e validar</div>
+<div class="rule-desc">Copiar pode ser útil para explorar. Antes de adotar, adapte ao contexto, teste casos de borda, confira a licença e explique cada decisão relevante.</div>
 </div>
 <div class="rule-tag">Não fazer</div>
 </div>
 <div class="rule r-do">
 <div class="rule-icon">🗄️</div>
 <div class="rule-text">
-<div class="rule-title">Use dados reais ou verossímeis</div>
-<div class="rule-desc">Dados inventados sem contexto não treinam julgamento. Use dados do Garmin, ou crie um dataset que simule Renner. Quando o dado é real, você percebe quando o resultado está errado.</div>
+<div class="rule-title">Use dados próprios, sintéticos ou autorizados</div>
+<div class="rule-desc">Dados com contexto treinam julgamento, mas segurança vem primeiro. Não mova dados, segredos ou código interno da Renner para ferramentas e repositórios pessoais.</div>
 </div>
 <div class="rule-tag">Fazer</div>
 </div>
 <div class="rule r-dont">
 <div class="rule-icon">🤖</div>
 <div class="rule-text">
-<div class="rule-title">Não peça para a IA escrever o código por você</div>
-<div class="rule-desc">Use Claude para revisar depois que você escreveu, explicar um comportamento que você não entendeu, ou fazer perguntas difíceis para testar seu domínio. Nunca para gerar o código que você deveria estar aprendendo.</div>
+<div class="rule-title">Use IA com objetivo e verificação</div>
+<div class="rule-desc">IA pode explicar, propor, revisar e gerar alternativas. Preserve informações internas, confira em fontes oficiais, execute testes e assuma responsabilidade pela solução adotada.</div>
 </div>
 <div class="rule-tag">Não fazer</div>
 </div>
 <div class="rule r-do">
 <div class="rule-icon">🃏</div>
 <div class="rule-text">
-<div class="rule-title">Anki para o que precisa ficar automático</div>
-<div class="rule-desc">Não para decorar sintaxe — para internalizar comportamentos. "O que RANGE faz diferente de ROWS quando há empates?" é um card útil. "Sintaxe do OVER()" não é.</div>
+<div class="rule-title">Use recuperação ativa quando ela ajudar</div>
+<div class="rule-desc">Flashcards, perguntas e reconstrução são opções para conceitos recorrentes. Sintaxe rara pode permanecer na documentação; priorize comportamento e critérios de decisão.</div>
 </div>
 <div class="rule-tag">Fazer</div>
 </div>
 <div class="rule r-dont">
 <div class="rule-icon">⏱️</div>
 <div class="rule-text">
-<div class="rule-title">Não gaste mais de 20% do tempo "aprendendo"</div>
-<div class="rule-desc">Assistir vídeo, ler artigo, ouvir podcast — isso não é praticar. O aprendizado técnico acontece quando você está com as mãos no código e o cérebro tentando resolver algo. 80% do tempo tem que ser prática ativa.</div>
+<div class="rule-title">Equilibre estudo, prática e feedback</div>
+<div class="rule-desc">A proporção varia por tópico e experiência. Garanta tempo suficiente para implementar, observar resultados e receber revisão, sem desprezar leitura conceitual.</div>
 </div>
 <div class="rule-tag">Não fazer</div>
 </div>
 <div class="rule r-do">
 <div class="rule-icon">🔁</div>
 <div class="rule-text">
-<div class="rule-title">Volte ao tópico em intervalos (espaçamento)</div>
-<div class="rule-desc">Depois de dominar um tópico, revise-o ativamente 3 dias depois, 1 semana, 1 mês. Não releia — tente reproduzir do zero. O que você não consegue reproduzir semanas depois, você não dominou.</div>
+<div class="rule-title">Revisite o tópico em intervalos úteis</div>
+<div class="rule-desc">Retome o tema após alguns dias e semanas, ajustando a frequência à importância e ao esquecimento observado. Alterne reconstrução, explicação e novos problemas.</div>
 </div>
 <div class="rule-tag">Fazer</div>
 </div>
 </div>
 </div>
-</div>\n</body>\n</html>
+</div>
+</body>
+</html>

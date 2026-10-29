@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plano 12 Semanas — Especialista Técnico</title>
+<title>Plano de 12 Semanas — Autonomia Técnica</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -414,10 +414,14 @@
 <body>
 
 <header>
-  <a href="index.html" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);text-decoration:none;text-transform:uppercase;letter-spacing:0.1em;transition:color 0.2s;display:inline-block;margin-bottom:32px;">← Voltar ao Hub</a>
+  <nav style="font-family:'IBM Plex Mono',monospace;font-size:11px;margin-bottom:32px;display:flex;gap:18px;flex-wrap:wrap;">
+    <a href="index.html" style="color:var(--text-dim);text-decoration:none;">← Hub</a>
+    <a href="cheatsheets.html" style="color:var(--text-dim);text-decoration:none;">Cheatsheets</a>
+    <a href="framework_dominio_tecnico.html" style="color:var(--text-dim);text-decoration:none;">Framework técnico</a>
+  </nav>
   <div class="eyebrow">Plano de Desenvolvimento Técnico</div>
-  <h1>Do executor<br><em>ao especialista.</em></h1>
-  <p class="subtitle">12 semanas para dominar SQL, PySpark, Databricks e ADF — resolvendo problemas reais de negócio, de ponta a ponta.</p>
+  <h1>Da execução<br><em>à autonomia crescente.</em></h1>
+  <p class="subtitle">12 semanas para construir competência prática em SQL, PySpark, Databricks e ADF — com entregas verificáveis em problemas reais.</p>
   <div class="stats-row">
     <div class="stat">
       <span class="stat-num">12</span>
@@ -436,7 +440,7 @@
 
 <div class="principle">
   <span class="principle-icon">// PRINCÍPIO</span>
-  <p><strong>Cada coisa que você aprende precisa aparecer em algo real na Renner na semana seguinte.</strong> Isso é o que transforma conhecimento em competência. Não separe estudo de trabalho.</p>
+  <p><strong>Cada tema deve gerar uma evidência prática: consulta, notebook, pipeline, teste ou explicação revisada.</strong> Use somente dados e ambientes autorizados da Renner; nunca copie informações internas para repositórios, dispositivos ou serviços pessoais.</p>
 </div>
 
 <div class="timeline">
@@ -449,7 +453,7 @@
         <div class="phase-meta p1">Fase 01 · Semanas 1–2</div>
         <div class="phase-title">SQL — Fundação Sólida</div>
       </div>
-      <div class="phase-tagline">Você aprende a linguagem que vai usar todo dia, para sempre.</div>
+      <div class="phase-tagline">Você constrói uma base reutilizável para as tarefas recorrentes do time.</div>
     </div>
     <div class="weeks">
       <div class="week-card card-p1">
@@ -463,7 +467,7 @@
         </ul>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
-          <p>Consultar qualquer tabela, filtrar e ordenar sem olhar documentação.</p>
+          <p>Produzir uma consulta filtrada e ordenada, justificar os filtros e validar o resultado; documentação oficial pode ser consultada.</p>
         </div>
       </div>
       <div class="week-card card-p1">
@@ -472,19 +476,19 @@
         <ul class="topics">
           <li>GROUP BY + COUNT, SUM, AVG, MAX, MIN</li>
           <li>HAVING para filtrar grupos</li>
-          <li>INNER JOIN e LEFT JOIN — quando usar cada um</li>
-          <li>RIGHT JOIN e FULL OUTER JOIN</li>
-          <li>JOINs com múltiplas condições</li>
+          <li>INNER, LEFT e FULL OUTER JOIN — quando usar cada um</li>
+          <li>Grão, cardinalidade 1:1/1:N/N:N e exploding joins</li>
+          <li>Tipos, nulos e múltiplas condições nas chaves</li>
         </ul>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
-          <p>Cruzar duas tabelas e agregar o resultado com confiança.</p>
+          <p>Cruzar duas tabelas preservando o grão esperado e apresentar contagens antes/depois como evidência.</p>
         </div>
       </div>
     </div>
     <div class="practice-box">
       <div class="label">// como praticar</div>
-      <p>Use dados reais da Renner ou o ambiente NovaMed. Escreva queries que respondam perguntas de negócio reais — "quais categorias venderam mais essa semana?" — não exercícios artificiais.</p>
+      <p>Use dados autorizados da Renner ou dados sintéticos equivalentes. Responda uma pergunta real de negócio e registre fonte, grão, filtros e validações.</p>
     </div>
   </div>
 
@@ -510,7 +514,7 @@
         </ul>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
-          <p>Escrever uma query com CTE e CASE WHEN sem consultar nada.</p>
+          <p>Escrever e explicar uma query com CTE, tipos, nulos e CASE; validar casos de borda com uma amostra controlada.</p>
         </div>
       </div>
       <div class="week-card card-p2">
@@ -520,18 +524,18 @@
           <li>ROW_NUMBER, RANK, DENSE_RANK</li>
           <li>LAG e LEAD — comparar linha com anterior/próxima</li>
           <li>SUM OVER e AVG OVER — acumulados e médias móveis</li>
-          <li>PARTITION BY — janelas por grupo</li>
-          <li>Datas: DATEDIFF, DATEADD, FORMAT</li>
+          <li>PARTITION BY, ordenação determinística e frames</li>
+          <li>ROWS versus RANGE; date_add, datediff e date_format no Spark SQL</li>
         </ul>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
-          <p>Calcular variação percentual, ranking por categoria e média móvel sem ajuda.</p>
+          <p>Calcular ranking e acumulado, explicar empates e frame, e validar o resultado contra uma agregação de controle.</p>
         </div>
       </div>
     </div>
     <div class="practice-box">
       <div class="label">// como praticar</div>
-      <p>Pegue relatórios que existem hoje na Renner e tente recriá-los do zero em SQL. Não peça a query — entregue o resultado e valide com o original.</p>
+      <p>Com autorização, reproduza uma métrica conhecida da Renner. Compare com a referência, investigue divergências e documente as hipóteses; use documentação e revisão quando necessário.</p>
     </div>
   </div>
 
@@ -541,7 +545,7 @@
       <div class="phase-bar bar-p3" style="height:auto;"></div>
       <div>
         <div class="phase-meta p3">Fase 03 · Semanas 5–6</div>
-        <div class="phase-title">Databricks na prática + leitura de notebooks</div>
+        <div class="phase-title">Databricks, Spark e Delta na prática</div>
       </div>
       <div class="phase-tagline">Você para de ter medo do ambiente e começa a se sentir em casa.</div>
     </div>
@@ -550,34 +554,35 @@
         <div class="week-num">Semana 05</div>
         <div class="week-title">Orientação no ambiente</div>
         <ul class="topics">
-          <li>Como o Databricks funciona: clusters, notebooks, células</li>
+          <li>Workspace, compute, notebooks, driver, executores e jobs</li>
           <li>Spark SQL dentro do Databricks com spark.sql()</li>
-          <li>Leitura de Delta Tables: spark.read.format("delta")</li>
-          <li>Entender a arquitetura bronze/silver/gold sem precisar construir</li>
+          <li>Leitura de Delta Tables e diferenças entre tabela e caminho</li>
+          <li>Bronze/Silver/Gold, histórico Delta e políticas de retenção</li>
         </ul>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
-          <p>Rodar uma query Spark SQL em um notebook existente sem erros.</p>
+          <p>Executar e explicar um notebook existente, identificar entradas/saídas e registrar riscos de ambiente ou dados.</p>
         </div>
       </div>
       <div class="week-card card-p3">
         <div class="week-num">Semana 06</div>
-        <div class="week-title">PySpark básico — leitura e inspeção</div>
+        <div class="week-title">PySpark, planos e inspeção</div>
         <ul class="topics">
           <li>df.select(), df.filter(), df.groupBy(), df.withColumn()</li>
           <li>Como inspecionar dados: df.show(), df.printSchema(), df.describe()</li>
-          <li>Como salvar resultado: df.write.format("delta").save()</li>
+          <li>Leitura de plano com explain("formatted") e noções de lazy evaluation</li>
+          <li>Escrita Delta consciente de modo, schema e idempotência</li>
           <li>Leitura de notebooks existentes: entender bloco por bloco</li>
         </ul>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
-          <p>Abrir um notebook desconhecido e comentar o que cada bloco faz.</p>
+          <p>Mapear o fluxo de um notebook desconhecido e explicar ao menos uma transformação e seu plano de execução.</p>
         </div>
       </div>
     </div>
     <div class="practice-box">
       <div class="label">// como praticar</div>
-      <p>Pegue notebooks existentes no ambiente da Renner, leia linha por linha e escreva em comentário o que cada bloco faz. Depois tente reescrever partes menores do zero.</p>
+      <p>Use notebooks autorizados da Renner. Mapeie dependências e regras sem alterar produção; reproduza um trecho com dados sintéticos ou em ambiente seguro.</p>
     </div>
   </div>
 
@@ -598,32 +603,34 @@
         <ul class="topics">
           <li>Joins no PySpark: df.join(other, on=..., how=...)</li>
           <li>Funções úteis: F.when(), F.coalesce(), F.lit()</li>
-          <li>Tratamento de dados sujos: nulos, tipos errados, duplicatas</li>
-          <li>Como ler arquivos externos: CSV, Parquet, Excel</li>
+          <li>Schema explícito, nulos, tipos inválidos e duplicidades</li>
+          <li>CSV, JSON, Parquet e Excel por conector/biblioteca homologada</li>
+          <li>Checks de grão, chaves e reconciliação pós-join</li>
         </ul>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
-          <p>Cruzar duas tabelas Delta e salvar o resultado transformado.</p>
+          <p>Cruzar duas tabelas Delta, validar cardinalidade e qualidade, e gravar uma saída idempotente em ambiente autorizado.</p>
         </div>
       </div>
       <div class="week-card card-p4">
         <div class="week-num">Semana 08</div>
         <div class="week-title">Window functions no PySpark</div>
         <ul class="topics">
-          <li>Window.partitionBy() e Window.orderBy()</li>
+          <li>Window.partitionBy(), orderBy() e desempate determinístico</li>
           <li>F.lag(), F.lead(), F.rank(), F.row_number()</li>
-          <li>SUM e AVG acumulados com janela</li>
+          <li>ROWS versus RANGE, acumulados e janelas globais</li>
           <li>Combinando PySpark com Spark SQL no mesmo notebook</li>
+          <li>Teste pequeno da regra e documentação da entrega</li>
         </ul>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
-          <p>Entregar uma tabela final correta explicando as decisões tomadas no caminho.</p>
+          <p>Entregar uma tabela validada com teste reproduzível e explicar as decisões, limites e evidências.</p>
         </div>
       </div>
     </div>
     <div class="practice-box">
       <div class="label">// como praticar</div>
-      <p>Pegue uma demanda real, mesmo que pequena, e proponha ao seu gestor que você faz a entrega. Mostre o resultado antes de mostrar o código.</p>
+      <p>Alinhe uma demanda pequena com o gestor. Apresente resultado, critérios de validação e riscos antes de discutir detalhes de implementação.</p>
     </div>
   </div>
 
@@ -633,7 +640,7 @@
       <div class="phase-bar bar-p5" style="height:auto;"></div>
       <div>
         <div class="phase-meta p5">Fase 05 · Semanas 9–10</div>
-        <div class="phase-title">ADF + ingestões como seu gestor faz</div>
+        <div class="phase-title">ADF + ingestões operáveis e seguras</div>
       </div>
       <div class="phase-tagline">Você entende como os dados chegam e consegue criar ou adaptar pipelines.</div>
     </div>
@@ -642,34 +649,34 @@
         <div class="week-num">Semana 09</div>
         <div class="week-title">ADF — fundação e ingestões básicas</div>
         <ul class="topics">
-          <li>Como um pipeline no ADF funciona: atividades, fluxo, parâmetros</li>
-          <li>Ingestão de arquivos flat: CSV, Excel do SharePoint para bronze</li>
-          <li>Como parametrizar pipelines para reusar em múltiplos contextos</li>
-          <li>Tratamento de erros básico: If Condition, On Failure</li>
+          <li>Atividades, datasets, linked services, parâmetros e triggers</li>
+          <li>Ingestão de CSV/Excel do SharePoint para Bronze com conectores homologados</li>
+          <li>Parâmetros, metadados e reutilização sem expor segredos</li>
+          <li>Falhas, retries, timeout, idempotência e reprocessamento</li>
         </ul>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
-          <p>Ler e entender qualquer pipeline existente na Renner sem ajuda.</p>
+          <p>Mapear um pipeline autorizado, explicar dependências e demonstrar como reprocessá-lo com segurança após uma falha simulada.</p>
         </div>
       </div>
       <div class="week-card card-p5">
         <div class="week-num">Semana 10</div>
         <div class="week-title">Ingestões via API e SFTP</div>
         <ul class="topics">
-          <li>Ingestão via API REST: linked service, headers, autenticação</li>
+          <li>API REST: autenticação segura, paginação, limites e incrementalidade</li>
           <li>Ingestão via SFTP: configurar, pegar arquivo, mover para Data Lake</li>
-          <li>Criar um pipeline novo do zero — mesmo que cópia de existente</li>
-          <li>Debug e monitoramento de execuções no ADF</li>
+          <li>Segredos em Key Vault/serviço homologado; nunca em código ou parâmetros visíveis</li>
+          <li>Monitoramento, alertas, logs, correlação e diagnóstico</li>
         </ul>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
-          <p>Criar uma ingestão nova sem precisar que o gestor configure do zero pra você.</p>
+          <p>Implementar em ambiente seguro uma ingestão revisada, com paginação ou arquivo, reexecução idempotente e evidência de monitoramento.</p>
         </div>
       </div>
     </div>
     <div class="practice-box">
       <div class="label">// como praticar</div>
-      <p>Olhe os pipelines existentes na Renner com objetivo de entender, não de mudar. Depois proponha criar um pipeline simples do zero — mesmo que seja uma cópia de algo que já existe.</p>
+      <p>Inspecione somente pipelines autorizados e não altere produção. Proponha uma ingestão simples em ambiente seguro, com revisão do gestor e credenciais gerenciadas.</p>
     </div>
   </div>
 
@@ -679,7 +686,7 @@
       <div class="phase-bar bar-p6" style="height:auto;"></div>
       <div>
         <div class="phase-meta p6">Fase 06 · Semanas 11–12</div>
-        <div class="phase-title">Domínio de negócio + entregas autônomas</div>
+        <div class="phase-title">Domínio de negócio + autonomia responsável</div>
       </div>
       <div class="phase-tagline">Você vira referência nos problemas que importam para a Renner.</div>
     </div>
@@ -691,31 +698,31 @@
           <li>Identificar os 5–6 problemas que mais aparecem no time</li>
           <li>Cobertura de estoque, vendas por categoria, ruptura, giro de produto</li>
           <li>Entender a lógica de negócio por trás de cada problema, não só a query</li>
-          <li>Construir repositório pessoal de queries e notebooks comentados</li>
+          <li>Documentar padrões reutilizáveis sem dados, segredos ou código interno não autorizado</li>
         </ul>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
-          <p>Ter pelo menos 3 soluções documentadas para problemas reais do time.</p>
+          <p>Documentar três padrões de solução com problema, grão, validação, riscos e lições, respeitando as políticas internas.</p>
         </div>
       </div>
       <div class="week-card card-p6">
         <div class="week-num">Semana 12</div>
-        <div class="week-title">Autonomia total — do pedido à entrega</div>
+        <div class="week-title">Entrega autônoma com revisão</div>
         <ul class="topics">
-          <li>Receber o pedido, entender a dor, entregar a tabela</li>
-          <li>Documentar o que foi feito: um parágrafo explicando a lógica</li>
-          <li>Propor soluções para problemas que o gestor ainda não resolveu</li>
-          <li>Ser a referência técnica que outros consultam</li>
+          <li>Clarificar pedido, regra, grão, critérios de aceite e riscos</li>
+          <li>Implementar, testar, reconciliar e documentar a solução</li>
+          <li>Solicitar revisão nos pontos de impacto ou incerteza</li>
+          <li>Comunicar resultado, limitações e próximos passos</li>
         </ul>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
-          <p>Seu gestor te passa um problema novo e você volta com uma proposta de solução, não com uma pergunta.</p>
+          <p>Receber um problema novo e voltar com perguntas de clarificação, proposta justificada, validações e plano seguro de entrega.</p>
         </div>
       </div>
     </div>
     <div class="practice-box">
       <div class="label">// como praticar</div>
-      <p>Pegue demandas de ponta a ponta. Documente tudo que você fez — um parágrafo explicando a lógica é o que separa um executor de um especialista.</p>
+      <p>Conduza uma demanda de ponta a ponta com checkpoints. Autonomia inclui saber quando perguntar, pedir revisão e interromper uma mudança insegura.</p>
     </div>
   </div>
 
@@ -761,14 +768,14 @@
       <tr>
         <td><span class="dot" style="background:var(--phase6)"></span>Sem 11–12</td>
         <td class="highlight">Negócio + autonomia</td>
-        <td>Vira referência no time</td>
+        <td>Demonstra autonomia responsável</td>
       </tr>
     </tbody>
   </table>
 </div>
 
 <footer>
-  Plano gerado em junho 2026 · Thiago × Claude · Lojas Renner — Engenharia de Dados
+  Plano pessoal de desenvolvimento · Lojas Renner — Engenharia de Dados · Revisado em 2026
 </footer>
 
 </body>
