@@ -1,56 +1,61 @@
-# Exploracao e Tipagem (PySpark)
+# Exploração e Tipagem (PySpark)
 
-## O que e
-Antes de transformar dados, inspecione schema, amostras, estatísticas e valores inválidos. Casts explícitos estabilizam joins e escritas, mas conversões incompatíveis podem produzir nulos ou erros conforme o modo ANSI e a função utilizada.
+## O que é
 
-## Nivel Junior/Pleno: Inspeções Rapidas e Describe
-Técnicas interativas na UI para confirmar a volumetria provisória e esquemas ocultos.
+Antes de transformar dados, inspecione schema, amostras, estatísticas e valores inválidos. Casts explícitos estabilizam joins e escritas; conversões incompatíveis produzem nulos ou erros conforme o modo ANSI e a função usada.
 
-```python
-# 1. ESQUELETIZACAO DA ARVORE (Mapeia chaves, structs imbuidas em json, arrey types e dicts internos e os expoe em ramificacao hierarquica estrutural).
-df_recebido.printSchema()
-
-# 2. PROFILING DE MAX/MIN NUMERICS (Estatistica basica sobre fatias inteiras pulando strings)
-df_recebido.select("idade", "faturamento").describe().show()
-
-# 3. INTEROPERABILIDADES DE TELA DE DEVS
-display(df_recebido) # No databricks workspace rederiza nativo tabelado front-end.
-```
-
-## Nivel Pleno: Casting Tipografico Explicito
-Escolha tipos compatíveis com o domínio e valide o resultado do cast antes de joins ou escritas.
+## Inspeção rápida
 
 ```python
-from pyspark.sql.functions import col
-from pyspark.sql.types import IntegerType, DecimalType
-
-df_formatado = df_origem \\
-    .withColumn("id_int_base", col("id").cast(IntegerType())) \\
-    
-    # Decimal explícito para valores monetários quando a escala é conhecida.
-    .withColumn("vlr_moeda", col("faturamento").cast(DecimalType(18,2))) \\
-    
-    # Cast condicional boleano automático a vera. Produze True/False limpo in-loop.
-    .withColumn("indicador_alta_compra", (col("faturamento") > 1500.0))
+df.printSchema()                                  # árvore de tipos, inclusive structs e arrays
+df.limit(20).show(truncate=False)
+df.select("idade", "faturamento").describe().show()   # count, mean, stddev, min, max
+df.select("idade").summary("count", "min", "25%", "50%", "75%", "max").show()
+display(df)                                       # Databricks: grade interativa e perfil de dados
 ```
 
-## Nivel Senior: Timestamps e Correcoes de Fuso-Horario (TimeZone Adjustments)
-O pesadelo global das clouds. Um Log ERP Brasileiro gerado em sua data Local crua na origem é hospedado no Azure em DataCenters americanos rodando a engine no UTC+0 nativo. Cruzações temporais e YTD quebram se expostos no Pyspark.
+- `describe` e `summary` são ações: percorrem os dados. Em tabelas grandes, rode sobre uma amostra (`df.sample(0.01, seed=42)`).
+- `df.dtypes` e `df.schema` permitem validar o schema por código.
+
+## Casts explícitos
 
 ```python
-from pyspark.sql.functions import to_timestamp, to_date, current_timestamp, from_utc_timestamp
+from pyspark.sql import functions as F
+from pyspark.sql import types as T
 
-# Timezone de sessoes default: current_timestamp reflete o relogio matriz host da Sessão.
+df_tipado = (
+    df_origem
+    .withColumn("id", F.col("id").cast(T.LongType()))
+    .withColumn("vl_faturamento", F.col("faturamento").cast(T.DecimalType(18, 2)))
+    .withColumn("is_alta_compra", F.col("faturamento") > 1500)   # expressão booleana
+)
 
-df_cronos = df_fatos_logs \\
-    # PARSING MASCARADO: Formataçoes exóticas stringadas para Date oficial. (O 'MM' minúsculo difere do sql)
-    .withColumn(
-        "dt_nascimento_limpa", 
-        to_date(col("dt_bruta_erada"), 'dd/MM/yyyy') 
-    ) \\
-    # TIMEZONE OFFSETTING BINDED (Geralmente salva Painel analitico trazendo do utc pro local regional):
-    .withColumn(
-        "ts_visita_hora_brasil", 
-        from_utc_timestamp(col("ts_evento_utc"), 'America/Sao_Paulo')
-    )
+# Contar o que o cast perdeu (valor presente que virou NULL)
+df_tipado.filter(F.col("faturamento").isNotNull() & F.col("vl_faturamento").isNull()).count()
 ```
+
+- Com ANSI ligado (padrão no Spark 4.x e no serverless), `cast` de valor inválido gera erro. `F.try_to_number`, `F.try_to_timestamp` ou `expr("try_cast(x AS INT)")` devolvem `NULL`.
+- Use `DecimalType` para dinheiro; `DoubleType` é aproximado.
+
+## Datas e timezone
+
+`current_timestamp()` segue o timezone da sessão (`spark.sql.session.timeZone`). Converta explicitamente quando a origem e a sessão estiverem em fusos diferentes.
+
+```python
+df_datas = (
+    df_logs
+    .withColumn("dt_nascimento", F.to_date("dt_nascimento_txt", "dd/MM/yyyy"))
+    .withColumn("ts_evento_br", F.from_utc_timestamp("ts_evento_utc", "America/Sao_Paulo"))
+    .withColumn("mes_ref", F.date_trunc("month", "ts_evento_utc"))
+)
+```
+
+- Os padrões de data são os mesmos do Spark SQL: `MM` = mês, `mm` = minuto, `HH` = 0–23.
+- Só aplique `from_utc_timestamp` se a coluna estiver de fato em UTC.
+
+## Checklist
+
+- [ ] O schema lido confere com o contrato esperado?
+- [ ] Perdas por cast são contadas?
+- [ ] Valores monetários usam `DecimalType`?
+- [ ] O fuso da origem e o da sessão são conhecidos?

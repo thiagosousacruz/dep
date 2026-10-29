@@ -1,55 +1,72 @@
-# Quality Operational Profiling (Data Quality em PySpark)
+# Data Quality Operacional (PySpark)
 
-## O que e
-As defesas analiticas para garantir saude referencial nas etapas Gold e Trusted (Analytics Engineering). E recomendado possuir uma camada isolada ou um framework leve que averigue desvios estatisticos de volumetria, comparativos em perdas de linhas em Join e metricas de esparsidade nulas operantes nas features antes do fechamento/commit real para os Datamarts e usuarios do painel.
+## O que é
 
-## Verificacoes Preditivas Baseadas Eixos/Graos
+Checagens executadas no próprio pipeline, antes de publicar Silver ou Gold: unicidade do grão, nulos em campos críticos, perda de linhas em joins e variação de volume. A regra precisa definir o limite aceitável e a ação (alertar, isolar ou falhar).
 
-```python
-from pyspark.sql.functions import col, count, sum, countDistinct
-
-# 1. VERIFICACAO DE EXTRUIDACAO DE GRAO E CHAVES (Unique Keys Rules)
-# O script abaixo avalia se o Id_Transacao supostamente oficial da tabela permaneceu unitario na contagem e valida o gap. 
-contagem_metrica = df_final.agg(
-    count("*").alias("Tamanho_Total_Linhas"),
-    countDistinct("id_transacao_chave_pk").alias("Chaves_Unicas_PK_Totais")
-).collect()[0]
-
-if contagem_metrica["Tamanho_Total_Linhas"] != contagem_metrica["Chaves_Unicas_PK_Totais"]:
-    print(f"ALERTA SEVERO! O dataframe gerado deveria representar 1 row per transaction... Existem Transacoes Id duplicadas. Tamanho Rows: {contagem_metrica['Tamanho_Total_Linhas']} | Chaves: {contagem_metrica['Chaves_Unicas_PK_Totais']} ")
-    # Pode Iniciar instrucao limitadora (ex. Raise Exception interrompendo o Jenkins Job)
-```
-
-## Perfilamento Contabil de Volume Nulo e Faltantes
+## Unicidade do grão
 
 ```python
-from pyspark.sql.functions import col, sum, when
+from pyspark.sql import functions as F
 
-# 2. CALCULO MATRICIAL E ESPECIFICO DO PESO NULO EM CAMPO CHAVE (Esparsividade Nula)
-def checar_densidade_coluna(df, coluna_alvo):
-    res_profiling = df.select(
-        (sum(when(col(coluna_alvo).isNull(), 1).otherwise(0)) / count("*") * 100).alias("porcentagem_falta")
-    ).collect()[0]
-    
-    return res_profiling["porcentagem_falta"]
+resumo = df_final.agg(
+    F.count("*").alias("linhas"),
+    F.count_distinct("id_transacao").alias("chaves"),
+).first()
 
-indice_nulos_telefone = checar_densidade_coluna(df_base, "telefone_cliente")
-
-if indice_nulos_telefone > 25.0:
-    print("WARNING QUALITY: A coluna telefones esta vindo com + de 25% de buracos globais. Inviavel usar essa propensão para modelos de Ligacao Preditiva Marketing ML.")
+if resumo["linhas"] != resumo["chaves"]:
+    raise ValueError(
+        f"Grão violado: {resumo['linhas']} linhas para {resumo['chaves']} chaves distintas"
+    )
 ```
 
-## Conciliacao Pos-Join Cruzamento Origem/Destino (Drop Gaps)
+- Faça as métricas em um único `agg`: cada ação separada relê os dados.
+- `print` não interrompe um job; para bloquear a publicação, levante exceção.
+
+## Percentual de nulos por coluna
 
 ```python
-# 3. RECONCILIACAO E MATRIZ POS-INTERACAO (Verificar se perdemos dados bons de origem nas unioes acirradas do Inner Join com tabelas defeituosas dimensionais!)
+def percentual_nulos(df, colunas):
+    linha = df.select([
+        (F.avg(F.col(c).isNull().cast("int")) * 100).alias(c) for c in colunas
+    ]).first()
+    return linha.asDict()
 
-linha_tamanho_fonte_A = df_Origem_Legado.count()
-linha_tamanho_cruzada = df_inner_joinado_com_B.count()
-
-qnt_linhas_orfades = linha_tamanho_fonte_A - linha_tamanho_cruzada
-
-if qnt_linhas_orfades > (linha_tamanho_fonte_A * 0.10):
-     # Tolerancia max: Nao se pode perder mais de 10% da origem tentando cruzar em tabelas dimensionais!
-    raise ValueError(f"FALHA DQ FATAL! Perda abusiva no INNER JOIN. A Tabela B não acompanhou a massa da A e descartou mais de 10% das Vendas originais limitando o DataMart!")
+nulos = percentual_nulos(df_clientes, ["telefone", "email", "cpf"])
+violacoes = {c: p for c, p in nulos.items() if p > 25.0}
+if violacoes:
+    print(f"Alerta de qualidade: nulos acima de 25% em {violacoes}")
 ```
+
+- O limite (25% acima) é exemplo: defina-o com o consumidor do dado.
+
+## Perda de linhas em joins
+
+Compare a origem com o resultado e isole as linhas sem correspondência, em vez de só contar.
+
+```python
+sem_dimensao = df_vendas.join(df_produtos, "id_produto", "left_anti")
+qtd_orfas = sem_dimensao.count()
+total = df_vendas.count()
+
+if total and qtd_orfas / total > 0.01:
+    sem_dimensao.write.mode("append").saveAsTable("main.quarentena.vendas_sem_produto")
+    raise ValueError(f"{qtd_orfas} de {total} vendas sem produto correspondente")
+```
+
+- Para um `inner join`, a diferença de contagem também pode vir de duplicidade do lado direito (que **aumenta** linhas); verifique as duas direções.
+
+## Frameworks e expectativas declarativas
+
+Para regras recorrentes, prefira declarar em vez de codificar `if` a cada pipeline:
+
+- **Lakeflow Declarative Pipelines (DLT):** `@dlt.expect`, `@dlt.expect_or_drop`, `@dlt.expect_or_fail`, com métricas por regra.
+- **Restrições Delta:** `CHECK` e `NOT NULL` na tabela (ver [Data quality em SQL](../01_sql/11_data-quality-profiling.md)).
+- Bibliotecas como DQX (Databricks Labs) e Great Expectations, quando o projeto as adota.
+
+## Checklist
+
+- [ ] Cada regra tem limite e ação definidos?
+- [ ] Violações bloqueiam a publicação quando deveriam?
+- [ ] Linhas rejeitadas vão para quarentena com contexto?
+- [ ] As métricas são calculadas com o mínimo de ações?

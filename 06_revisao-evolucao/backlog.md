@@ -1,8 +1,8 @@
 # Backlog de Revisão e Evolução
 
-O núcleo ativo cobre SQL e PySpark. Modeling permanece complementar e streaming, recipes e exercícios estão fora do ciclo atual.
+O núcleo ativo cobre SQL e PySpark. Modeling permanece complementar; streaming e recipes estão fora do ciclo atual. A prática diária é feita pelo Desafio do Dia, que cobre apenas o conteúdo dos cheatsheets.
 
-## Concluído nesta consolidação
+## Concluído
 
 - [x] Declarar Markdown como fonte de verdade e HTML como artefato gerado.
 - [x] Corrigir links para áreas inexistentes ou renomeadas.
@@ -13,21 +13,37 @@ O núcleo ativo cobre SQL e PySpark. Modeling permanece complementar e streaming
 - [x] Validar entradas, placeholders, links internos e contagem de seções.
 - [x] Preservar a estrutura semântica `pre > code` no HTML.
 - [x] Documentar dependências e comando de geração.
+- [x] Revisão técnica e editorial completa (2026-10): ver [revisao-editorial-2026-10.md](revisao-editorial-2026-10.md).
+- [x] Correções de SQL de 2026-10-28: `CACHE VIEW`, CTE × plano, `approx_count_distinct` 5%, ordem de execução, `IFF`.
 
 ## Próximas melhorias
 
-- [ ] Adicionar revisão periódica por versão do Databricks Runtime adotado.
-- [ ] Acrescentar referências oficiais nos temas dependentes de versão.
+- [ ] Revisão periódica por versão do runtime usando [o checklist](../04_templates/checklist-revisao-editorial.md).
 - [ ] Automatizar o build e o verificador de links em CI caso o projeto seja publicado.
 - [ ] Expandir exemplos somente a partir de casos reais validados.
 
-## Correções de SQL identificadas (2026-10-28)
+## Lacunas identificadas (aguardando decisão de escopo)
 
-Testadas no DBSQL 2026.42 (warehouse serverless).
+Prioridade: **A** = esperado no tema e de uso frequente · **M** = útil · **B** = avançado ou nichado.
 
-- [ ] `01_cheatsheets/01_sql/05_ctes.md`: `CACHE VIEW ... AS` não existe (`PARSE_SYNTAX_ERROR`). A sintaxe é `CACHE TABLE nome AS SELECT`. Confirmar se o warehouse serverless executa o comando.
-- [ ] `05_ctes.md` × `12_performance-tuning.md`: o 05 afirma que uma CTE referenciada N vezes é lida N vezes; o 12 orienta a não presumir materialização ou reavaliação sem olhar o plano. Alinhar o 05 ao 12 (o plano pode reaproveitar a leitura, com `ReusedExchange`).
-- [ ] `06_group-by-e-pivots.md`: `approx_count_distinct` citado com "2% taxa de erro". O padrão é `relativeSD = 0.05` (5%), ajustável pelo 2º argumento.
-- [ ] `01_sintaxe-basica.md`: a ordem de execução omite janelas/`QUALIFY` e `DISTINCT`.
-- [ ] `IFF` em `04_nulos-e-condicionais.md`, `05_ctes.md` e `11_data-quality-profiling.md`: funciona no Databricks, mas é específico dele. Considerar `if()` ou `CASE`, ou avisar que não é portável.
+### SQL
 
+- [ ] **A** `08_window-functions.md`: `RANGE BETWEEN INTERVAL` para janelas por tempo, `lead`, `first_value`/`last_value` com `IGNORE NULLS`, `ntile`, `percent_rank`.
+- [ ] **A** `10_delta-dml.md`: `DESCRIBE HISTORY`, `MERGE ... WHEN NOT MATCHED BY SOURCE` (delete/soft delete), `MERGE WITH SCHEMA EVOLUTION`, `INSERT REPLACE WHERE`, colunas `IDENTITY`, Change Data Feed.
+- [ ] **A** `07_joins.md`: joins por intervalo (data entre vigências de SCD2) e `NOT EXISTS` vs `LEFT ANTI JOIN`.
+- [ ] **M** `02_tipos-e-formatos.md`: `make_date`, `months_between`, `last_day`, `TIMESTAMP_NTZ` vs `TIMESTAMP`.
+- [ ] **M** `12_performance-tuning.md`: Photon, `ANALYZE TABLE ... COMPUTE STATISTICS`, data skipping, Query Profile do DBSQL.
+- [ ] **M** Novo tópico: Unity Catalog essencial (namespace de 3 níveis, `GRANT`, views dinâmicas, linhagem).
+- [ ] **B** `03_sanitizacao`: funções de similaridade (`levenshtein`, `soundex`) e normalização Unicode.
+- [ ] **B** SQL scripting (`BEGIN ... END`, variáveis `DECLARE`) e funções SQL definidas pelo usuário.
+
+### PySpark
+
+- [ ] **A** `02_leitura-escrita-io.md`: Auto Loader (`cloudFiles`) para ingestão incremental de arquivos, mesmo fora de streaming contínuo (`trigger(availableNow=True)`).
+- [ ] **A** `10_delta-lake-api.md`: `whenNotMatchedBySourceDelete`, `history()`, leitura de Change Data Feed, `replaceWhere`.
+- [ ] **A** `13_performance-e-arquitetura.md`: `cache`/`persist` (e a limitação no serverless), `spark.sql.shuffle.partitions` vs AQE.
+- [ ] **M** `08_window-functions.md`: `rangeBetween` com timestamp convertido em segundos, `first`/`last` com `ignorenulls`.
+- [ ] **M** `13_performance-e-arquitetura.md`: `pyspark.testing.assertDataFrameEqual` (Spark 3.5+).
+- [ ] **M** Novo tópico: Lakeflow Declarative Pipelines (DLT) e expectations, ligado ao 12 e ao 14.
+- [ ] **B** Python Data Source API e UDTFs (Spark 4.x).
+- [ ] **B** `14_medallion-architecture.md`: sem acentuação e sem exemplos de código; avaliar exemplo mínimo por camada.

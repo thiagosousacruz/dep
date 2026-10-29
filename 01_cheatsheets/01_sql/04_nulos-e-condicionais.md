@@ -1,56 +1,63 @@
-# Condicionais e Preenchimento Nulos (SQL)
+# Nulos e Condicionais (SQL)
 
 ## O que é
-O estado `NULL` assombra analíticas. Ele não significa *vazio string ('')* e não é *Zero*. É pura e simplesmente um vazio bytes `Ausência de Estado`. Deixá-los vazar sem regras quebra agrupadores e derruba pontes de Joinings de paineis PowerBI (Deixando linhas como chaves vazias desamarradas na Dimension table).
 
-## Nível Júnior/Pleno: Condicionais e Controle Básico (`COALESCE`)
-Abstraindo vácuos de dados para nomenclaturas seguras na tabela. O SQL `COALESCE(coluna, valor)` olha da esquerda pra direita a lista e para assim que não achar nulo. Muito melhor que codificar gigantes `CASE WHEN` para testes base.
+`NULL` representa ausência de valor: não é string vazia (`''`) nem zero. Comparações com `NULL` resultam em `NULL` (desconhecido), o que afeta filtros, joins e agregações de forma silenciosa.
+
+## COALESCE e CASE WHEN
+
+`COALESCE(a, b, ...)` devolve o primeiro argumento não nulo. `CASE WHEN` cobre regras com várias condições — sempre com `ELSE` explícito.
 
 ```sql
-SELECT 
+SELECT
     id_produto,
-    -- Converte Nulos Textuais
-    COALESCE(nome_produto, 'SEM NOME ORIGINAL') AS descricao_valida,
-    
-    -- ESTRATEGIA CHAVE ORFA: Crie um FK default! Um produto que venha sem a Categoria receberá '-1', la na Tabela De Categoria do BI, crie um campo default '-1 - Orfão'. O Link do Join baterá perfeitamente sem erros! 
-    COALESCE(id_categoria, -1) AS id_categoria,
-    
-    -- O CASE WHEN classico para condicoes densas (Sempre defina o ELSE Final!)
-    CASE 
-        WHEN status_atual = 'A' THEN 'ALTO_RISCO'
-        WHEN status_atual = 'M' AND is_ativo = True THEN 'MEDIO_RISCO'
+    COALESCE(nome_produto, 'SEM NOME')  AS nome_produto,
+    COALESCE(id_categoria, -1)          AS id_categoria,   -- membro "desconhecido" na dimensão
+    CASE
+        WHEN status_atual = 'A'                   THEN 'ALTO_RISCO'
+        WHEN status_atual = 'M' AND is_ativo      THEN 'MEDIO_RISCO'
         ELSE 'BAIXO_RISCO'
-    END as flag_risco
-FROM base_catalogo;
+    END AS flag_risco
+FROM silver.produtos;
 ```
 
-## O Impacto Oculto em Contagens
-Todo agrupador matemático clássico varre e mata a existencia de nulos na hora de somar volumes. `COUNT(1)` conta FÍSICO a partição, `COUNT(coluna)` varre o NULO e queima a linha.
+- Substituir chave nula por `-1` só funciona se a dimensão tiver a linha `-1 = Desconhecido`; combine isso com o modelo.
+- `CASE` avalia as condições em ordem e para na primeira verdadeira.
+
+## NULL em agregações e comparações
 
 ```sql
-SELECT 
-    COUNT(1) AS fisicas_totais_puras,             -- Conta até as linhas completamentes em branco = 10 
-    COUNT(id_celular_reserva) AS qty_preenchidos  -- Retornará só 3 (Pq as outras 7 pessoas não mandaram dados!).
-
+SELECT
+    COUNT(*)                 AS linhas,            -- conta todas as linhas
+    COUNT(telefone)          AS com_telefone,      -- ignora NULL
+    AVG(nota)                AS media_sem_nulos,   -- NULL fica fora do numerador e do denominador
+    AVG(COALESCE(nota, 0))   AS media_nulo_zero    -- regra diferente: explicite qual é a correta
 FROM envios;
--- ALERTA: Nunca realize INNER JOINS entre duas chaves caso ambas sejam NULAS! A = NULL e B = NULL não vão triggar ligações no SQL nativo pois ele recusa que nulo empate com nulo sem ser de forma explícita na semantica `IS NULL` !
 ```
 
-## Nível Sênior: Manipulando Operadores Dinâmicos (Flags & Nullifs)
-Engenheiros criam *Quality Flags*: Nós inserimos colunistas int ocultas atestando qualidade da origem.
-E também temos de prevenir falhas matemáticas nas queries!
+- `COUNT(1)` e `COUNT(*)` são equivalentes.
+- `WHERE coluna = NULL` nunca é verdadeiro: use `IS NULL` / `IS NOT NULL`.
+- Para igualdade que trate `NULL` como igual: `a <=> b` ou `a IS NOT DISTINCT FROM b`.
+- Em joins, chaves `NULL` não se correspondem (ver [Joins](07_joins.md)).
+
+## Divisão por zero, NULLIF e funções try_
+
+Com ANSI ligado (padrão no Databricks SQL e no Spark 4.x), dividir por zero gera erro `DIVIDE_BY_ZERO`. Escolha explicitamente o comportamento.
 
 ```sql
-SELECT 
-    b.valor_bruto,
-    a.comissao_fixa,
-    
-    -- ERRO FATAL: "b.valor_bruto / a.comissao" !!!
-    -- SE A COMISSAO VIER '0' DO BACKEND, ISSO É DIVISÃO POR ZERO! SEU JOB CRASH E TE ACORDA AS 3 DA MANHA.
-    -- NULLIF transforma denominador zero em NULL; o resultado da divisão será NULL.
-    b.valor_bruto / NULLIF(a.comissao_fixa, 0) as fator_multiplicador,
-    
-    -- Geracao de Flag p/ dashboarding de DQ
-    IFF(a.comissao_fixa IS NULL, 1, 0) as is_linha_com_sintoma_furo
-FROM fatos a;
+SELECT
+    valor_bruto / NULLIF(comissao, 0)  AS fator,          -- denominador 0 vira NULL
+    try_divide(valor_bruto, comissao)  AS fator_try,      -- mesmo efeito, função dedicada
+    CASE WHEN comissao IS NULL THEN 1 ELSE 0 END AS is_comissao_ausente   -- flag de qualidade portável
+FROM fatos;
 ```
+
+- `iff(cond, a, b)` existe no Databricks SQL, mas não no Spark open source; `if(cond, a, b)` existe nos dois, mas não é ANSI. `CASE WHEN` é portável.
+- Flags de qualidade (`is_*`) permitem medir o problema em vez de escondê-lo.
+
+## Checklist
+
+- [ ] Comparações com nulos usam `IS NULL`, `<=>` ou `IS NOT DISTINCT FROM`?
+- [ ] A regra de agregação com nulos (ignorar ou tratar como zero) está explícita?
+- [ ] Divisões têm política para denominador zero?
+- [ ] Chaves substitutas (`-1`) existem na dimensão?

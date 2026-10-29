@@ -1,43 +1,72 @@
-# Profiling Rapido Diario e Checagens de Data Quality (SQL)
+# Profiling e Checagens de Data Quality (SQL)
 
-## O que e
-E a rede de seguranca da pipeline. Nem todo erro de dados derruba o Spark: muitos passam como consulta valida e so aparecem depois em KPI, dashboard ou tabela Gold. O objetivo deste material e mostrar checks curtos e frequentes para validar sanidade antes de publicar dados.
+## O que é
 
-## Checks essenciais de rotina
+Muitos problemas de dados não geram erro: a consulta roda e o defeito só aparece no KPI. Checagens curtas e frequentes validam grão, unicidade, nulos, faixas e distribuição antes de publicar.
+
+## Grão e unicidade
+
+Compare o número de linhas com o número de chaves distintas **do grão esperado**.
 
 ```sql
--- 1. VERIFICAR SE O GRAO ESPERADO FOI PRESERVADO
--- Use a chave do grao esperado da tabela.
--- Ex.: se a saida deveria ter 1 linha por pedido, compare com id_pedido.
+-- Saída deveria ter 1 linha por pedido
 SELECT
-    COUNT(1) AS qty_linhas,
-    COUNT(DISTINCT id_cliente) AS qty_ids_unicos
-FROM tabela_masterizado;
+    COUNT(*)                   AS linhas,
+    COUNT(DISTINCT id_pedido)  AS pedidos_distintos,
+    COUNT(*) - COUNT(DISTINCT id_pedido) AS excedente
+FROM gold.fato_pedidos;
 
--- 2. VERIFICAR RANGE E REGRAS DE NEGOCIO IMPOSSIVEIS
-SELECT
-    MIN(idade) AS idade_min,
-    MAX(idade) AS idade_max,
-    SUM(IFF(valor_bruto < 0, 1, 0)) AS boletos_negativos
-FROM db_origem.arquivos_brutos;
-
--- 3. REPRESENTATIVIDADE E DISTRIBUICAO BASICA
-SELECT
-    tipo_assinatura,
-    COUNT(1) AS base_volumetrica,
-    ROUND((COUNT(1) / SUM(COUNT(1)) OVER()) * 100, 2) AS percentual_representatividade
-FROM silver_base_contratos
-GROUP BY tipo_assinatura;
+-- Quais chaves estão duplicadas?
+SELECT id_pedido, COUNT(*) AS n
+FROM gold.fato_pedidos
+GROUP BY id_pedido
+HAVING COUNT(*) > 1
+ORDER BY n DESC
+LIMIT 20;
 ```
 
-## O que vale conferir antes de publicar
-- Grao esperado da tabela.
-- Nulos em campos criticos.
-- Chaves que deveriam ser unicas.
-- Valores fora de range.
-- Distribuicao inesperada por categoria.
+## Nulos e faixas impossíveis
 
-## Boas praticas
-- Compare sempre com a chave correta do grao esperado, nao com qualquer identificador conveniente.
-- Execute profiling antes e depois de joins sensiveis.
-- Se um `COUNT(DISTINCT ...)` mudar muito, investigue cardinalidade e deduplicacao.
+```sql
+SELECT
+    count_if(id_cliente IS NULL)             AS clientes_nulos,
+    ROUND(100 * AVG(CASE WHEN email IS NULL THEN 1 ELSE 0 END), 2) AS pct_email_nulo,
+    MIN(idade)                               AS idade_min,
+    MAX(idade)                               AS idade_max,
+    count_if(valor_bruto < 0)                AS valores_negativos,
+    count_if(dt_evento > current_date())     AS datas_futuras
+FROM silver.cadastro;
+```
+
+## Distribuição por categoria
+
+```sql
+SELECT
+    tipo_assinatura,
+    COUNT(*)                                             AS linhas,
+    ROUND(100 * COUNT(*) / SUM(COUNT(*)) OVER (), 2)     AS pct
+FROM silver.contratos
+GROUP BY tipo_assinatura
+ORDER BY linhas DESC;
+```
+
+Compare com a execução anterior: uma categoria que some ou dobra costuma indicar problema na origem.
+
+## Expectativas na própria tabela
+
+Restrições `CHECK` em tabelas Delta impedem gravar linhas que violem a regra.
+
+```sql
+ALTER TABLE silver.cadastro ADD CONSTRAINT idade_valida CHECK (idade BETWEEN 0 AND 120);
+ALTER TABLE silver.cadastro ALTER COLUMN id_cliente SET NOT NULL;
+```
+
+- A escrita inteira falha se uma linha violar a restrição; decida se isso é o comportamento desejado ou se prefere quarentena.
+- Em pipelines declarativos (Lakeflow / DLT), `EXPECT ... ON VIOLATION DROP ROW | FAIL UPDATE` registra métricas por regra.
+
+## Checklist
+
+- [ ] O grão esperado está declarado e testado?
+- [ ] Nulos em campos críticos têm limite aceitável definido?
+- [ ] Existe comparação com a execução anterior (volume e distribuição)?
+- [ ] Regras estáveis viraram restrições na tabela?

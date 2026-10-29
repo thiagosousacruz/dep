@@ -1,57 +1,97 @@
 # CTEs e Views Temporárias (Databricks / Spark SQL)
 
 ## O que é
-As Common Table Expressions (CTEs), invocadas via cláusula `WITH`, permitem dividir complexidade brutal de Data Quality em pequenos blocos sequenciais e lógicos. Eliminam completamente as famosas e ilegíveis *Sub-queries aninhadas* em cascata, transformando consultas monolíticas em verdadeiros "Pipelines de Leitura".
 
-## Nível Júnior: Organização Modular e Limpeza
-O fim supremo de consultas no formato: `SELECT x FROM (SELECT y FROM (SELECT z FROM ...))`
+Uma Common Table Expression (`WITH nome AS (...)`) nomeia um passo intermediário da consulta. Substitui subconsultas aninhadas por blocos sequenciais e legíveis. É uma construção **lógica**: não grava dados.
+
+## CTEs para organizar a lógica
 
 ```sql
--- 1. Desenvolvemos os blocos lógicos sequencialmente lendo arquivos originais apenas quando for vital
-WITH ClientesAtivos AS (
-    SELECT id, nome, estado
-    FROM dim_clientes
+WITH clientes_ativos AS (
+    SELECT id_cliente, nome, estado
+    FROM silver.clientes
     WHERE status = 'ATIVO'
 ),
-FaturamentoTotal AS (
-    SELECT cliente_id, SUM(receita) as valor_comprado
-    FROM fatos_venda_2023
-    GROUP BY cliente_id
+faturamento AS (
+    SELECT id_cliente, SUM(receita) AS valor_comprado
+    FROM silver.vendas
+    WHERE ano = 2025
+    GROUP BY id_cliente
 )
--- 2. No bloco final, você cruza e orquestra apenas resultados lapidados com os filtros já impostos pelas CTEs
 SELECT c.nome, c.estado, f.valor_comprado
-FROM ClientesAtivos c
-JOIN FaturamentoTotal f ON c.id = f.cliente_id;
+FROM clientes_ativos AS c
+JOIN faturamento AS f USING (id_cliente);
 ```
 
-## Nível Pleno: Quality Gates In-Memory (Via Sessão) e Views
-No Databricks, quando CTEs tornam-se monstruosas de grandes por dezenas de `WITH`s e cruzamentos lógicos, testá-las em tela para debugar lógicas de ETL pode gerar um transtorno de blocos. A engenharia moderna utiliza Views Temporárias que persistem lógicas em tempo de runtime para você brincar em células posteriores.
+- Um bloco por responsabilidade (filtrar, agregar, juntar) facilita testar cada passo isoladamente.
+- Nomeie CTEs pelo conteúdo (`clientes_ativos`), não pela técnica (`cte1`).
+
+## Views temporárias
+
+`TEMP VIEW` guarda a definição de uma consulta durante a **sessão** (notebook ou conexão). Útil para inspecionar passos em células diferentes.
 
 ```sql
--- Isole passos massivos gerando views virtuais. Ao fim do script ou ao término do Cluster, ela se dissolve inteiramente sem sujar o DB Silver.
-CREATE OR REPLACE TEMP VIEW v_qualidade_dados AS
-SELECT *, 
-       IFF(email IS NULL, 1, 0) as flag_erro_email
-FROM db_origem.bronze_usuarios;
+CREATE OR REPLACE TEMP VIEW v_qualidade_usuarios AS
+SELECT *,
+       CASE WHEN email IS NULL THEN 1 ELSE 0 END AS flag_erro_email
+FROM bronze.usuarios;
 
--- A Partir daqui a tabeça virtual global está pronta! O motor passará pelo filtro em caso de chamada
-SELECT * FROM v_qualidade_dados WHERE flag_erro_email = 1;
+SELECT * FROM v_qualidade_usuarios WHERE flag_erro_email = 1;
 ```
 
-## CTEs, otimização e reutilização
-Arquitetos entendem um fator essencial do SQL: Modulos CTE e Views Temporárias **NÃO MATERIALIZAM dados no mundo físico**! Elas são equações lógicas. No ambiente Big Data do Spark, se você referenciar o nome da mesma CTE `A_Muito_Pesada` 3 vezes no escopo master, **O Spark vai ler o parquet inicial no Disco Rígido três vezes de forma idêntica!**
+- A view some quando a sessão termina e não é visível para outras sessões.
+- Global temp views (`global_temp`) não são suportadas em computação serverless; para compartilhar um resultado entre sessões, grave uma tabela.
+
+## Reaproveitamento e materialização
+
+Uma CTE referenciada várias vezes **pode** ser recalculada a cada referência ou ter a leitura reaproveitada — depende do plano (procure `ReusedExchange` ou `ReusedSubquery` no `EXPLAIN`). Não presuma nenhum dos dois: observe o plano (ver [Performance tuning](12_performance-tuning.md)).
 
 ```sql
--- O ERRO GRAVE (Executará a origem gigante as requisições multiplicadas na árvore)
-WITH CTE_Pesada AS (SELECT * FROM fatos_trilionaria WHERE dia > x)
-SELECT * FROM a JOIN CTE_Pesada ON a.id = b.id -- Executa Disk Scan!
+EXPLAIN FORMATTED
+WITH vendas_recentes AS (
+    SELECT * FROM silver.vendas WHERE dt_venda >= DATE '2025-01-01'
+)
+SELECT 'norte' AS regiao, COUNT(*) FROM vendas_recentes WHERE regiao = 'N'
 UNION ALL
-SELECT * FROM b JOIN CTE_Pesada ON a.id = c.id -- Executa Disk Scan dnv!
-
--- A SOLUÇÃO: Quando precisar forçar os braços do cluster (Workers) a segurar o frame em RAM na execução de uma mesma lógica, exija o table cache na engine de plano virtual antes com views na execução em blocos.
-CACHE VIEW cte_cacheada AS SELECT * FROM fatos_trilionaria;
-
-SELECT * FROM a JOIN cte_cacheada...
-UNION ALL
-SELECT * FROM b JOIN cte_cacheada...
+SELECT 'sul', COUNT(*) FROM vendas_recentes WHERE regiao = 'S';
 ```
+
+Quando o plano mostra recomputação cara de um passo usado várias vezes:
+
+```sql
+-- Clusters clássicos: cache em memória durante a sessão
+CACHE TABLE vendas_recentes AS
+SELECT * FROM silver.vendas WHERE dt_venda >= DATE '2025-01-01';
+UNCACHE TABLE vendas_recentes;
+
+-- Serverless (onde CACHE TABLE gera erro) ou resultado reutilizado por vários jobs:
+CREATE OR REPLACE TABLE tmp.vendas_recentes AS
+SELECT * FROM silver.vendas WHERE dt_venda >= DATE '2025-01-01';
+```
+
+- `CACHE TABLE` e as APIs de cache não são suportados em computação serverless: [limitações do serverless](https://docs.databricks.com/aws/en/compute/serverless/limitations).
+- Tabela intermediária tem custo de escrita e de limpeza; meça antes e depois.
+
+## CTE recursiva
+
+`WITH RECURSIVE` percorre hierarquias (organogramas, árvores de categorias). Disponível a partir do Databricks Runtime 17.0 / DBSQL 2025.20 (Preview).
+
+```sql
+WITH RECURSIVE hierarquia (id, id_gestor, nivel) AS (
+    SELECT id, id_gestor, 0 FROM rh.colaboradores WHERE id_gestor IS NULL
+    UNION ALL
+    SELECT c.id, c.id_gestor, h.nivel + 1
+    FROM rh.colaboradores AS c
+    JOIN hierarquia AS h ON c.id_gestor = h.id
+)
+SELECT * FROM hierarquia;
+```
+
+- O limite padrão é de 100 níveis de recursão (`RECURSION_LEVEL_LIMIT_EXCEEDED`); ciclos nos dados precisam ser tratados.
+- Referência: [CTE (Databricks)](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-cte).
+
+## Checklist
+
+- [ ] Cada CTE tem uma responsabilidade e um nome descritivo?
+- [ ] O plano foi verificado antes de assumir recomputação ou reaproveitamento?
+- [ ] O recurso de cache/materialização escolhido existe no tipo de computação usado?

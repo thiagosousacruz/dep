@@ -1,65 +1,78 @@
-# Sintaxe Basica, RDD, DAGs e Spark SQL (PySpark)
+# Fundamentos: Lazy Evaluation, DAGs e Spark SQL (PySpark)
 
-## O que e
-Compreender como a maquina opera "por debaixo" antes de digitar codigos e fundamental. Diferente do ecossistema local do Python, o Spark orquestra lotes processuais por avaliacoes passivas. O framework tambem detem interoperabilidade brilhante permitindo aos desenvolvedores intercalar API Tabular com o glorioso SQL puro no codigo!
+## O que é
 
-## Nivel Junior/Pleno: Lazy Evaluation (Transformations vs Actions)
-Transformações descrevem um novo plano lógico e são avaliadas de forma lazy. Actions solicitam um resultado ou escrita e disparam os estágios necessários do plano.
+O Spark não executa cada linha de código imediatamente. Transformações montam um plano; ações disparam a execução distribuída desse plano. DataFrame API e SQL compartilham o mesmo otimizador (Catalyst), então você pode alternar entre os dois.
+
+## Transformações e ações
+
+Transformações (`filter`, `select`, `withColumn`, `join`) são **lazy**: só descrevem um novo DataFrame. Ações (`count`, `show`, `collect`, `write`) executam o plano.
 
 ```python
-from pyspark.sql.functions import col
+from pyspark.sql import functions as F
 
-# TRANSFORMATIONS (Avaliacao Preguicosa): Execucao instantanea porque nada ocorre no armazenamento fisico. O Spark traca um Grafo Aciclico (DAG).
-df_filtrado = df_origem \\
-    .filter(~col("nome").isNull()) \\
-    .withColumn("idade_ajustada", col("idade") + 1)
+df_filtrado = (
+    df_origem
+    .filter(F.col("nome").isNotNull())
+    .withColumn("idade_ajustada", F.col("idade") + 1)
+)  # nada foi lido ainda
 
-# ACTIONS: o driver coordena a execução das tarefas nos executores e materializa o trabalho necessário.
-df_filtrado.count()          # Retorna numero de linhas 
-df_filtrado.show(10)         # Exibe uma amostra restrita no console
-df_filtrado.write.save(...)  # Dispara a gravacao no Data Lake
+df_filtrado.count()                                  # ação: executa o plano
+df_filtrado.show(10)                                 # ação: executa de novo (sem cache)
+df_filtrado.write.mode("overwrite").saveAsTable("silver.pessoas")
 ```
 
-## Evolucao da API (RDD vs DataFrame)
-RDDs oferecem controle de baixo nível, mas não expõem ao Catalyst a mesma informação estrutural disponível em DataFrames. Para transformações tabulares, a DataFrame API costuma permitir otimizações como poda de colunas, pushdown de filtros e seleção de estratégias físicas.
+- Cada ação reexecuta o plano desde a origem, a menos que haja cache. Evite `count()` de depuração em pipelines de produção.
+- `collect()` traz todos os dados para o driver: use apenas em resultados pequenos.
+- Narrow transformations (`filter`, `select`) não exigem shuffle; wide transformations (`groupBy`, `join`, `orderBy`) redistribuem dados entre executores e criam novos estágios.
+
+## DataFrame API vs RDD
+
+RDDs oferecem controle de baixo nível, mas não expõem ao Catalyst a estrutura dos dados. Para transformações tabulares, a DataFrame API permite poda de colunas, pushdown de filtros e escolha de estratégia de join.
 
 ```python
-# O PADRAO DE MERCADO DATABRICKS (DataFrame API Otimizada)
-df_vendas = spark.read.csv("/mnt/vendas.csv", header=True)
-df_total = df_vendas.filter(col("status") == "FECHADO")
+df_vendas = spark.read.table("bronze.vendas")
+df_fechadas = df_vendas.filter(F.col("status") == "FECHADO")
+df_fechadas.explain("formatted")   # mostra o plano físico
 ```
 
-## A Ponte Interoperavel: Spark SQL e Temp Views
-Voce pode pausar a abstracao programatura de DataFrame e rodar queries relacionais cruas no meio de uma transformacao, perfeito p pivoteamentos complexos e para alavancar membros que migram de Analise de Dados pro Engenho!
+- No Spark Connect (usado pela computação serverless e pelo modo compartilhado do Unity Catalog), a API de RDD e `sparkContext` não estão disponíveis.
+
+## Spark SQL e temp views
 
 ```python
-# 1. Transformando o seu DataFrame Mutavel em uma Tabela Virtualizada SQL
-df_python.createOrReplaceTempView("view_vendas_temporaria")
+df_vendas.createOrReplaceTempView("vw_vendas")
 
-# 2. Executando SQL ANSI puro e devolvendo o output para a malha Python
-df_resultado_sql = spark.sql("""
-    SELECT 
-        regiao,
-        COUNT(*) as total_transacoes,
-        SUM(valor) as receita
-    FROM view_vendas_temporaria
+df_resumo = spark.sql("""
+    SELECT regiao, COUNT(*) AS transacoes, SUM(valor) AS receita
+    FROM vw_vendas
     WHERE valor > 0
     GROUP BY regiao
 """)
 
-# VISTAS GLOBAIS DE ORQUESTRACAO (Cross-Cluster):
-# Uma global temp view fica no banco global_temp e pode ser acessada por sessões ligadas à mesma aplicação Spark; não é persistente nem substitui uma tabela compartilhada.
-df_cargas.createOrReplaceGlobalTempView("tb_acessivel_por_todos")
-df_puxado_do_vizinho = spark.sql("SELECT * FROM global_temp.tb_acessivel_por_todos")
+# Parâmetros nomeados em vez de f-string (Spark 3.4+)
+df_regiao = spark.sql(
+    "SELECT * FROM vw_vendas WHERE regiao = :regiao",
+    args={"regiao": "SUL"},
+)
 ```
 
-## Importacoes centrais da biblioteca
-Importe apenas as funções usadas e prefira aliases consistentes no projeto.
+- Temp views valem para a `SparkSession` atual. Global temp views (`global_temp`) valem para a aplicação Spark inteira, não para outros clusters, e não são suportadas em serverless.
+- Montar SQL com f-string a partir de entrada externa abre espaço para SQL injection; prefira `args`.
+
+## Imports e convenções
 
 ```python
-# F-Native (Toda funcao matematica, filtros booleanos, casts rapidos e regex):
-import pyspark.sql.functions as F
-
-# T-Native (Descritores tipologicos fisicos no Dataframe Structs):
-import pyspark.sql.types as T
+from pyspark.sql import functions as F
+from pyspark.sql import types as T
+from pyspark.sql.window import Window
 ```
+
+- Usar o namespace `F.` evita sombrear funções nativas do Python (`sum`, `max`, `round`, `filter`).
+
+## Checklist
+
+- [ ] As ações no código são intencionais (sem `count()`/`show()` de depuração)?
+- [ ] `collect()`/`toPandas()` só recebem resultados pequenos?
+- [ ] SQL dinâmico usa parâmetros em vez de concatenação?
+- [ ] O código roda em Spark Connect se o destino for serverless?

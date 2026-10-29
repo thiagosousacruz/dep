@@ -1,54 +1,68 @@
-# Databricks Utilities (DbUtils e Automacoes de Ambiente)
+# Databricks Utilities (dbutils)
 
-## O que e
-As extensoes imperativas restritas ao cluster interativo da plataforma Databricks. Atravessam a API DataFrame padrao e concedem interacao base com as camadas arquiteturais da Virtual Machine (Montagem de Discos Databricks File System - DBFS), Cofres Encriptados e Interacoes de Orquestradores Externos em nivel de script (Data Factory Widgets).
+## O que é
 
-## Nivel Junior/Pleno: Manipulacoes Nativas DBFS (Filesystem)
-Utilizar importacoes Python legadas de OS (ex: `shutil` e `os`) no ambiente clusterizado pode corromper links virtuais montados se invocados forçosamente. Utilize DbUtils exclusivamente para gestao logistica de midias estaticas.
+`dbutils` é a biblioteca de utilitários dos notebooks e jobs Databricks: manipula arquivos, recebe parâmetros (widgets) e lê segredos. Existe apenas no Databricks; código que depende dele não roda em Spark local sem adaptação.
+
+## Arquivos: dbutils.fs e Volumes
+
+Com Unity Catalog, arquivos não tabulares ficam em **Volumes** (`/Volumes/<catálogo>/<schema>/<volume>/`), com permissões governadas pelo catálogo. Mounts (`/mnt`) e a raiz do DBFS são legado.
 
 ```python
-# EXPANSAO EXPLORATORIA
-# Lista metadados e arquivos (retorna uma sublista em objeto iteravel).
-pastas_rejeitadas = dbutils.fs.ls("/mnt/silver/lotes_com_falha/")
+arquivos = dbutils.fs.ls("/Volumes/main/silver/arquivos/lotes_com_falha/")
+for f in arquivos:
+    print(f.name, f.size, f.modificationTime)
 
-# MANUSEIO DE DESLOCAMENTOS INTERNOS DE DISCO (Substituindo Shutil)
-dbutils.fs.cp("/mnt/silver/relatorio_ontem.csv", "/mnt/silver/bkp/relatorio_ontem.csv")
+dbutils.fs.cp("/Volumes/main/silver/arquivos/relatorio.csv",
+              "/Volumes/main/silver/arquivos/bkp/relatorio.csv")
 
-# HARD DELETE (Saneamento Limpante)
-dbutils.fs.rm("/mnt/bronze/logs_estourados_01/", recurse=True) # Destroi a arvore de pastificacao contígua integralmente.
+dbutils.fs.rm("/Volumes/main/bronze/arquivos/tmp_carga/", recurse=True)   # irreversível
 ```
 
-## Nivel Senior: DataFactory Bindings & Widgets de Parametrizacao Dinamica
-Notebooks sao concebidos como ferramentas de interatividade iterativa isolada. Para orquestrar scripts PySpark repetidas vezes diariamente mudando os alvos contextuais, nao podemos isolar datas manualmente alterando em telas de editor fixo (Hardcoding Constants). As Widgets transportam input externo da malha de automacao direto pro Node da Databricks em run-time.
+- Volumes também aceitam APIs locais de arquivo (`open`, `os`, `shutil`) no caminho `/Volumes/...`.
+- `rm` com `recurse=True` apaga sem lixeira: confira o caminho (de preferência parametrizado e validado) antes.
+- Nunca apague com `dbutils.fs.rm` arquivos dentro do diretório de uma tabela Delta; use `DELETE`/`VACUUM`.
+
+## Parâmetros: widgets e job parameters
+
+Widgets recebem valores do usuário no notebook ou de parâmetros do job, evitando datas e ambientes fixos no código.
 
 ```python
-# DEFINICAO ESPERADA (Container vazio alocador aguardando a injecao via Job/ADF).
-dbutils.widgets.text("PARAM_DATACORTE", "2024-01-01", "Label_UI: Data Referencia Lote")
-dbutils.widgets.dropdown("PARAM_ENVIRONMENT", "dev", ["dev", "staging", "prod"], "Ambiente Ativo")
+from pyspark.sql import functions as F
 
-# EXTRACAO EM VARIAVEL OPERACIONAL P/ SCRIPT NO CABECALHO (Runtime Getters)
-# Orquestrador chamou esse job passando parametro 'prod' e Data '2024-10-18'. O Job internaliza em RunTime!
-VAR_AMBIENTE = dbutils.widgets.get("PARAM_ENVIRONMENT")
-VAR_LOTE = dbutils.widgets.get("PARAM_DATACORTE")
+dbutils.widgets.text("data_corte", "2025-01-01", "Data de corte")
+dbutils.widgets.dropdown("ambiente", "dev", ["dev", "hml", "prod"], "Ambiente")
 
-# Uso em logicas de leitor:
-df_alvo_flexivel = spark.read.parquet(f"/mnt/{VAR_AMBIENTE}/cargas_analiticas/data={VAR_LOTE}")
+ambiente = dbutils.widgets.get("ambiente")
+data_corte = dbutils.widgets.get("data_corte")
+
+df = spark.read.table(f"{ambiente}.silver.cargas").filter(F.col("dt_carga") == data_corte)
 ```
 
-## O Cofre Especialista: (Secrets do KeyVault)
-Trafego livre e explicito de tokens API em repositorios conectados ao GitHub. Em ambientes profissionais o Azure Key Vault detem os hashes. Você evoca segredos alocados perfeitamente encriptos.
+- O valor sempre chega como string: converta e valide (`datetime.date.fromisoformat(data_corte)`).
+- Em jobs, parâmetros do job e de tarefa preenchem os widgets de mesmo nome.
+
+## Segredos
+
+Credenciais ficam em secret scopes (gerenciados pelo Databricks ou ligados a Azure Key Vault), nunca no código ou no repositório.
 
 ```python
-# CHAMADA DE TOKEN NO ESCOPO ATRELO O DATABRICKS AO COFRE:
-login_str = dbutils.secrets.get(scope="kv-dbr-prod-scope", key="api-oracle-usuario")
-token_str = dbutils.secrets.get(scope="kv-dbr-prod-scope", key="api-oracle-senha")
+usuario = dbutils.secrets.get(scope="erp-prod", key="usuario")
+senha = dbutils.secrets.get(scope="erp-prod", key="senha")
 
-# SECURITY CHECK:
-# A Databricks inibe print explicitos num console aberto de desenvolvedor mutando as strings com os indutores verbais da microsoft "[REDACTED]".
-
-df_externo_oracle = spark.read.jdbc(
-    url="jdbc:oracle:thin:@server.corp:1521/XDB",
-    table="MASTER_RESTRITO",
-    properties={ "user": login_str, "password": token_str } # Input RAM interno limpo de rastros.
+df_erp = spark.read.jdbc(
+    url="jdbc:oracle:thin:@servidor:1521/XDB",
+    table="VENDAS",
+    properties={"user": usuario, "password": senha},
 )
 ```
+
+- O notebook mostra `[REDACTED]` ao imprimir um segredo, mas isso não é proteção completa: transformar o valor (ex.: imprimir caractere por caractere) o expõe. Controle quem pode ler o scope.
+- `dbutils.secrets.list("erp-prod")` lista chaves sem revelar valores.
+
+## Checklist
+
+- [ ] Caminhos usam Volumes do Unity Catalog em vez de `/mnt`?
+- [ ] Parâmetros são convertidos e validados?
+- [ ] Nenhuma credencial aparece no código?
+- [ ] Operações destrutivas usam caminho validado?

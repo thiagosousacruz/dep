@@ -41,13 +41,26 @@ VACUUM gold.vendas RETAIN 168 HOURS;
 
 `VACUUM` remove arquivos não referenciados mais antigos que a retenção. Antes de reduzir a retenção padrão, avalie leitores concorrentes, operações longas, políticas de recuperação e requisitos de auditoria. Não trate `VACUUM` como limpeza inofensiva.
 
-## Optimize
+## Optimize e layout de dados
 
 ```sql
 OPTIMIZE gold.vendas;
 ```
 
-Em Databricks, `OPTIMIZE` compacta arquivos. Estratégias como `ZORDER` dependem dos recursos e recomendações do runtime adotado; escolha colunas a partir dos filtros reais e valide o ganho.
+`OPTIMIZE` compacta arquivos pequenos. Para organizar dados pelas colunas mais filtradas, o Databricks recomenda **liquid clustering** em tabelas novas, no lugar de `PARTITIONED BY` e `ZORDER`.
+
+```sql
+CREATE TABLE gold.vendas (venda_id BIGINT, loja_id INT, dt_venda DATE, preco DECIMAL(12,2))
+CLUSTER BY (dt_venda, loja_id);
+
+ALTER TABLE gold.vendas CLUSTER BY (loja_id);   -- troca as chaves sem reescrever o histórico
+OPTIMIZE gold.vendas;                           -- aplica o clustering incrementalmente
+```
+
+- Liquid clustering não é compatível com `ZORDER` nem com particionamento na mesma tabela.
+- Escolha de 1 a 4 colunas a partir dos filtros e joins reais; meça arquivos lidos antes e depois.
+- Com predictive optimization habilitado, `OPTIMIZE` e `VACUUM` podem ser executados automaticamente em tabelas gerenciadas pelo Unity Catalog.
+- Referência: [Liquid clustering (Databricks)](https://docs.databricks.com/aws/en/delta/clustering).
 
 ## Checklist
 

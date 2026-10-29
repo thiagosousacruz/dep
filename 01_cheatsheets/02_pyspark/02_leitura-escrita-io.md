@@ -1,63 +1,95 @@
 # Leitura e Escrita de Dados (PySpark I/O)
 
-## O que e
-Processos primários de interacao (`spark.read` e `DataFrame.write`) sobre fontes fisicas no HD/Storage. Determinam o sucesso da ingestao, mitigando o desperdicio de conexoes ociosas em banco de dados operacionais ou controlando partições otimizadas do Databricks no Data Lake.
+## O que é
 
-## Nivel Junior/Pleno: Leitura Analitica Variada
-A definicao explícita do schema e preceito base para economizar verificações profundas (`Pass-scanning`) onde o spark vasculha tudo pra inferir os tipos as cruas.
+`spark.read` e `DataFrame.write` conectam o pipeline a arquivos, tabelas e bancos externos. As opções escolhidas definem custo de leitura, paralelismo, tratamento de registros inválidos e layout físico do resultado.
+
+## Arquivos com schema explícito
+
+Sem schema, o Spark precisa inferir tipos (passada extra sobre os dados e tipos instáveis entre cargas). Declare o schema em ingestões recorrentes.
 
 ```python
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+from pyspark.sql import types as T
 
-schema_fixo = StructType([
-    StructField("id", IntegerType(), False),
-    StructField("cidade", StringType(), True)
+schema_lote = T.StructType([
+    T.StructField("id", T.IntegerType(), False),
+    T.StructField("cidade", T.StringType(), True),
 ])
 
-# LEITURA CONTROLADA TABULAR (CSVS)
-df_csv = spark.read \\
-    .schema(schema_fixo) \\
-    .option("header", "true") \\
-    .option("delimiter", ";") \\
-    .csv("/mnt/bronze/lotes/*.csv") # Suporta pathings GLOB nativamente
+df_csv = (
+    spark.read
+    .schema(schema_lote)
+    .option("header", "true")
+    .option("sep", ";")
+    .option("mode", "PERMISSIVE")                     # inválidos viram NULL
+    .option("columnNameOfCorruptRecord", "_corrupt")  # guarda a linha original
+    .csv("/Volumes/main/bronze/landing/lotes/*.csv")
+)
 
-# LEITURAS NATIVAS DE COMPRESSAO APROPRIADA (Lakes)
-df_parquet = spark.read.parquet("/mnt/bronze/")
-df_delta = spark.read.format("delta").load("/mnt/silver/")
-
-# LEITURAS JSON PAYLOADS (Quebras Esteticas)
-# O padrao comum de leitura le json-lines (Por Row unica). Se o payload traz o JSON em bloco identado/multilinhas esparso esteticamente, defina 'multiline':
-df_json = spark.read \\
-    .option("multiline", "true") \\
-    .json("/mnt/bronze/payloads/*.json")
+df_json = spark.read.option("multiLine", "true").json("/Volumes/main/bronze/landing/payloads/")
+df_parquet = spark.read.parquet("/Volumes/main/bronze/landing/parquet/")
 ```
 
-## Nivel Pleno: Leitura JDBC Paralelizada
-Uma leitura JDBC sem particionamento costuma usar uma única conexão e limita o paralelismo. Isso não implica OOM por definição, mas pode concentrar trabalho, aumentar a duração e pressionar a origem. Para paralelizar, escolha uma coluna adequada e limites coerentes, negociando o número de conexões com o banco de origem.
+- `mode`: `PERMISSIVE` (padrão), `DROPMALFORMED` (descarta) ou `FAILFAST` (falha no primeiro inválido).
+- Para a coluna `_corrupt` ser preenchida, ela precisa estar no schema.
+- Com Unity Catalog, arquivos ficam em **Volumes** (`/Volumes/<catálogo>/<schema>/<volume>/`); mounts em `/mnt` são legado.
+
+## Tabelas
 
 ```python
-# Distribuimos e paralelizamos a query no DB: O Spark dividirá o escopo base (1 a 5 Milhoes do alvo column id_venda) num array partitivo enviando 10 requestes simultaneamente pra encher a malha relacional.
-df_erp = spark.read.jdbc(
-    url="jdbc:sqlserver://servidor.database.windows.net:1433;database=DB",
-    table="vendas.faturamento",
-    column="id_venda",      
-    lowerBound=1,
-    upperBound=5000000,
-    numPartitions=10,       
-    properties={"user": "...", "password": "..."}
+df = spark.read.table("main.silver.clientes")
+
+(
+    df_resultado.write
+    .mode("overwrite")              # append | overwrite | error | ignore
+    .saveAsTable("main.gold.agregado_mensal")
 )
 ```
 
-## Nivel Senior: Gravacao particionada estrutural
-Como gravar em conformidades HDFS `(pathing fisico= /../ano=2024/mes=10/part-004.parquet)`.
+- Em Databricks, `saveAsTable` grava Delta por padrão e registra a tabela no catálogo.
+- Para sobrescrever só parte da tabela, use `.option("replaceWhere", "mes = '2025-10'")` em vez de `overwrite` total.
+
+## JDBC paralelizado
+
+Sem particionamento, uma leitura JDBC usa uma única conexão. Com `column`, `lowerBound`, `upperBound` e `numPartitions`, o Spark divide a consulta em faixas.
 
 ```python
-df_resultado.write \\
-    .format("delta") \\
-    .mode("overwrite") \\
-    .partitionBy("ano", "mes") \\
-    .save("/mnt/gold/agregado_mensal")
-    
-# ALERTA DE ARQUITETURA CRITICA: "The Small File Problem"
-# Jamais gere um particionamento fisico massudo baseado em colunas de alta cardinalidade(ex `partitionBy('id_carrinho_compra')`)! O Spark fisicamente criará pastas microscopicas gerando 2 MIHLÕES DE ARQUIVOS PARQUET de 14 Kb limitando transacoes no File System e engargalando disco por excesso logístico! Só Particiione em blocos que segurarão lotes grandes +150MB.
+df_erp = spark.read.jdbc(
+    url="jdbc:sqlserver://servidor.database.windows.net:1433;database=DB",
+    table="vendas.faturamento",
+    column="id_venda",
+    lowerBound=1,
+    upperBound=5_000_000,
+    numPartitions=10,
+    properties={
+        "user": dbutils.secrets.get("erp", "usuario"),
+        "password": dbutils.secrets.get("erp", "senha"),
+    },
+)
 ```
+
+- `lowerBound` e `upperBound` **não filtram** dados: só definem o tamanho das faixas. Linhas fora delas vão para a primeira e a última partição.
+- `numPartitions` é o número de conexões simultâneas na origem; combine com o dono do banco.
+- Escolha uma coluna numérica/data bem distribuída; uma coluna com skew concentra o trabalho.
+- Alternativa no Databricks: Lakehouse Federation consulta a origem como catálogo, sem código JDBC.
+
+## Particionamento físico e arquivos pequenos
+
+```python
+(
+    df_resultado.write
+    .mode("overwrite")
+    .partitionBy("ano", "mes")
+    .saveAsTable("main.gold.vendas_mensal")
+)
+```
+
+- Particionar por coluna de alta cardinalidade (ex.: `id_cliente`) gera milhares de diretórios e arquivos pequenos, degradando leitura e manutenção.
+- O Databricks recomenda não particionar tabelas pequenas (orientação oficial: menos de ~1 TB) e, em tabelas novas, preferir **liquid clustering** (ver [Delta Lake API](10_delta-lake-api.md)).
+
+## Checklist
+
+- [ ] Ingestões recorrentes têm schema declarado?
+- [ ] Registros inválidos são capturados e medidos?
+- [ ] Credenciais vêm de secrets, nunca do código?
+- [ ] O layout físico (partição ou clustering) foi escolhido pelos filtros reais?

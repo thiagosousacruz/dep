@@ -60,7 +60,19 @@ target.vacuum(168)
 
 Restore depende dos arquivos ainda estarem disponíveis. Vacuum remove arquivos antigos não referenciados e pode invalidar time travel; alinhe retenção com jobs concorrentes e recuperação.
 
-APIs programáticas de otimização não estão disponíveis em todas as distribuições e versões. Quando usar recursos específicos do Databricks, confirme a compatibilidade do runtime.
+## Otimização e layout
+
+```python
+target.optimize().executeCompaction()          # compacta arquivos pequenos
+
+(
+    df_vendas.writeTo("main.gold.vendas")
+    .clusterBy("dt_venda", "loja_id")          # liquid clustering na criação
+    .createOrReplace()
+)
+```
+
+Em tabelas novas, o Databricks recomenda liquid clustering no lugar de `partitionBy` e `ZORDER` (ver [Delta DML em SQL](../01_sql/10_delta-dml.md)). APIs programáticas de otimização e clustering variam por versão do Delta Lake e do runtime; confirme a compatibilidade antes de usar.
 
 ## Checklist
 

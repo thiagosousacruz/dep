@@ -1,61 +1,79 @@
-# Agrupamentos Relacionais e PIVOTS (Databricks)
+# Agrupamentos e Pivots (SQL / Databricks)
 
 ## O que é
-É o motor analítico primitivo utilizado para sumarização massiva de métricas nas tabelas e distorções da matriz (transformar linhas em colunas para os painéis de PowerBI).
 
-## Nível Júnior/Pleno: Aglutinação Clássica e Atalhos Spark
-Toda expressão selecionada que não seja agregada deve ser compatível com o `GROUP BY`. Funções aproximadas podem reduzir custo quando a precisão exata não é requisito.
+`GROUP BY` resume linhas em métricas por grupo. `PIVOT` e `UNPIVOT` giram dados entre linhas e colunas. `ROLLUP`, `CUBE` e `GROUPING SETS` produzem subtotais em uma única consulta.
+
+## Agregações e filtros por agregação
+
+Toda coluna não agregada do `SELECT` precisa estar no `GROUP BY`.
 
 ```sql
-SELECT 
-    regiao_estoque, 
-    -- 1. Agregacoes Convencionais
-    COUNT(1) as qtd_encomendas,                 
-    SUM(vlr_frete) as receita,
-    
-    -- 2. Agregações com Filter Incorporado (Evita case and when longos!)
-    count_if(status = 'FALHA') AS compras_recusadas,             
-    sum(vlr_frete) FILTER (WHERE canal = 'FISICA') AS receita_fim_fisica,
-    
-    -- 3. APPROX: alternativa de menor custo quando erro aproximado é aceitável.
-    -- approx_processa na hora c/ hyperLogLog (2% taxa de erro, ideal pra dashs!).
-    approx_count_distinct(comprador_id) as clientes_aprox_ativos
-    
-FROM despachos_app
-GROUP BY regiao_estoque             
-HAVING sum(vlr_frete) > 100000;  -- FILTRA PÓS SOMA NO PACOTE!!!
+SELECT
+    regiao,
+    COUNT(*)                                           AS qtd_pedidos,
+    SUM(vlr_frete)                                     AS frete_total,
+    count_if(status = 'FALHA')                         AS pedidos_falhos,
+    SUM(vlr_frete) FILTER (WHERE canal = 'LOJA')       AS frete_loja,
+    approx_count_distinct(id_cliente)                  AS clientes_aprox
+FROM silver.despachos
+GROUP BY regiao
+HAVING SUM(vlr_frete) > 100000;
 ```
 
-## A Matriz Cruzada (PIVOT e UNPIVOT)
-Uma das regras pesadas pra analistas que usam SQL. Converter linhas em metadados horizontais e vis-versa.
+- `FILTER (WHERE ...)` e `count_if` evitam `CASE WHEN` dentro de cada agregação.
+- `approx_count_distinct` usa HyperLogLog++ com erro relativo padrão de **5%** (`relativeSD = 0.05`); passe um segundo argumento menor para mais precisão (ex.: `approx_count_distinct(id_cliente, 0.01)`), com mais memória. Use quando a contagem exata não for requisito.
+- `GROUP BY ALL` (Databricks) agrupa por todas as colunas não agregadas do `SELECT`; prático em exploração, mas explícito é mais seguro em produção.
+
+## PIVOT e UNPIVOT
 
 ```sql
--- PIVOTAR: Quero que os "Anos" que chegam de pe na coluna ano_fiscal virem COLUNAS fixas na horizontal pros contadores verem na aba excel!
-SELECT * FROM (
-    SELECT regiao, ano_fiscal, SUM(vendas) as gmv FROM base_t GROUP BY regiao, ano_fiscal
+-- Linhas → colunas: um valor de ano_fiscal vira uma coluna
+SELECT *
+FROM (
+    SELECT regiao, ano_fiscal, vendas FROM silver.vendas_anuais
 )
 PIVOT (
-    SUM(gmv) 
-    FOR ano_fiscal IN (2022, 2023, 2024) -- Pinos chaves do pivoteamento em hardcode
+    SUM(vendas) FOR ano_fiscal IN (2023, 2024, 2025)
 );
 
--- UNPIVOTAR (Spark 3.4+): Desfazer as abas esquisitas do excel (Coluna Janeiro, Coluna Fevereiro) em uma arvore vertical limpa (Coluna Mes, Coluna Valor).
-SELECT * FROM planilhona_feia
-UNPIVOT(
-    receita_limpa FOR meses_desmontados IN (receita_jan, receita_fev, receita_mar)
+-- Colunas → linhas (Spark 3.4+ / Databricks Runtime 12.2+)
+SELECT *
+FROM bronze.planilha_receita
+UNPIVOT (
+    receita FOR mes IN (receita_jan AS jan, receita_fev AS fev, receita_mar AS mar)
 );
 ```
 
-## Nível Sênior: Totais e Sub-Totais (CUBE e ROLLUP)
-Dispensa O `UNION ALL` recursivo gigante nos Dataframes para painéis burros que precisam consumir subtotais no backend. Multiplica os agrupadores internamente de 1x.
+- A lista do `PIVOT` é fixa: valores novos não viram colunas automaticamente. Revise-a quando o domínio mudar.
+- `UNPIVOT` descarta linhas cujo valor é `NULL`; use `UNPIVOT INCLUDE NULLS` se precisar delas.
+
+## Subtotais: ROLLUP, CUBE e GROUPING SETS
 
 ```sql
--- ROLLUP: Executa subtotais de forma hierárquica e decrescente (esquerda p dir.)
--- Retorna níveis hierárquicos e uma linha de total geral.
-SELECT pais, regiao, estado, SUM(volume_caixas) FROM transporte_t
-GROUP BY pais, regiao, estado WITH ROLLUP;
+-- ROLLUP: hierárquico (pais, regiao, estado) → (pais, regiao) → (pais) → total
+SELECT pais, regiao, estado, SUM(volume) AS volume,
+       grouping_id(pais, regiao, estado) AS nivel
+FROM silver.transporte
+GROUP BY ROLLUP (pais, regiao, estado);
 
--- CUBE: Retorna TODAS as mutações e cruzas dimensionais (Ano sozinho com Regiao, Ano Com subproduto etc).
-SELECT ano, tipo_produto, SUM(vendas) FROM faturamento 
-GROUP BY ano, tipo_produto WITH CUBE;
+-- CUBE: todas as combinações das colunas
+SELECT ano, tipo_produto, SUM(vendas) AS vendas
+FROM silver.faturamento
+GROUP BY CUBE (ano, tipo_produto);
+
+-- GROUPING SETS: só as combinações que você listar
+SELECT ano, regiao, SUM(vendas) AS vendas
+FROM silver.faturamento
+GROUP BY GROUPING SETS ((ano, regiao), (ano), ());
 ```
+
+- Nas linhas de subtotal a coluna agregada aparece como `NULL`. Use `grouping(col)` ou `grouping_id(...)` para distinguir subtotal de um `NULL` real.
+- `GROUP BY a, b WITH ROLLUP` é sintaxe equivalente aceita pelo Spark.
+
+## Checklist
+
+- [ ] O grão do resultado está claro (uma linha por quê)?
+- [ ] O erro de `approx_count_distinct` é aceitável para o uso?
+- [ ] A lista do `PIVOT` cobre os valores atuais do domínio?
+- [ ] Linhas de subtotal são identificadas com `grouping`?
