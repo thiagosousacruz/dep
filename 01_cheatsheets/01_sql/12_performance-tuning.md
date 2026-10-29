@@ -1,35 +1,55 @@
-# Performance Tuning e Leitura de Planos (Spark Engine)
+# Performance Tuning e Leitura de Planos
 
-## O que é
-Enquanto um analista se contenta que a "*query funciona*", o Engenheiro de Dados certifica-se de que a query "*Custa centavos para rodar no Cluster Distribuído e não falhará à meia-noite em cenários de alta escabilidade*". É a refatoração do código SQL usando as alavancas lógicas para burlar o envio de massas brutas pela rede do cluster (Shuffling inter-nodes).
+## Princípio
 
-## Nível Pleno: Leituras Direcionais e PushDowns
-Não traga lixo para o interpretador de plano! O Catalyst SQL do Spark lê a pipeline de final para início e se encontra defasagens de colunas inúteis pedidas nas `CTES` iniciais que ele nem vai cruzar na saída do Dashboard, ele força varredura nelas mesmo assim onerando redes. Filtre nas Pontas do `FROM`. E prefira partições físicas sempre (`Date >= ... `).
+Otimização começa por evidência: plano físico, métricas da execução, volume lido, shuffle, skew e spill. Evite otimizar apenas pela aparência da consulta.
 
-```sql
--- ERRO DO JUNINHO! Leu de 2010 a 2024 de um datalake de 4 terabytes na CTE só pra filtrar por data no Master SELECT? O cluster travará caindo tudo na memoria atoa primeiro.
-WITH X AS (SELECT * FROM gigantesca_df ), Y AS (...)
-SELECT * FROM X JOIN Y WHERE X.date > '2024';
+## Reduzir leitura e transferência
 
--- O JEITO SÉRIO PREVENTIVO: Predicate Pushdown! Use as chaves Preditivas atreladas a Pastas já nos primeirs FROMs.
-WITH X AS (
-    SELECT id, total FROM gigantesca_df 
-    WHERE year_partition >= 2024 -- A engine pula a leitura em disco das pastas passadas do StorageS3.
-) ...
-```
-
-## Sênior (Especialistas Nuvens DBR): Adaptive Query Execution e Spillings
-*O Pior erro Pós OOM (Out Of Memory Error): O Spilling In-Disks!*
-Significa que uma máquina não agentou a memoria cruzada de Tabela A com Tabela B, e ela começou a Descer (Spillar) partes da Tabela para a memória SDD e Disco Rígido para forçar a query a caber. Como os cabos do disco são infinitamente mais vagarosos que a RAM C++, seu Pipeline Spark atrasará cerca de **5 a 10 horas rotineiramente**.
+O Catalyst pode aplicar column pruning e predicate pushdown quando a fonte e a expressão permitem. Escrever projeções e filtros claros melhora a intenção, mas confirme no plano se foram efetivamente empurrados para a leitura.
 
 ```sql
--- DICA 1: Tabela tá derramando para disco? Balanceio Particional (Evitando a assimetria maldita do Skew Data num worker solteiro)!
--- O Repartition redistribui cegamente forçando shuffles os dados da matriz, se a Chave X tiver muitos repetidos, todos iriam pra 1 processador, mande pelo gerador aleatório.
-SELECT /*+ REPARTITION(200) */ a.id, a.nome 
-FROM banco_estourado a;
+SELECT id_venda, loja_id, valor
+FROM vendas
+WHERE data_venda >= DATE '2026-01-01';
 
--- DICA 2: FORCE A LEITURA DO PLANO DE VOOS (EXPLAIN)
--- Antes de injetar o script na Pipeline. Cheque seu destino e alocacoes.
-EXPLAIN EXTENDED 
-SELECT a.id, b.status FROM A INNER JOIN B... -- Mostra a árvore Physical plan lida de Tras p Frete do Catalyst sobre os Shuffles!
+EXPLAIN FORMATTED
+SELECT id_venda, loja_id, valor
+FROM vendas
+WHERE data_venda >= DATE '2026-01-01';
 ```
+
+Procure no plano por filtros na varredura, colunas lidas, exchanges, sorts e estratégia de join. Uma CTE é uma construção lógica; não presuma materialização ou reavaliação sem observar o plano.
+
+## Shuffle, skew e spill
+
+- **Shuffle:** redistribui dados entre executores; é esperado em joins e agregações, mas volume excessivo merece investigação.
+- **Skew:** poucas chaves concentram grande parte dos registros, produzindo tarefas muito mais lentas que as demais.
+- **Spill:** dados intermediários excedem a memória disponível para a operação e usam disco. Pode ser aceitável; impacto e causa devem ser medidos.
+
+AQE pode coalescer partições pós-shuffle e tratar alguns skew joins. Hints como `BROADCAST` e `REPARTITION` são intervenções: valide o plano antes e depois.
+
+```sql
+EXPLAIN FORMATTED
+SELECT /*+ BROADCAST(d) */ f.id_venda, d.categoria
+FROM fato_vendas AS f
+JOIN dim_produto AS d ON f.produto_id = d.produto_id;
+```
+
+## Sequência de diagnóstico
+
+1. Confirme resultado, grão e volume esperado.
+2. Compare bytes e arquivos lidos com o necessário.
+3. Localize exchanges, sorts, joins e agregações mais caros.
+4. Compare duração e volume das tarefas para detectar skew.
+5. Verifique spill, memória e tamanho das partições.
+6. Altere uma variável por vez e meça novamente.
+
+## Checklist
+
+- [ ] Há filtro seletivo e projeção de colunas?
+- [ ] O plano confirma pruning e pushdown quando aplicáveis?
+- [ ] A estratégia de join é adequada ao tamanho real dos lados?
+- [ ] Shuffle, skew e spill foram medidos?
+- [ ] A mudança preserva o resultado e melhora uma métrica observável?
+

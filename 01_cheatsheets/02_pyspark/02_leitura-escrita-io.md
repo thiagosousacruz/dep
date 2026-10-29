@@ -33,7 +33,7 @@ df_json = spark.read \\
 ```
 
 ## Nivel Pleno: Leitura JDBC Paralelizada
-Diferente de um `read.parquet`, consultar fontes on-premise (Sistemas Legados, Oracle, SQL Server) seca restringe um canal de coneçao 1:1, focando 100% da query massiva num node Worker solteiro que falhará o timeout (OOM/Table Locking).
+Uma leitura JDBC sem particionamento costuma usar uma única conexão e limita o paralelismo. Isso não implica OOM por definição, mas pode concentrar trabalho, aumentar a duração e pressionar a origem. Para paralelizar, escolha uma coluna adequada e limites coerentes, negociando o número de conexões com o banco de origem.
 
 ```python
 # Distribuimos e paralelizamos a query no DB: O Spark dividirá o escopo base (1 a 5 Milhoes do alvo column id_venda) num array partitivo enviando 10 requestes simultaneamente pra encher a malha relacional.

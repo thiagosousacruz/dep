@@ -1,7 +1,7 @@
 # Estruturas Complexas JSON e Schema Enforcement (PySpark)
 
 ## O que e
-O combate de Lakehouses modernos que consomem origens semiestruturadas. APIs enviam logs embarcados em dicionarios (Structs), contendo listas infinitas dentro de fatias textuais sem tipos obvios. Schema Enforcement garante que essas montanhas flexiveis sejam descompactadas numa Matrix O-O fortemente tipada respeitando a qualidade da Silver!
+Dados semiestruturados exigem distinguir texto JSON de colunas `struct` e `array` já tipadas. Um schema explícito torna o contrato observável; registros incompatíveis ainda precisam de validação e tratamento.
 
 ## Nivel Junior/Pleno: A Extracao Logica Simples (Struct Dot Notation)
 Extrativismo cirurgico quando as origens do Json ja foram blindadas por padrao.
@@ -10,7 +10,7 @@ Extrativismo cirurgico quando as origens do Json ja foram blindadas por padrao.
 from pyspark.sql.functions import col, get_json_object, explode, split
 
 # ESTRUTURA BLINDADA EMBARCADA
-# Um payload da Silver ja nativamente interpretou um Dicionario Struct no DataFrame. Vc expande no select:
+# Para uma coluna struct já tipada, projete os campos necessários.
 df_tratar = df_ingestao.select(
     "id_registro",
     # Mapeamentos Ocultos usando a Dot Notation Extrativista da arvore:
@@ -37,7 +37,7 @@ df_geracao = df_receita_bruta \\
 ```
 
 ## Nivel Sênior: Schema Enforcement na Entrada Tipada
-A definicao explícita do metadado. Se a Silver exige IDs Inteiros, aceitar floats sujos do MongoDB corrompe tabelas. Aceleramos as tipagens usando Enforcement que barre nulos errados logo na criacao do load.
+Defina tipos e nulabilidade esperados, depois meça registros incompatíveis. Informar um schema na leitura não garante sozinho que todos os valores atendem às regras de negócio.
 
 ```python
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType
@@ -48,7 +48,7 @@ schema_oficial_vendas = StructType([
     StructField("id_venda", StringType(), nullable=False),  
     StructField("valor_lote", IntegerType(), nullable=True) 
 ])
-# Ao impor no spark.read a leitura aplicara Casts corretos nas entranhas previnindo nulls perigosos.
+# O schema orienta o parser; valide campos nulos ou registros corrompidos após a leitura.
 df_fixo = spark.read.schema(schema_oficial_vendas).json("/mnt/bronze/*.json")
 
 # 2. INFERENCIA DINÂMICA ENVOLVENDO SCHEMAS STRINGS MISTURADOS

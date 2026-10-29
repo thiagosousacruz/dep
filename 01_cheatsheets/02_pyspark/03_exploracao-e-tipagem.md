@@ -1,7 +1,7 @@
 # Exploracao e Tipagem (PySpark)
 
 ## O que e
-As chaves bases que revelam o estado fisíco estrutural após e ingestao crua no notebook (`Exploratão Visual`), e o cast de almejamentos obrigatórios de engrenagem (`Tipagem Forte/Timezones`). O casting robusto e preventor fatal contra truncamento de inteiros cruzando strings!
+Antes de transformar dados, inspecione schema, amostras, estatísticas e valores inválidos. Casts explícitos estabilizam joins e escritas, mas conversões incompatíveis podem produzir nulos ou erros conforme o modo ANSI e a função utilizada.
 
 ## Nivel Junior/Pleno: Inspeções Rapidas e Describe
 Técnicas interativas na UI para confirmar a volumetria provisória e esquemas ocultos.
@@ -18,7 +18,7 @@ display(df_recebido) # No databricks workspace rederiza nativo tabelado front-en
 ```
 
 ## Nivel Pleno: Casting Tipografico Explicito
-Evitar o truncamento silencioso garantindo compatibilidade estática em joins ou writes.
+Escolha tipos compatíveis com o domínio e valide o resultado do cast antes de joins ou escritas.
 
 ```python
 from pyspark.sql.functions import col
@@ -27,7 +27,7 @@ from pyspark.sql.types import IntegerType, DecimalType
 df_formatado = df_origem \\
     .withColumn("id_int_base", col("id").cast(IntegerType())) \\
     
-    # Casting monetario com delimitador obrigatorio (Tamanho Bytes, Restos Centesimal).
+    # Decimal explícito para valores monetários quando a escala é conhecida.
     .withColumn("vlr_moeda", col("faturamento").cast(DecimalType(18,2))) \\
     
     # Cast condicional boleano automático a vera. Produze True/False limpo in-loop.

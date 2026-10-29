@@ -1,117 +1,81 @@
-# Performance Tuning, Arquitetura DevOps e Testes (PySpark)
+# Performance, Arquitetura e Testes em PySpark
 
-## O que e
-As fronteiras do Arquiteto Big Data. O Tuning mitiga a ociosidade ou afundamento (OOM) de processadores repensando as malhas distribuidas de memoria (Shuffles e AQE). Já a infraestrutura DevOps aborda agnosticismo de códigos (Separation Of Concerns), e testes em Mock de CI/CD para que lógicas Spark ganhem escala e integridade produtiva.
+## Diagnóstico antes da otimização
 
-## 1. Otimização Adaptativa (AQE) e Redistribuicao de Carga
-As extensoes operantes configuraveis na sessao do databricks em versoes 3.X que alteram planos em *Runtime* baseado na observacao em disco.
+Use `explain("formatted")`, Spark UI e métricas do job para identificar leitura, exchanges, sorts, skew, spill e tarefas lentas. Compare resultado e custo antes e depois de cada mudança.
 
 ```python
-# 1.1 CONFIGS DO DATABRICKS ADAPTATIVE:
+df_resultado.explain("formatted")
+```
+
+## AQE e partições
+
+AQE pode ajustar o plano com estatísticas de runtime, coalescer partições pós-shuffle e tratar alguns skew joins. Em runtimes gerenciados, confira os defaults antes de sobrescrever configurações.
+
+```python
 spark.conf.set("spark.sql.adaptive.enabled", "true")
 spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
-
-# 1.2 SHUFFLE VOLUNTARIO: REPARTITION E COALESCE
-# REPARTITION (Mixagem Universal). Custa extrema latencia. Destroi limites ordenados para balancear bits igualmente as Cpus.
-df_nivelado_p_join = df_assimetrico.repartition(400, "codigo_uf")
-
-# COALESCE (Compreensao Pacífica). Une partições pequenas esparsamente fracas apertando-as pra dentro nas partições contiguas MAIORES sem mandar pacotes pesados transitar pelo fio!
-df_final_comprimido_clean = df_apos_filtros.coalesce(20)
 ```
 
-## 2. Solucao de Skew Joins In-Memory (Salting e DPP)
-Se atrelar Data-Skews em Joins quebra nodes independentes mesmo com repatition, fatiamos de vez.
+- `repartition(n, *cols)` executa redistribuição e pode aumentar ou reduzir partições. Use quando precisa balancear dados, particionar por chave ou elevar paralelismo.
+- `coalesce(n)` costuma reduzir partições sem shuffle completo. É útil após filtros fortes, mas pode criar partições desbalanceadas.
+- Não existe um número universal de partições. Considere volume, tamanho das tarefas, núcleos disponíveis e escrita final.
 
 ```python
-from pyspark.sql.functions import rand, lit, explode, array
-
-# SALTING ARTIFICIAL:
-# Uma chave "STATUS=OK" detem bilhoes de ocorrencias e afundou uma CPU sozinha.
-# Injetamos valores aleatorios (Salt 0-9) espalhando artificialmente o Skew!
-df1_salteado = df_estourada.withColumn("salt", (rand() * 10).cast("int"))
-df2_alvo_salteado = df_dimensao.withColumn("salt", explode(array([lit(i) for i in range(10)])))
-
-df_cruzamento = df1_salteado.join(df2_alvo_salteado, ["chave_original", "salt"]).drop("salt")
-
-# DYNAMIC PARTITION PRUNING (DPP): Otimizacao fantastica!
-# Cortes automaticos de particoes antes do Join comecar a ler a Fato baseada na Chave da tabela dimensional que sequer será batida (Injeção via Filter Pre-Scan).
-spark.conf.set("spark.sql.optimizer.dynamicPartitionPruning.enabled", "true")
+df_por_cliente = df.repartition(200, "cliente_id")
+df_saida = df_filtrado.coalesce(20)
 ```
 
-## 3. Vetores Apache Arrow (Pandas UDFs)
-Uso de funcoes comuns Python (`def()`) encapsuladas em `udf` matam operabilidades (Byting Row by Row). Substituir logicas dificeis em pythons nativas por Vetores Pandas (Mecanica C++ in RAM) acelera lotes brutais.
+## Skew e salting
+
+Meça frequência das chaves e duração das tarefas. Primeiro avalie filtros, AQE, broadcast do lado pequeno e revisão da chave. Salting replica ou transforma dados e deve ser reservado para skew comprovado.
 
 ```python
-from pyspark.sql.functions import pandas_udf
-import pandas as pd
-from pyspark.sql.types import StringType
+from pyspark.sql import functions as F
 
-# The Silver Bullet:
-@pandas_udf(StringType())
-def tag_vetorizada_operacao(serie_recebida_memoria_em_lotes: pd.Series) -> pd.Series:
-    # A aplicacao rodará Batch Vectors ignorando serializacao limitante
-    return serie_recebida_memoria_em_lotes.apply(lambda val: "VIP" if val > 2500000 else "STANDART")
-
-df_tunado_vector = df_estourado_lento.withColumn("classificacao", tag_vetorizada_operacao("saldo"))
+df.groupBy("chave").count().orderBy(F.desc("count")).show(20, truncate=False)
 ```
 
-## 4. Separation of Concerns (OOP) e Loggings
-Isolar chamadas Cloud de Arquiteturas matemáticas previne spaghettificacão de paineis iterativos de cadernos.
+## Funções nativas, Python UDF e Pandas UDF
+
+Prefira expressões nativas do Spark: elas são visíveis ao otimizador e evitam fronteiras Python desnecessárias. Pandas UDF processa lotes via Arrow e pode ser melhor que uma Python UDF linha a linha, mas ainda tem serialização, memória e restrições de tipos. Use-a apenas quando não houver expressão nativa adequada e meça.
 
 ```python
-import os
-import logging
-from pyspark.sql.functions import col
+from pyspark.sql import functions as F
 
-logging.basicConfig(level=logging.INFO)
-LOG = logging.getLogger(__name__)
-
-# THE CONFIG MAGNAGER (Parametros injetados por ADF Ditando Alvos em RunTime)
-class VariaveisPipeline:
-    def __init__(self):
-        self.ambiente = os.getenv("RUNNING_ENV", "dev")
-        self.path_alvo = f"/mnt/{self.ambiente}/bronze/estoques"
-
-CONF = VariaveisPipeline()
-
-# THE AGNOSTIC MATH: Função imutavel Pura (Não Encosta Em Banco pra não travar!)
-def aplicar_lucratividade(df_entrada):
-    return df_entrada.withColumn("imposto", col("vlr_custo") * 0.17)
-
-def main_job():
-    LOG.info("Start!")
-    df_base = spark.read.parquet(CONF.path_alvo) 
-    df_imposto = aplicar_lucratividade(df_base)   
-    LOG.info("Escrita ok.")
+df_classificado = df.withColumn(
+    "classificacao",
+    F.when(F.col("saldo") > 2_500_000, "VIP").otherwise("STANDARD"),
+)
 ```
 
-## 5. Mock Sessions CI Locais (Pytest)
-Nao teste lógicas matemáticas pagando Databricks. Crie mini clusters in memory para Esteira Jenkins/Github testando as regras cegas em mocks arrays gerados em terminal!
+## Separação de responsabilidades
+
+Mantenha transformação pura separada de leitura, escrita e configuração. Isso facilita testes e evita acoplar regra de negócio ao notebook.
 
 ```python
-## Arquivo: '/tests/test_tributacao.py'  
-import pytest
-from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, DoubleType
+from pyspark.sql import functions as F
 
-from projeto.modulo_tributacao import aplicar_lucratividade
-
-# 1. FIXTURE SERVERLESS (Driver Mode in RAM, isolado).
-@pytest.fixture(scope="session")
-def fake_session():
-    return SparkSession.builder.master("local[1]").appName("teste_cicd").getOrCreate()
-
-# 2. SEU CÓDIGO TESTADO VIA CHECK CI
-def test_validacao_regrad_de_tributo_aplicada_ascedente(fake_session):
-    
-    # DATAFRAMES FALSOS:
-    esquema_tabela = StructType([ StructField("vlr_custo", DoubleType()) ])
-    df_mock = fake_session.createDataFrame([(100.0,)], esquema_tabela)
-    
-    # ALGORITMO:
-    res_df = aplicar_lucratividade(df_mock)
-    rows_nativo = res_df.collect()
-    
-    # 100 * 0.17 % ICMS = 17 !!!
-    assert rows_nativo[0]["imposto"] == 17.0
+def aplicar_imposto(df):
+    return df.withColumn("imposto", F.col("valor") * F.lit(0.17))
 ```
+
+## Teste local
+
+```python
+def test_aplicar_imposto(spark):
+    entrada = spark.createDataFrame([(100.0,)], ["valor"])
+    resultado = aplicar_imposto(entrada).first()
+    assert resultado.imposto == 17.0
+```
+
+Sessões Spark locais são integrações leves, não mocks. Para comparações decimais, use tipos decimais ou tolerância apropriada.
+
+## Checklist
+
+- [ ] O gargalo foi observado no plano ou na UI?
+- [ ] Funções nativas foram consideradas antes de UDFs?
+- [ ] Repartition/coalesce têm objetivo e métrica definidos?
+- [ ] Transformações são testáveis sem I/O externo?
+- [ ] A otimização preservou o resultado?
+

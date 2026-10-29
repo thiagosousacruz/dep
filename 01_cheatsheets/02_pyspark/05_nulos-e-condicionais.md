@@ -26,11 +26,11 @@ df_seguro = df_classificado.withColumn(
 ```
 
 ## Operadores de Sanitizacao Nativa: fillna e dropna
-Manipulacoes diretas mitigando nulos indiscriminados limitrofe. Observacao Critica: O expurgo via Dropna em Pipelines Gold deve ser acurado em escopo, evitando a desfragmentacao de informacao sadia contida em feature paralela da mesma row vitimada.
+`dropna` remove linhas e pode descartar informação válida em outras colunas. Restrinja o subconjunto às colunas exigidas pela regra e acompanhe quantas linhas foram removidas.
 
 ```python
 # EXPURGACAO ESTRITA
-# Remove apenas as linhas que detem nulo EXCLUSIVAMENTE nos pilares chaves listados (idade e cpf). Nulos perifericos em var de contato nao destruiriam a matriz row inteira. 
+# Remove linhas com nulo nas colunas exigidas pela regra.
 df_tratado = df_logistica.dropna(
     how="any",         
     subset=["idade", "cpf"] 
@@ -50,13 +50,13 @@ df_replaced = df_imputado.replace(["N/A", "NA", " ", ""], None)
 ```
 
 ## Nivel Senior: Quality Blocks para Divisoes Analiticas
-Divisao elementar como `df.lucro / df.custo` com custos operantes batendo fisicamente = 0 ocasionam `ZeroDivisionError` no node Spark derrubando a malha da DAG na Cloud!
+O comportamento de divisão por zero depende do tipo e da configuração ANSI. Expresse a política desejada para não depender do default da sessão.
 
 ```python
 # Tratamentos logicos mitigam este rombo com defesoes Nativas.
 df_fatoracao = df.withColumn(
     "rentabilidade",
-    # Condiciona a quebra forcando o valor de falha gerar None local inves de travar!
+    # Retorna NULL quando o denominador é zero.
     when(col("custos_de_producao") == 0, lit(None))
     .otherwise(col("receita") / col("custos_de_producao"))
 )

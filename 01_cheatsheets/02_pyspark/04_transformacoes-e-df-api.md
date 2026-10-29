@@ -23,7 +23,7 @@ df_estrutural = df_base \\
     .drop("celular", "outros")
     
 # SELECTION EXPR IN-INLINE (Atalhos do SQL nativo numa string p limpezas sem ter de dar import col())
-df_atalho_rapidaço = df_bruto.selectExpr("id_pk AS ID", "CAST(faturamento AS INT)", "ano_atual - 2000 AS dif_anos")
+df_selecionado = df_bruto.selectExpr("id_pk AS id", "CAST(faturamento AS INT) AS faturamento", "ano_atual - 2000 AS dif_anos")
 ```
 
 ## Nivel Pleno: Filtros, Deduplicaçoes, Ordernaçoes, e Empilhamentos

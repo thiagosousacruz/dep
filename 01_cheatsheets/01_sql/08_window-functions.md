@@ -1,54 +1,59 @@
-# Window Functions (Databricks / Spark SQL)
+# Window Functions em Spark SQL
 
-## O que é
-Operadores especiais que resolvem as perguntas temporais sem amassar a matriz em group bys (`ORDER BY OVER()`). Eles realizam as equações consultando "vizinhos indexados sequenciais" pelas regras da aba `PARTITION BY`, e retêm formatações linha a linha originais!
+## O que são
 
-## Nível Júnior: Rankings e Deduplicações Analíticas
-Você já limpou nulos, limpou as crases e explodings, agora limpe as linhas velhas repetitivas preservando chaves atomicamente únicas na Silver!
+Funções de janela calculam valores relacionados sem reduzir o número de linhas como um `GROUP BY`. A especificação combina particionamento lógico, ordenação e, quando necessário, um frame.
 
-```sql
--- Sintaxe Fixa Mestre:  OVER(PARTITION BY ... ORDER BY ...)
-SELECT 
-    id_maquina, data_status, log_critico,
-    
-    -- ROW_NUMBER: Absolutamente Inegociável para desempates estritos das pipelines Silver ! (Se empatou.. joga pro ladinho pulando num!). Pede as 1 e pronto!
-    ROW_NUMBER() OVER(PARTITION BY id_maquina ORDER BY data_status DESC) as deduplicacao_primaria,
-
-    -- DENSE_RANK: Pára evitar saltos exóticos na progressão (Ex: Os maiores da loja deram notas: "10, 10, 8", eles ficarão Ranks #1, #1, #2 consecutivo pra não desmotivar). 
-    DENSE_RANK() OVER(PARTITION BY id_maquina ORDER BY cpu_mhz DESC) as prioridade_urgencia
-FROM server_logs;
-```
-
-## Nível Pleno: Running Totals (Acumulados) e Funções Lags
-Necessário pra tirar métricas SLAs de Help Desk (Quantos ms eu demorei do etapa 2 pro 5?) e fechar caixas!
+## Exemplos
 
 ```sql
--- Lags (Volta pra linha anterior relacional) / Leads (Acha a Proxima linha do bloco da partição).
-SELECT 
-    num_chamado, data_emissao as hj,
-    LAG(data_emissao) OVER(PARTITION BY num_chamado ORDER BY data_emissao ASC) as emissao_anterior
-    -- Você tiraria SLA do gap num: datediff(hj, emissao_anterior)
-FROM suporte_ti;
+-- Versão mais recente por cliente; inclua desempate determinístico
+SELECT *
+FROM eventos
+QUALIFY row_number() OVER (
+  PARTITION BY cliente_id
+  ORDER BY evento_em DESC, evento_id DESC
+) = 1;
 
--- Resumos Acumulativos (Year to Date - YTD Sales)
--- P/ ir somando tudo de Tras pra frente no Databricks. A ausência de RANGE impõe "Da Linha atual Ate a Infinidade Anterior Do Bloco".
-SELECT 
-    mes, receita_mes,
-    SUM(receita_mes) OVER(ORDER BY mes) as acumulado_ano_corrente
-FROM fechamento;
+-- Comparação com a linha anterior
+SELECT
+  cliente_id,
+  evento_em,
+  valor,
+  lag(valor) OVER (
+    PARTITION BY cliente_id ORDER BY evento_em, evento_id
+  ) AS valor_anterior
+FROM eventos;
+
+-- Acumulado desde o início da partição
+SELECT
+  conta_id,
+  data_movimento,
+  sum(valor) OVER (
+    PARTITION BY conta_id
+    ORDER BY data_movimento
+    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+  ) AS saldo_acumulado
+FROM movimentos;
 ```
 
-## Sênior (Cluster Health Problem): Range Frames e OOM Errors
-A engine exige memória ram bruta pra segurar a janela enquanto lê todas e agrupa. Controlar o volume de blocos define se seu cluster cai ou não.
+## Rows versus range
 
-```sql
--- Moving Average (O range frame MANUAL RESTRITO: Medias Moveis)
-SELECT 
-    vendedor, venda,
-    AVG(venda) OVER (
-        PARTITION BY vendedor ORDER BY d_movimento 
-        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW -- SOMA MEU SETOR DOS ULTIMOS 6 DIAS DA SEMANA COM A MINHA LINHA E MEDIA!
-    ) AS media_mov_7dias
-FROM financeiro;
-```
-**CRÍTICO DE OOM**: NUNCA UTILIZE CLÁUSULAS GLOBAIS CEGAS NO SPARK (*EX: `AVG(preco) OVER (ORDER BY mes DESC)` * SEM `PARTITION BY`!*). A Ausência ditará que todo mundo no universo cairá pra mesma e uníca pastinha de partição no datalake local do Node0 de Job! A máquina com 16 CPUs tentará varrer de UMA UNICA CPU uma analítica contra toda a sua base bilionária. Use partições (hashes de IDs regionais ou mensais aleatóricas pra subdividir o trabalho aos processadores)!
+`ROWS BETWEEN 6 PRECEDING AND CURRENT ROW` cobre sete linhas, não sete dias. Para uma janela temporal, use uma expressão de ordenação e um `RANGE` compatíveis com a versão e o tipo de dado, ou agregue por data antes de usar `ROWS`.
+
+## Cuidados de escala
+
+Uma janela ordenada sem `PARTITION BY` forma uma única partição lógica e pode concentrar ordenação e estado em um executor. Ela ainda pode ser necessária para ranking global, mas deve ser usada conscientemente e medida na Spark UI. Não invente uma chave de partição apenas para acelerar: isso altera o resultado.
+
+- Use colunas de desempate para resultados determinísticos.
+- Evite partições extremamente grandes ou muito desbalanceadas.
+- Projete apenas as colunas necessárias antes da janela.
+- Verifique sort, shuffle, spill e duração das tarefas no plano e na UI.
+
+## Checklist
+
+- [ ] A partição representa o grupo lógico correto?
+- [ ] A ordenação é determinística?
+- [ ] O frame expressa linhas ou intervalo de valores como pretendido?
+- [ ] O volume por partição foi medido?
+

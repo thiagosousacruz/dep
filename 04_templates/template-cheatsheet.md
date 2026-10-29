@@ -1,27 +1,32 @@
-# [Título do Cheatsheet]
+# Título do cheatsheet
 
 ## O que é
-(Breve descrição conceitual do comando, função ou estrutura)
+
+Definição curta e tecnicamente verificável.
 
 ## Quando usar
-(Casos de uso aplicáveis e cenários ideais no dia a dia da engenharia de dados)
 
-## Sintaxe base
-```sql
--- ou python
--- Código/Sintaxe
+Contexto, objetivo e pré-condições.
+
+## Exemplo mínimo
+
+```text
+exemplo
 ```
 
-## Exemplo simples
-```sql
--- ou python
--- Exemplo prático aplicado
-```
+## Aplicação operacional
 
-## Erros comuns
-- Erro 1 (ex: Não realizar o cast adequado de data)
-- Erro 2
+Exemplo adaptável a uma situação recorrente.
 
-## Boas práticas
-- Prática 1 (ex: Priorizar window functions à self joins custosos)
-- Prática 2\n
+## Cuidados e trade-offs
+
+- Limites da abordagem.
+- Dependências de versão ou ambiente.
+- Alternativas relevantes.
+
+## Checklist
+
+- [ ] A entrada e o grão foram validados?
+- [ ] O resultado foi conferido?
+- [ ] Custos e efeitos colaterais foram considerados?
+

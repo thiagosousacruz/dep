@@ -20,7 +20,7 @@ FROM dados_apis;
 ```
 
 ## Especialista (Sênior): Exploding The Array
-O que os Engs e DEs apanham nos projetos. A API do IFood te mandou UMA LINHA de Pedido. Porém, há 4 hambúrgueres diferentes no `Array` de intens comprados escondido no JSON string. Você DEVE quebrar a 1 Linha Fato_Pedido da conta para "4 Linhas Isoladas" Fato_Items para poder faturar individualmente. A solução: Expandir explodindo os itens via LATERAL VIEWS geradoras.
+Quando um pedido contém um array de itens, `explode` produz uma linha por item. Faça isso somente quando o grão desejado for item; a operação altera a cardinalidade e exige preservar a chave do registro de origem.
 
 ```sql
 -- TABELA (Pedido 10, VlrTot: 50 | Array Itens: [{'cod':1, 'nf': 20}, {'cod':2, 'nf': 30}])
@@ -32,6 +32,6 @@ SELECT
     item_aberto.cod AS CodigoIndividual_Fisico,
     item_aberto.nf AS NotaIndividual_Fisico
 FROM db_restaurantes db
--- A "Lateral" explode O CAMPO Arrays_itens na mesma linha para todas os itens internos via CROSS MATCH iterativo e os renomeia em "item_aberto"
+-- Produz uma linha por elemento do array e nomeia o elemento como item_aberto.
 LATERAL VIEW EXPLODE(from_json(Array_itens, 'array<struct<cod:int,nf:int>>')) explode_tabela AS item_aberto;
 ```

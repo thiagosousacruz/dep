@@ -1,13 +1,13 @@
-# Sanitização Strings e Nomenclaturas (SQL/Silver Lyr)
+# Sanitização de Strings e Nomenclatura em SQL
 
 ## O que é
-Rotinas cosméticas vitais pra garantir a confiabilidade estrutural. Textos digitados à mão via CRM quase nunca vem limpos na zona Bronze do Lake. Na passagem para Silver devemos higienizá-los e rebatizar as colunas exóticas pra padrões universais da CIA (`Snake_Case`), garantindo os cruzamentos futuros sem bugs.
+Sanitização reduz variações de texto e nomes que dificultam joins, validações e consumo. Na passagem para Silver, aplique regras explícitas e rastreáveis; não altere valores apenas por estética e preserve o dado bruto na Bronze.
 
 ## Nível Júnior/Pleno: Limpezas Primárias e AS (Alias)
-Seu arsenal anti "*Espaços Fantasmas*". E a principal regra de ouro DE: Não confie no `SELECT *` de origens! Batize manualmente para travar o contrato de schemas.
+Projete e nomeie explicitamente as colunas publicadas. Isso torna alterações de schema visíveis e evita transportar campos desnecessários.
 
 ```sql
--- Diga adeus aos nomes bizarros nativos como `VLR_FINAN_01` através do Alias explicito!
+-- Converta nomes de origem para o padrão acordado no contrato de saída.
 SELECT
     -- Higienização Básica de chaves texteis pre-joins ('   SAO pAULO ' -> 'SAO PAULO')
     UPPER(TRIM(cidade)) AS nm_cidade_padrao,
@@ -16,7 +16,7 @@ SELECT
     -- Em caso de origens via legados DB em Windows ou Arquivos que chegaram quebrando e contendo espaços, isole-os em Crases Invertitadas (Backticks):
     `Data Venda Física` AS dt_venda,
     
-    -- Dica: Booleanos sempre levam 'is_' ou 'has_'
+    -- Convenção possível: prefixos is_ ou has_ para booleanos.
     FlgAtv AS is_ativo 
 FROM lojas_filial;
 ```

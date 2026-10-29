@@ -2,6 +2,8 @@
 
 Guias de referencia rapida para Analytics Engineering, modelagem dimensional e consumo analitico em BI.
 
+> **Status:** material complementar mantido apenas em Markdown. Esta area nao integra o build HTML principal e nao e prioridade de expansao no ciclo atual.
+
 ## Indice
 - [Como usar esta pasta](#como-usar-esta-pasta)
 - [Ordem sugerida de leitura](#ordem-sugerida-de-leitura)
@@ -60,14 +62,11 @@ Nao e uma pasta de implementacao SQL/PySpark. Ela complementa essas areas discut
 ## Como isso se conecta com o repositorio
 Esta pasta conversa diretamente com:
 
-- SQL: [`../sql/`](../sql)
+- SQL: [`../01_sql/`](../01_sql)
   Porque varias decisoes de modelagem impactam joins, granularidade, nulos, snapshots e camada Gold.
 
-- PySpark: [`../pyspark/`](../pyspark)
+- PySpark: [`../02_pyspark/`](../02_pyspark)
   Porque muitas dessas decisoes precisam ser implementadas em pipelines, Delta e cargas incrementais.
-
-- Contexto de negocio: [`../../07_contexto-negocio/`](../../07_contexto-negocio)
-  Porque a modelagem correta depende de regra de negocio, semantica de indicador e forma de consumo.
 
 - Revisao e evolucao: [`../../06_revisao-evolucao/`](../../06_revisao-evolucao)
   Onde ficam registradas avaliacoes e pontos de melhoria desta area.

@@ -1,82 +1,92 @@
 # SQL Joins (Databricks / Spark SQL)
 
-## O que e
-Joins combinam linhas de duas ou mais tabelas a partir de uma chave em comum. Em Databricks/Spark, tambem sao uma das operacoes mais custosas, porque costumam mover dados entre particoes e nodes do cluster.
+## O que é
 
-## Nivel Junior: Mapa minimo dos joins
+Joins combinam conjuntos de dados por uma condição. Em Spark, podem exigir shuffle; o custo depende do volume, da distribuição das chaves, da estratégia física e das colunas transportadas.
+
+## Quando usar
 
 ```sql
--- INNER JOIN: mantem apenas o que existe nas duas tabelas
-SELECT f.venda, dim.uf_estado
-FROM Tb_Fatos f
-INNER JOIN Dim_Geografia dim ON f.geografia_id = dim.id;
+-- INNER: somente correspondências
+SELECT f.id_venda, d.uf
+FROM fato_vendas AS f
+INNER JOIN dim_loja AS d ON f.loja_id = d.loja_id;
 
--- LEFT JOIN: mantem tudo da esquerda e busca complemento na direita
-SELECT f.venda, dim.uf_estado
-FROM Tb_Fatos f
-LEFT JOIN Dim_Geografia dim ON f.geografia_id = dim.id;
+-- LEFT: preserva todas as linhas da esquerda
+SELECT f.id_venda, d.uf
+FROM fato_vendas AS f
+LEFT JOIN dim_loja AS d ON f.loja_id = d.loja_id;
 
--- FULL OUTER JOIN: bom para auditoria de divergencias
-SELECT a.id, b.id
-FROM tabela_a a
-FULL OUTER JOIN tabela_b b ON a.id = b.id;
+-- FULL OUTER: útil para reconciliação
+SELECT coalesce(a.id, b.id) AS id, a.valor, b.valor
+FROM origem AS a
+FULL OUTER JOIN destino AS b ON a.id = b.id;
 
--- CROSS JOIN: produto cartesiano, use apenas de forma intencional
-SELECT a.id, b.faixa
-FROM tabela_a a
-CROSS JOIN tabela_b b;
+-- CROSS: produto cartesiano intencional
+SELECT c.data, f.faixa
+FROM calendario AS c
+CROSS JOIN faixas AS f;
 ```
 
-## O terror do Databricks: Exploding Joins
-O erro classico e fazer join com uma dimensao/tabela da direita que possui mais de uma linha por chave. Quando isso acontece, a fato e multiplicada sem aviso e os numeros finais ficam incorretos.
+`LEFT SEMI JOIN` retorna linhas da esquerda com correspondência; `LEFT ANTI JOIN`, as linhas sem correspondência. Ambos evitam carregar colunas do lado direito.
 
 ```sql
-WITH Dimensao_Sanitizada AS (
-    SELECT *
-    FROM Lixo_Dimensional_B
-    QUALIFY ROW_NUMBER() OVER (
-        PARTITION BY id
-        ORDER BY updatetime DESC
-    ) = 1
+SELECT a.id FROM clientes AS a LEFT SEMI JOIN acessos AS b ON a.id = b.cliente_id;
+SELECT a.id FROM clientes AS a LEFT ANTI JOIN acessos AS b ON a.id = b.cliente_id;
+```
+
+## Cardinalidade e exploding join
+
+O número de linhas pode crescer quando uma chave encontra múltiplas linhas do outro lado. Isso pode ser correto em uma relação 1:N ou indicar violação do grão esperado. Não deduplique automaticamente: primeiro confirme a regra de negócio e escolha uma ordenação determinística.
+
+```sql
+-- Diagnóstico do lado que deveria ter uma linha por loja
+SELECT loja_id, count(*) AS quantidade
+FROM dim_loja
+GROUP BY loja_id
+HAVING count(*) > 1;
+
+-- Use somente quando a regra exigir a versão mais recente por loja
+WITH dim_loja_atual AS (
+  SELECT *
+  FROM dim_loja
+  QUALIFY row_number() OVER (
+    PARTITION BY loja_id ORDER BY atualizado_em DESC, versao DESC
+  ) = 1
 )
-SELECT ...
-FROM fato_a
-LEFT JOIN Dimensao_Sanitizada b ON fato_a.id = b.id;
+SELECT f.id_venda, d.uf
+FROM fato_vendas AS f
+LEFT JOIN dim_loja_atual AS d ON f.loja_id = d.loja_id;
 ```
 
-## Nivel Pleno: Semi e Anti Joins
-Esses joins filtram sem trazer colunas extras, e sao muito uteis para existencia e ausencia.
+## Performance
+
+O hint `BROADCAST` pode evitar shuffle da tabela grande quando o lado transmitido cabe com folga na memória dos executores. Confirme a estratégia no plano e não force broadcast apenas por contagem de linhas.
 
 ```sql
--- LEFT SEMI JOIN: traz linhas da esquerda que existem na direita
-SELECT a.id, a.nome
-FROM clientes a
-LEFT SEMI JOIN logs b ON a.id = b.id_comprador;
+SELECT /*+ BROADCAST(d) */ f.id_venda, d.uf
+FROM fato_vendas AS f
+LEFT JOIN dim_loja AS d ON f.loja_id = d.loja_id;
 
--- LEFT ANTI JOIN: traz linhas da esquerda que nao existem na direita
-SELECT r.id, r.nome
-FROM clientes_base r
-LEFT ANTI JOIN acesso_apps x ON r.id = x.id_sessao;
+EXPLAIN FORMATTED
+SELECT f.id_venda, d.uf
+FROM fato_vendas AS f
+LEFT JOIN dim_loja AS d ON f.loja_id = d.loja_id;
 ```
 
-## Nivel Senior: Hints e performance
+Para skew, prefira primeiro AQE, filtragem antecipada e revisão das chaves. Salting é uma intervenção adicional e exige medir a distribuição e preservar a semântica.
 
-```sql
--- BROADCAST JOIN: use quando a tabela da direita for pequena o suficiente
-SELECT /*+ BROADCAST(dim) */ f.venda, dim.loja
-FROM fato_gigantesca_de_vendas f
-LEFT JOIN dimensao dim ON f.loja_id = dim.id;
+## Cuidados
 
--- SKEW JOIN: ajuda em cenarios de desbalanceamento forte de chaves
-SELECT /*+ SKEW('tabela_desbalanceada_suja') */ a.id, b.valor
-FROM tabela_desbalanceada_suja a
-JOIN dim_valores b ON a.id = b.id;
-```
+- Alinhe os tipos das chaves explicitamente; casts durante o join podem mascarar dados inválidos.
+- `NULL = NULL` não é verdadeiro. Em Spark SQL, use `<=>` apenas quando nulos devam corresponder.
+- Selecione apenas as colunas necessárias para reduzir leitura e transferência.
+- Compare contagens e métricas antes e depois do join segundo o grão esperado.
 
-## Boas práticas (Heurísticas do dia a dia)
+## Checklist
 
-- **Evite o Exploding Join por padrão:** Não assuma que a tabela da direita (dimensão) tem apenas uma linha por chave. Se a regra de negócio dita que a relação é 1:1, **sempre deduplique o lado direito com `QUALIFY ROW_NUMBER() = 1`** antes do join. Isso salva horas de *troubleshooting*.
-- **Check de sanidade obrigatório:** Adquira o hábito de rodar a seguinte query mental (ou física) antes de aprovar um Pull Request: "A tabela A tem X linhas. Após o LEFT JOIN com a tabela B, a tabela final continua com X linhas?". Se o número aumentou, você gerou um produto cartesiano acidental.
-- **Evite joins em colunas de tipos diferentes:** Um `JOIN` entre um `INT` e um `STRING` fará com que o Databricks faça um *implicit cast*, destruindo o uso de índices e particionamentos. Sempre alinhe os tipos com `CAST()` ou `TRY_CAST()`.
-- **Cuidado com Nulos nas chaves:** Em um `INNER JOIN` normal, `NULL = NULL` retorna FALSO. Se precisar cruzar registros onde a chave pode ser nula dos dois lados, use a sintaxe `NULL-SAFE EQUAL` do Spark: `ON a.chave <=> b.chave`.
-- **Não faça `SELECT a.*, b.*`:** Joins em larga escala com select asterisco arrastam gigabytes de colunas inúteis pela rede do cluster (*Network I/O*). Traga apenas o estritamente necessário.
+- [ ] O grão de cada lado está declarado?
+- [ ] A cardinalidade esperada é 1:1, 1:N ou N:N?
+- [ ] Chaves têm tipos compatíveis e qualidade conhecida?
+- [ ] O plano e as métricas confirmam a estratégia escolhida?
+

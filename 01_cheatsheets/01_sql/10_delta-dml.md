@@ -1,44 +1,59 @@
-# Delta Lake: DML, Upserts e Limpezas de Storage (Databricks)
+# Delta Lake: DML e Manutenção
 
 ## O que é
-Em Data warehouses comuns, `UPDATE` trancava tabelas e derrubava jobs em concorrência, já no sistema Lakehouse open-source *Delta*, os dados são arquivos parquets brutos versionados com `Commit Logs`. Isso permite *Time-Travel* a estados passados e Inserções condencionais via comandos massivos ACID (`Merge Into`).
 
-## Nível Pleno: O UPSERT Seguro (Merge Into)
-Seu Job roda todos os dias e extrai a base nova. Inserir a base inteira nos fundos do lago duplica. Deletar a silver antiga primeiro e Gravar dnv onera I/O de rede. O Upsert injeta chaves novas, e Atualiza só as chaves velhas desempadas inteligentemente no Lakehouse sem matar transacoes.
+Delta Lake adiciona log transacional e controle de concorrência a arquivos de dados. Operações, sintaxe e recursos de otimização podem variar por versão do Delta Lake e pelo Databricks Runtime.
 
-```sql
--- DML Clássico de Upsert Analytics
-MERGE INTO master.gold_producao AS target
-USING temp.silver_diaria AS source
-ON target.id_venda_pk = source.id_venda_pk
+## Merge
 
--- Chave da Origin casou com do Destino? 
-WHEN MATCHED THEN
-  -- Pode colocar condicões (So atualize se os valores de preco não forem iguais, senao é perca de ciclo!)
-  UPDATE SET 
-    target.preco     = source.preco,
-    target.data_upd  = current_timestamp()
-
--- Chave é novissima? 
-WHEN NOT MATCHED THEN
-  INSERT (id_venda_pk, preco, data_upd)
-  VALUES (source.id_venda_pk, source.preco, current_timestamp());
-```
-
-## Especialista: Viagem no Tempo (Time Travel) e Compactação de Lixos Físicos Delta
-O Delta faz versionamento (tipo Git). A cada Insert, um Log V2 é gerado e o arquivo Parquet V1 velho é orfanado, mas mantido.
+A condição do `MERGE` deve identificar no máximo uma linha de origem para cada linha de destino. Deduplique ou rejeite ambiguidades antes da operação.
 
 ```sql
--- TIME TRAVEL: O Analista fez cagada e gravou as 10 da manhã um DROP que sumiu os numéros, acione Restore para a linha mestre versionada de ontém!
-SELECT * FROM master.gold_producao TIMESTAMP AS OF '2024-01-01 23:00:00';
-
-RESTORE TABLE master.gold_producao TO TIMESTAMP AS OF '2024-01-01 23:00:00';
-
--- LIXEIRA (VACCUM) DE BLOCOS: 
--- 30 Dias rodando ETL geram milhares de blocos v1 desativados inuteis. Apague-os Forçadamente do disco cloud para salvar IO limits! (Deleta tudo mais velho q 7 dias do backup history)
-VACUUM master.gold_producao RETAIN 168 HOURS;
-
--- O OPTIMIZE DOS POBRES (Trazendo o Performance Tuning fisico p frente)
--- Aglutina Partições. (O infame problema de mil arquivos zinhos the small file size problem). O Spark abrirá todos os arquivos minúsculos de 10Kb dessa tabela e empacotará eles de 1GB em 1GB contíguos na AWS reduzindo latência no scaner.
-OPTIMIZE master.gold_producao ZORDER BY (estado, id_loja); -- Zorder força os clusters mais acionados a grudarem lado a lado.
+MERGE INTO gold.vendas AS target
+USING silver.vendas_incrementais AS source
+ON target.venda_id = source.venda_id
+WHEN MATCHED AND NOT (
+  target.preco <=> source.preco
+) THEN UPDATE SET
+  target.preco = source.preco,
+  target.atualizado_em = current_timestamp()
+WHEN NOT MATCHED THEN INSERT (
+  venda_id, preco, atualizado_em
+) VALUES (
+  source.venda_id, source.preco, current_timestamp()
+);
 ```
+
+## Time travel e restore
+
+```sql
+SELECT * FROM gold.vendas VERSION AS OF 42;
+RESTORE TABLE gold.vendas TO VERSION AS OF 42;
+```
+
+Time travel depende da disponibilidade do log e dos arquivos referenciados. Um `VACUUM` pode tornar versões antigas ilegíveis.
+
+## Vacuum
+
+```sql
+VACUUM gold.vendas RETAIN 168 HOURS;
+```
+
+`VACUUM` remove arquivos não referenciados mais antigos que a retenção. Antes de reduzir a retenção padrão, avalie leitores concorrentes, operações longas, políticas de recuperação e requisitos de auditoria. Não trate `VACUUM` como limpeza inofensiva.
+
+## Optimize
+
+```sql
+OPTIMIZE gold.vendas;
+```
+
+Em Databricks, `OPTIMIZE` compacta arquivos. Estratégias como `ZORDER` dependem dos recursos e recomendações do runtime adotado; escolha colunas a partir dos filtros reais e valide o ganho.
+
+## Checklist
+
+- [ ] A origem do merge é única pela condição usada?
+- [ ] O merge é idempotente para reprocessamentos?
+- [ ] Retenção e time travel atendem recuperação e auditoria?
+- [ ] A otimização física foi medida no padrão real de consultas?
+- [ ] A funcionalidade existe na versão do ambiente?
+

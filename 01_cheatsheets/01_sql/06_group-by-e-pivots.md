@@ -4,7 +4,7 @@
 É o motor analítico primitivo utilizado para sumarização massiva de métricas nas tabelas e distorções da matriz (transformar linhas em colunas para os painéis de PowerBI).
 
 ## Nível Júnior/Pleno: Aglutinação Clássica e Atalhos Spark
-Todo o atributo que não entrar nas funções matemáticas de empacotamento (`SUM()`, `MIN()`) deve ir obrigatoriamente para a linha delimitadora do `GROUP BY`. Em Databricks existem agregadores lógicos maravilhosos pra cortar CTEs.
+Toda expressão selecionada que não seja agregada deve ser compatível com o `GROUP BY`. Funções aproximadas podem reduzir custo quando a precisão exata não é requisito.
 
 ```sql
 SELECT 
@@ -17,7 +17,7 @@ SELECT
     count_if(status = 'FALHA') AS compras_recusadas,             
     sum(vlr_frete) FILTER (WHERE canal = 'FISICA') AS receita_fim_fisica,
     
-    -- 3. APPROX: O Segredo de Bilhões. 'COUNT(DISTINCT)' quebra clusters dando sorts inter-node. 
+    -- 3. APPROX: alternativa de menor custo quando erro aproximado é aceitável.
     -- approx_processa na hora c/ hyperLogLog (2% taxa de erro, ideal pra dashs!).
     approx_count_distinct(comprador_id) as clientes_aprox_ativos
     
@@ -51,7 +51,7 @@ Dispensa O `UNION ALL` recursivo gigante nos Dataframes para painéis burros que
 
 ```sql
 -- ROLLUP: Executa subtotais de forma hierárquica e decrescente (esquerda p dir.)
--- Retorna agrupamentos de: (Pais, Região, Estado), Depois solta linha de (Pais, Região), Depois so de (Pais) e No Fim uma Master Line de GRAND TOTAL (Tudo).
+-- Retorna níveis hierárquicos e uma linha de total geral.
 SELECT pais, regiao, estado, SUM(volume_caixas) FROM transporte_t
 GROUP BY pais, regiao, estado WITH ROLLUP;
 

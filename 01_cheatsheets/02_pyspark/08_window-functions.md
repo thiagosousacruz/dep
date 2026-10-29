@@ -1,64 +1,74 @@
-# Janelas e Funcoes Relacionais (Window Functions em PySpark)
+# Window Functions em PySpark
 
-## O que e
-As janelas de agrupamento transitorio analitico mitigam a perda horizontal que `group_by()` causaria na tabela. Sem aglutinar a base verticalmente, a *Window Specification API* fornece sub-grupos isolados por registro na linha de execucao de ranking nativo ou variaveis sequenciais defasadas (`Lags / Leads / Sum() Over`).
+## O que são
 
-## Nivel Junior/Pleno: Instanciamento O-O (Row Numbers Analiticos)
-Deduplicacoes ou rankings rigorosos perante linhas identicas de log necessitam declarar o espectro de atuacao na janela antecedente de uso.
+Uma `WindowSpec` define o grupo lógico, a ordenação e o frame usados por funções como `row_number`, `lag` e agregações acumuladas.
+
+## Deduplicação determinística
 
 ```python
+from pyspark.sql import functions as F
 from pyspark.sql.window import Window
-from pyspark.sql.functions import row_number, col
 
-# 1. Definicao do "Container" Base da Janela: A regra de contagem e ordencao de recencia
-wdw_especificadora = Window \\
-    .partitionBy("id_dispositivo") \\
-    .orderBy(col("data_extracao_utc").desc())  # Ultima ocorrencia = Top 1 na iteracao da row
+por_dispositivo = Window.partitionBy("dispositivo_id").orderBy(
+    F.col("extraido_em").desc(),
+    F.col("evento_id").desc(),
+)
 
-# 2. Desdobramento In-Loco na Tabela
-df_purificado = df_logs_duplicados \\
-    .withColumn("indexacao_rank", row_number().over(wdw_especificadora)) \\
-    .filter(col("indexacao_rank") == 1) \\
-    .drop("indexacao_rank") 
+df_atual = (
+    df_eventos
+    .withColumn("ordem", F.row_number().over(por_dispositivo))
+    .filter(F.col("ordem") == 1)
+    .drop("ordem")
+)
 ```
 
-## Nivel Pleno: Metricas Progressivas (Lags/Leads e Acumuladores YTD)
-Desvios matematicos fundamentados no espacamento retroativo do eixo tempo num usuario. Ex: Qual a metrica gerada na diferenca da acao atual contra o clique exato registrado duas etapas atras (Lead/Lag).
+O desempate evita escolher linhas arbitrárias quando timestamps são iguais.
+
+## Lag e acumulado
 
 ```python
-from pyspark.sql.functions import lag
+ordem_cliente = Window.partitionBy("cliente_id").orderBy("evento_em", "evento_id")
 
-# Janela expandida base: Qual a ordem natural dos eventos?
-wdw_time_series = Window.partitionBy("user_hash").orderBy("data_clique_ts")
+df_variacao = df_eventos.withColumn(
+    "valor_anterior",
+    F.lag("valor").over(ordem_cliente),
+)
 
-df_comportamental = df_fatos \\
-    .withColumn(
-        "saldo_verificado_visita_anterior",
-        # Lag recua virtualmente `N` steps ordenados dentro do WindowSpec listado atual. 
-        lag(col("saldo_corrente"), 1).over(wdw_time_series)
-    ) \\
-    .withColumn(
-        "delta_gasto_do_cliente",
-        (col("saldo_corrente") - col("saldo_verificado_visita_anterior"))
-    )
+acumulado_conta = (
+    Window.partitionBy("conta_id")
+    .orderBy("data_movimento", "movimento_id")
+    .rowsBetween(Window.unboundedPreceding, Window.currentRow)
+)
+
+df_saldo = df_movimentos.withColumn("saldo", F.sum("valor").over(acumulado_conta))
 ```
 
-## Sênior Alvo: Range Frames Fixos Restritos e Amarras de OOM
-Restringir espacamentos deslizantes vigorosamente previne exaustao dos logs em master limitando as operacoes que uma acao em Fila obriga as threads carregarem em Ram Virtual.
+## Frames e tempo
 
 ```python
-from pyspark.sql.functions import avg
-
-# Range Manual Restrito por Janela (Ex: Media Movel da Semana Fechada).
-# Enclausuramos o comportamento iterativo para englobar unicamente as seis ocorrencias previas limitadas acopladas mais a atual.
-wdw_deslizantes_7_dias_moveis = Window \\
-    .partitionBy("segmento") \\
-    .orderBy("data_referencia") \\
-    .rowsBetween(-6, Window.currentRow)  # Base segura fechada. (Window.unboundedPreceding e infinitiva e perigosa logica massiva)
-
-df_tendencia = df_movimentacao \\
-    .withColumn("historico_media_movel_vendas", avg("venda").over(wdw_deslizantes_7_dias_moveis))
-    
-
-# ALERTA VERMELHO CRITICO DE OOM: NUNCA INICIE OU DEFINA A PROPRIA WINDOW DA DAG SEM O BLOCO 'PARTITION BY'! Invocando Window.orderBy("ano_fiscal") global forcará o Catalyst de Big Data a estrangular TODO O CLUSTER de Terabytes pra cima de um Unico Worker de Particao Master visando garantir o sorteio perfeitamente linear, estourando processamento irreversivel!
+ultimas_sete_linhas = (
+    Window.partitionBy("segmento")
+    .orderBy("data_referencia")
+    .rowsBetween(-6, Window.currentRow)
+)
 ```
+
+Esse frame cobre sete linhas, não sete dias. Se houver datas ausentes ou múltiplas linhas por dia, agregue previamente no grão diário ou use um `rangeBetween` coerente com a expressão numérica de ordenação.
+
+## Cuidados de escala
+
+Uma janela ordenada sem `partitionBy` cria uma partição lógica global. Isso pode ser correto para ranking global, mas concentra a ordenação; confirme o custo no plano e na Spark UI. Acrescentar uma partição artificial muda a semântica e não é uma correção neutra.
+
+- Observe skew e volume dentro de cada grupo.
+- Reduza colunas antes da janela quando possível.
+- Use ordem determinística.
+- Meça sort, shuffle e spill.
+
+## Checklist
+
+- [ ] Partição e ordenação representam a regra de negócio?
+- [ ] Empates têm critério explícito?
+- [ ] O frame significa linhas ou intervalo de valores como pretendido?
+- [ ] O tamanho das partições foi observado?
+

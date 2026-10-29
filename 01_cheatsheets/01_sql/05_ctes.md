@@ -38,7 +38,7 @@ FROM db_origem.bronze_usuarios;
 SELECT * FROM v_qualidade_dados WHERE flag_erro_email = 1;
 ```
 
-## Nível Sênior: O Perigo Absoluto da Reavaliação no Spark (Catalyst)
+## CTEs, otimização e reutilização
 Arquitetos entendem um fator essencial do SQL: Modulos CTE e Views Temporárias **NÃO MATERIALIZAM dados no mundo físico**! Elas são equações lógicas. No ambiente Big Data do Spark, se você referenciar o nome da mesma CTE `A_Muito_Pesada` 3 vezes no escopo master, **O Spark vai ler o parquet inicial no Disco Rígido três vezes de forma idêntica!**
 
 ```sql

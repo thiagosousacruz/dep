@@ -47,7 +47,7 @@ SELECT
     
     -- ERRO FATAL: "b.valor_bruto / a.comissao" !!!
     -- SE A COMISSAO VIER '0' DO BACKEND, ISSO É DIVISÃO POR ZERO! SEU JOB CRASH E TE ACORDA AS 3 DA MANHA.
-    -- SALVACAO: O "NULLIF(coluna, valor)". Se B for 0, converta forçadamente para NULL. Dividir por Nulo não dá erro fatal, apenas volta NULO pra casinha no output final !
+    -- NULLIF transforma denominador zero em NULL; o resultado da divisão será NULL.
     b.valor_bruto / NULLIF(a.comissao_fixa, 0) as fator_multiplicador,
     
     -- Geracao de Flag p/ dashboarding de DQ
