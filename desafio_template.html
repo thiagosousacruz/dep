@@ -137,6 +137,8 @@
     border-radius: 999px; font: 600 .8rem 'Inter', sans-serif; padding: .5rem 1rem; cursor: pointer;
   }
   .btn:hover { background: var(--border-card); }
+  .btn.primario { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+  .btn.primario:hover { opacity: .85; background: var(--text-primary); }
 
   .rodape { color: var(--text-muted); font-size: .8rem; margin-top: 1.5rem; }
   .vazio { color: var(--text-secondary); }
@@ -152,7 +154,7 @@
 
   <header>
     <h1>Desafio do Dia</h1>
-    <p>Um tópico dos cheatsheets por dia, em três níveis. O sorteio percorre todos os tópicos antes de repetir qualquer um.</p>
+    <p>Um tópico dos cheatsheets por vez, em três níveis. A fila só avança quando você clica em <strong>Concluí</strong>: pular dias não perde nada, e todos os tópicos saem antes de qualquer repetição.</p>
   </header>
 
   <div class="controls">
@@ -161,8 +163,8 @@
       <button type="button" data-area="sql">SQL</button>
       <button type="button" data-area="pyspark">PySpark</button>
     </div>
-    <select id="semana" aria-label="Semana do plano">
-      <option value="">Todas as semanas</option>
+    <select id="tema" aria-label="Tema do cheatsheet">
+      <option value="">Todos os temas</option>
     </select>
   </div>
 
@@ -174,14 +176,13 @@
 <script>
   const DESAFIOS = {{ DESAFIOS_JSON }};
   const NIVEIS = [["basico", "Básico"], ["intermediario", "Intermediário"], ["avancado", "Avançado"]];
-  const INICIO = Date.UTC(2026, 0, 1);
 
   const guardar = (k, v) => { try { localStorage.setItem("desafio." + k, v); } catch (e) {} };
   const ler = (k, padrao) => { try { return localStorage.getItem("desafio." + k) || padrao; } catch (e) { return padrao; } };
 
   const estado = {
     area: ler("area", "todos"),
-    semana: ler("semana", ""),
+    tema: ler("tema", ""),
     nivel: ler("nivel", "basico"),
     extra: null,            // id sorteado fora do desafio do dia
   };
@@ -189,14 +190,19 @@
   // ?id=<desafio> abre um desafio específico (links das trilhas), sem filtros.
   const idPedido = new URLSearchParams(location.search).get("id");
   if (idPedido && DESAFIOS.some(d => d.id === idPedido)) {
-    estado.extra = idPedido; estado.area = "todos"; estado.semana = "";
+    estado.extra = idPedido; estado.area = "todos"; estado.tema = "";
   }
 
-  function hoje() {
-    const param = new URLSearchParams(location.search).get("data");   // ?data=AAAA-MM-DD para testes
-    const d = param ? new Date(param + "T12:00:00") : new Date();
-    return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - INICIO) / 86400000);
+  // Fila atemporal: cada filtro (área + tema) guarda quantos tópicos você já concluiu.
+  // ?pos=N força a posição, para testes.
+  const chaveFila = () => estado.area + "|" + estado.tema;
+  function posicaoFila() {
+    const forcada = new URLSearchParams(location.search).get("pos");
+    if (forcada !== null && /^\d+$/.test(forcada)) return Number(forcada);
+    const v = Number(ler("fila." + chaveFila(), "0"));
+    return Number.isFinite(v) && v >= 0 ? v : 0;
   }
+  function avancarFila() { guardar("fila." + chaveFila(), String(posicaoFila() + 1)); }
 
   function semente(texto) {
     let h = 2166136261;
@@ -237,16 +243,15 @@
   function filtrados() {
     return DESAFIOS
       .filter(d => estado.area === "todos" || d.area === estado.area)
-      .filter(d => !estado.semana || String(d.semana) === estado.semana);
+      .filter(d => !estado.tema || d.tema === estado.tema);
   }
 
   function escolher(lista) {
     const n = lista.length;
-    const dia = hoje();
-    const ciclo = Math.floor(dia / n);
-    const posicao = ((dia % n) + n) % n;
-    const chave = estado.area + "|" + estado.semana;
-    return { desafio: lista[ordemDoCiclo(n, chave, ciclo)[posicao]], ciclo: ciclo + 1, posicao: posicao + 1, n };
+    const passo = posicaoFila();
+    const ciclo = Math.floor(passo / n);
+    const posicao = passo % n;
+    return { desafio: lista[ordemDoCiclo(n, chaveFila(), ciclo)[posicao]], ciclo: ciclo + 1, posicao: posicao + 1, n };
   }
 
   function escapar(s) {
@@ -268,7 +273,7 @@
 
   function render() {
     document.querySelectorAll("[data-area]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.area === estado.area)));
-    document.getElementById("semana").value = estado.semana;
+    document.getElementById("tema").value = estado.tema;
 
     const lista = filtrados();
     const alvo = document.getElementById("desafio");
@@ -288,7 +293,7 @@
     alvo.innerHTML = `
       <div class="meta">
         <span class="pill ${d.area}">${lingua}</span>
-        ${d.semana ? `<a class="pill" href="plano-12-semanas.html">Semana ${d.semana}</a>` : ""}
+        <a class="pill" href="${escapar(d.link)}">${escapar(d.tema)}</a>
         ${ehExtra ? '<span class="pill extra">Treino extra</span>' : ""}
       </div>
       <div class="ferramenta">${escapar(d.ferramenta)}</div>
@@ -310,12 +315,13 @@
       </details>
 
       <div class="acoes">
+        ${ehExtra ? "" : '<button type="button" class="btn primario" id="concluir">Concluí → próximo</button>'}
         <button type="button" class="btn" id="outro">Sortear outro</button>
-        ${ehExtra ? '<button type="button" class="btn" id="voltar">Voltar ao desafio do dia</button>' : ""}
+        ${ehExtra ? '<button type="button" class="btn" id="voltar">Voltar à fila</button>' : ""}
       </div>`;
 
     document.getElementById("rodape").textContent =
-      `Ciclo ${doDia.ciclo} · desafio ${doDia.posicao} de ${doDia.n} deste filtro. O desafio do dia muda à meia-noite e é o mesmo em qualquer dispositivo.`;
+      `Tópico ${doDia.posicao} de ${doDia.n} · ciclo ${doDia.ciclo}. A posição fica salva neste navegador; cada filtro tem a sua fila.`;
 
     alvo.querySelectorAll("[data-nivel]").forEach(b => b.addEventListener("click", () => {
       estado.nivel = b.dataset.nivel; guardar("nivel", estado.nivel); render();
@@ -329,20 +335,33 @@
       const outros = lista.filter(x => x.id !== d.id);
       if (outros.length) { estado.extra = outros[Math.floor(Math.random() * outros.length)].id; render(); }
     });
+    const concluir = document.getElementById("concluir");
+    if (concluir) concluir.addEventListener("click", () => { avancarFila(); estado.extra = null; render(); window.scrollTo({ top: 0 }); });
     const voltar = document.getElementById("voltar");
     if (voltar) voltar.addEventListener("click", () => { estado.extra = null; render(); });
   }
 
-  const semanas = [...new Set(DESAFIOS.map(d => d.semana).filter(Boolean))].sort((a, b) => a - b);
-  const select = document.getElementById("semana");
-  semanas.forEach(s => select.insertAdjacentHTML("beforeend", `<option value="${s}">Semana ${s}</option>`));
-  if (!semanas.includes(Number(estado.semana))) estado.semana = "";
+  // Temas = cheatsheets, agrupados por área, na ordem do cheatsheet.
+  const areaDoTema = {};
+  DESAFIOS.forEach(d => { areaDoTema[d.tema] = d.area; });
+  const select = document.getElementById("tema");
+  [["sql", "SQL"], ["pyspark", "PySpark"]].forEach(([area, rotulo]) => {
+    const temas = Object.keys(areaDoTema).filter(t => areaDoTema[t] === area).sort();
+    if (!temas.length) return;
+    select.insertAdjacentHTML("beforeend",
+      `<optgroup label="${rotulo}">${temas.map(t => `<option value="${escapar(t)}">${escapar(t)}</option>`).join("")}</optgroup>`);
+  });
+  if (!(estado.tema in areaDoTema)) estado.tema = "";
 
   document.querySelectorAll("[data-area]").forEach(b => b.addEventListener("click", () => {
-    estado.area = b.dataset.area; estado.extra = null; guardar("area", estado.area); render();
+    estado.area = b.dataset.area; estado.extra = null;
+    if (estado.tema && estado.area !== "todos" && areaDoTema[estado.tema] !== estado.area) { estado.tema = ""; guardar("tema", ""); }
+    guardar("area", estado.area); render();
   }));
   select.addEventListener("change", () => {
-    estado.semana = select.value; estado.extra = null; guardar("semana", estado.semana); render();
+    estado.tema = select.value; estado.extra = null;
+    if (estado.tema && estado.area !== "todos" && areaDoTema[estado.tema] !== estado.area) { estado.area = "todos"; guardar("area", "todos"); }
+    guardar("tema", estado.tema); render();
   });
 
   render();

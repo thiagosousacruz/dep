@@ -31,6 +31,7 @@ Roteiro para o hub cobrir o ciclo completo (aprender → consultar → praticar 
 - [ ] **Modeling no build:** incluir `03_modeling-e-analytics` 01–03 no `build_docs.py`, com desafios de SCD2 e fato/dimensão.
 - [ ] **Novos cheatsheets:** testes de pipelines PySpark · orquestração e reprocessamento · Unity Catalog · Lakeflow/DLT · CI/CD com Asset Bundles.
 - [ ] **Prática integradora:** `projetos/` com 3–4 casos guiados (medallion com SCD2, ingestão incremental com reprocessamento, diagnóstico de performance, code review) e desafios dos tipos "diagnóstico" e "design".
+- [x] Desafio do Dia atemporal (2026-11): fila que só avança com "Concluí", filtro por tema do cheatsheet; sem semanas nem data.
 - [ ] **Progresso leve:** marcar "acertei / revisar" no Desafio do Dia (só `localStorage`); temas marcados voltam com mais frequência.
 
 - [ ] Revisão periódica por versão do runtime usando [o checklist](../04_templates/checklist-revisao-editorial.md).

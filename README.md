@@ -35,10 +35,10 @@ Os arquivos `.md` e `02_desafios/*.json` são a fonte de verdade. `cheatsheets.h
 
 ## Desafio do Dia
 
-Todo dia a página sorteia uma seção dos cheatsheets e propõe uma atividade em três níveis (básico, intermediário e avançado). Cada nível traz uma pequena base fictícia ou uma proposta genérica para aplicar na sua base, além de uma solução proposta.
+A página mostra uma seção dos cheatsheets por vez e propõe uma atividade em três níveis (básico, intermediário e avançado). Cada nível traz uma pequena base fictícia ou uma proposta genérica para aplicar na sua base, além de uma solução proposta.
 
-- O sorteio é uma permutação embaralhada por ciclo: todas as seções saem uma vez antes de qualquer repetição, sem favorecer o início dos arquivos. Ele depende só da data, então o desafio é o mesmo em qualquer dispositivo e nada é salvo.
-- É possível filtrar por SQL/PySpark e pela semana correspondente do plano de 12 semanas.
+- **Fila atemporal:** a ordem é uma permutação embaralhada por ciclo (todas as seções saem antes de qualquer repetição), e a fila só avança quando você clica em **Concluí → próximo**. Pular dias não perde nada. A posição fica salva no navegador (`localStorage`).
+- **Filtros:** SQL/PySpark e **tema** (um cheatsheet). Cada filtro tem a sua própria fila; "Sortear outro" é um treino extra que não mexe na fila.
 - O build falha se uma seção `##` treinável ficar sem desafio. Seções conceituais (O que é, Checklist, Cuidados) e as listadas em `02_desafios/_config.json` ficam de fora.
 - As soluções foram escritas para Databricks. As que têm dados fictícios e não dependem de recursos exclusivos (Delta, `dbutils`, `QUALIFY`) podem ser verificadas em Spark local com `python verificar_desafios.py` (opcional; requer `pyspark` 4.x e Java).
 

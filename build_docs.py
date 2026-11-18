@@ -354,6 +354,7 @@ def trainable_sections(files_by_area: dict[Area, list[Path]], id_map: dict[Path,
                 ref = f"{area.directory.name}/{path.name}#{slug}"
                 sections[ref] = {
                     "area": area.css_class,
+                    "tema": f"{area.label} {anchor[-2:]} · {title_from(text, path)}",
                     "arquivo": title_from(text, path),
                     "secao": title,
                     "link": f"cheatsheets.html{anchor}-{slug}",
@@ -361,22 +362,19 @@ def trainable_sections(files_by_area: dict[Area, list[Path]], id_map: dict[Path,
     return sections
 
 
-def load_challenges() -> tuple[list[dict], set[str], dict[str, int]]:
+def load_challenges() -> tuple[list[dict], set[str]]:
     challenges: list[dict] = []
     skipped: set[str] = set()
-    weeks: dict[str, int] = {}
     for path in sorted(CHALLENGES_DIR.glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
         challenges.extend(data.get("desafios", []))
         skipped.update(data.get("secoes_sem_desafio", []))
-        weeks.update(data.get("semanas_por_arquivo", {}))
-    return challenges, skipped, weeks
+    return challenges, skipped
 
 
 def validate_challenges(
     challenges: list[dict],
     skipped: set[str],
-    weeks: dict[str, int],
     sections: dict[str, dict],
 ) -> tuple[list[str], list[str]]:
     errors: list[str] = []
@@ -393,9 +391,6 @@ def validate_challenges(
         covered.add(ref)
         if not item.get("ferramenta"):
             errors.append(f"{cid}: ferramenta vazia")
-        week = item.get("semana", weeks.get(ref.split("#")[0]))
-        if week is not None and not (isinstance(week, int) and 1 <= week <= 12):
-            errors.append(f"{cid}: semana fora de 1..12: {week}")
         levels = item.get("niveis", {})
         for level in LEVELS:
             body = levels.get(level)
@@ -423,8 +418,8 @@ def build_challenges(allow_incomplete: bool = False) -> str:
     files_by_area = {area: markdown_files(area) for area in AREAS}
     id_map = build_id_map(files_by_area)
     sections = trainable_sections(files_by_area, id_map)
-    challenges, skipped, weeks = load_challenges()
-    errors, missing = validate_challenges(challenges, skipped, weeks, sections)
+    challenges, skipped = load_challenges()
+    errors, missing = validate_challenges(challenges, skipped, sections)
     if missing and not allow_incomplete:
         errors.append("Secoes sem desafio:\n  " + "\n  ".join(missing))
     if errors:
@@ -433,11 +428,7 @@ def build_challenges(allow_incomplete: bool = False) -> str:
     catalog = []
     for item in sorted(challenges, key=lambda c: c["id"]):
         meta = sections[item["ref"]]
-        catalog.append({
-            **item,
-            **meta,
-            "semana": item.get("semana", weeks.get(item["ref"].split("#")[0])),
-        })
+        catalog.append({**item, **meta})
     payload = json.dumps(catalog, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
     template = CHALLENGE_TEMPLATE_PATH.read_text(encoding="utf-8")
