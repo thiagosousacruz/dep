@@ -4,7 +4,7 @@ Base pessoal para aprender, consultar e praticar SQL e PySpark em Databricks/Spa
 
 | Camada | Para quê | Página |
 |---|---|---|
-| Trilhas | Aprender o conceito (modelo mental, exemplo para prever, erros comuns) | `trilhas.html` |
+| **Livro** (comece aqui) | Seguir capítulo a capítulo: conceito, exemplo para prever, erros comuns, checagem com respostas e a prática da semana | `trilhas.html` |
 | Cheatsheets | Consultar sintaxe e cuidados | `cheatsheets.html` |
 | Desafio do Dia | Praticar sem olhar | `desafio.html` |
 | Planos e framework | Saber o que estudar e como | `plano-12-semanas.html`, `plano_12_meses_engenheiro_dados.html`, `framework_dominio_tecnico.html` |
@@ -20,7 +20,7 @@ O núcleo mantido e publicado no HTML cobre:
 
 ## Como navegar
 
-- [Trilhas de aprendizado](03_trilhas/README.md)
+- [Livro: capítulos e sumário](03_trilhas/README.md)
 - [Mapa de skills](06_revisao-evolucao/mapa-de-skills.md): skill × trilha × cheatsheet × desafio × planos
 - [Visão geral de SQL](01_cheatsheets/01_sql/README.md)
 - [Visão geral de PySpark](01_cheatsheets/02_pyspark/README.md)
@@ -28,7 +28,7 @@ O núcleo mantido e publicado no HTML cobre:
 - [Backlog e evolução](06_revisao-evolucao/backlog.md)
 - [`cheatsheets.html`](cheatsheets.html), versão navegável gerada de SQL e PySpark
 - [`desafio.html`](desafio.html), Desafio do Dia gerado a partir de `02_desafios/`
-- [`trilhas.html`](trilhas.html), lições geradas a partir de `03_trilhas/`
+- [`trilhas.html`](trilhas.html), o livro gerado a partir de `03_trilhas/` (ordem e partes em `03_trilhas/_livro.json`)
 
 Os arquivos `.md` e `02_desafios/*.json` são a fonte de verdade. `cheatsheets.html`, `trilhas.html` e `desafio.html` são gerados automaticamente e não devem ser editados manualmente.
 

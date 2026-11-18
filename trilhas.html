@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trilhas — DataEng Playbook</title>
+<title>Livro — DataEng Playbook</title>
 <meta name="description" content="Base de conhecimento consolidada com guias de referência rápida para Databricks/Spark SQL e PySpark.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -323,6 +323,19 @@
   }
   .sec-num.sql { background: var(--sql-bg-strong); color: var(--sql-color); }
   .sec-num.trilha { background: var(--sql-bg-strong); color: var(--sql-color); }
+  /* ── LIVRO ── */
+  .start-btn { display: inline-block; margin-top: 8px; padding: 10px 18px; border-radius: 8px;
+    background: var(--sql-bg-strong); color: var(--sql-color); font-weight: 600; text-decoration: none; }
+  .book-summary li.part { font-weight: 700; margin-top: 12px; list-style: none; color: var(--text-primary); }
+  .book-summary li.part:first-child { margin-top: 0; }
+  .book-summary li.pending { color: var(--text-muted); }
+  .nav-pending { font-size: .78rem; color: var(--text-muted); padding: 4px 12px; }
+  details { margin: 12px 0 4px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 8px; }
+  .chapter-foot { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border-color); }
+  .chapter-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  .chapter-nav a { font-weight: 600; text-decoration: none; }
   .nav-item.trilha-item.active { border-left-color: var(--sql-color); }
   .sec-num.pyspark { background: var(--pyspark-bg-strong); color: var(--pyspark-color); }
   .cheat-section .subtitle {
@@ -461,12 +474,12 @@
 <!-- ===== SIDEBAR ===== -->
 <nav class="sidebar" id="sidebar">
   <div class="logo">
-    <span>🧭 DataEng</span> <small>Trilhas · aprender o conceito</small>
+    <span>🧭 DataEng</span> <small>Livro · engenharia de dados na prática</small>
   </div>
   <div class="search-box">
     <div class="search-wrapper">
       <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" placeholder="Buscar lição..." oninput="filterNav()">
+      <input type="text" id="searchInput" placeholder="Buscar capítulo..." oninput="filterNav()">
       <button class="clear-btn" id="clearSearchBtn" onclick="document.getElementById('searchInput').value=''; filterNav();">&times;</button>
     </div>
   </div>
@@ -474,16 +487,32 @@
     <div class="nav-section-title">← <a href="index.html" style="color:inherit;text-decoration:none;">Voltar ao Hub</a></div>
   </div>
   <div class="nav-section">
-    <div class="nav-section-title"><span>Trilhas</span> <span class="badge">9</span></div>
+    <a class="nav-item" href="#home"><span class="num">☰</span>Sumário</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title"><span>Parte I · SQL sólido</span></div>
     <a class="nav-item trilha-item" href="#trilha-01" data-search="ordem lógica do sql  o que a consulta enxerga em cada cláusula"><span class="num">01</span>Ordem lógica do SQL: o que a consulta enxerga em cada cláusula</a>
     <a class="nav-item trilha-item" href="#trilha-02" data-search="null e lógica de três valores"><span class="num">02</span>NULL e lógica de três valores</a>
     <a class="nav-item trilha-item" href="#trilha-03" data-search="grão e cardinalidade  por que joins multiplicam linhas"><span class="num">03</span>Grão e cardinalidade: por que joins multiplicam linhas</a>
     <a class="nav-item trilha-item" href="#trilha-04" data-search="window functions  calcular sem perder linhas"><span class="num">04</span>Window functions: calcular sem perder linhas</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title"><span>Parte II · Spark por dentro</span></div>
     <a class="nav-item trilha-item" href="#trilha-05" data-search="como o spark executa seu código"><span class="num">05</span>Como o Spark executa seu código</a>
     <a class="nav-item trilha-item" href="#trilha-06" data-search="diagnóstico de performance  medir antes de mexer"><span class="num">06</span>Diagnóstico de performance: medir antes de mexer</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title"><span>Parte III · Delta e cargas</span></div>
     <a class="nav-item trilha-item" href="#trilha-07" data-search="delta e merge idempotente  rodar duas vezes  mesmo resultado"><span class="num">07</span>Delta e MERGE idempotente: rodar duas vezes, mesmo resultado</a>
     <a class="nav-item trilha-item" href="#trilha-08" data-search="cargas full  incremental e cdc"><span class="num">08</span>Cargas full, incremental e CDC</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title"><span>Parte IV · Modelagem</span></div>
     <a class="nav-item trilha-item" href="#trilha-09" data-search="scd2 e modelagem dimensional  o passado não pode mudar sozinho"><span class="num">09</span>SCD2 e modelagem dimensional: o passado não pode mudar sozinho</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title"><span>Parte V · Plataforma</span></div>
+    <div class="nav-pending">em breve</div>
   </div>
   <div class="sidebar-footer">
     <a href="#home" style="color:var(--text-muted);font-size:.72rem;">↑ Voltar ao topo</a>
@@ -499,38 +528,55 @@
 <!-- ===== HOME ===== -->
 <section id="home">
   <div class="home-hero">
-    <h1>Trilhas de <span class="sql">aprendizado</span></h1>
-    <p>Lições para entender o conceito antes de consultar a referência. Cada lição segue o framework: problema, modelo mental, exemplo para prever, quebrar de propósito, erros comuns e checagem — e termina apontando para o cheatsheet e os desafios do tema.</p>
+    <h1>Engenharia de dados <span class="sql">na prática</span></h1>
+    <p>Um livro para abrir e ir seguindo, capítulo a capítulo. Cada capítulo explica o conceito com um exemplo para você prever, mostra como quebrar de propósito, lista os erros comuns e termina com a checagem (com respostas) e a prática da semana no plano.</p>
+    <p><a class="start-btn" href="#trilha-01">Começar pelo capítulo 1 →</a></p>
   </div>
   <div class="home-cards">
     <div class="home-card">
-      <h3><span class="icon">🧭</span> Como usar</h3>
-      <ul>
-        <li><span class="num">1</span> Leia a lição e <strong>preveja</strong> cada resultado antes de rodar.</li>
-        <li><span class="num">2</span> Rode os exemplos e os casos de borda em um notebook com dados fictícios.</li>
-        <li><span class="num">3</span> Responda a checagem com suas palavras, sem consultar.</li>
-        <li><span class="num">4</span> Pratique nos desafios linkados e use o <a href="cheatsheets.html">cheatsheet</a> como consulta.</li>
+      <h3><span class="icon">📚</span> Sumário <span class="tag sql-tag">9 capítulos</span></h3>
+      <ul class="book-summary">
+        <li class="part">Parte I · SQL sólido</li>
+        <li><span class="num">1</span> <a href="#trilha-01">Ordem lógica do SQL: o que a consulta enxerga em cada cláusula</a></li>
+        <li><span class="num">2</span> <a href="#trilha-02">NULL e lógica de três valores</a></li>
+        <li><span class="num">3</span> <a href="#trilha-03">Grão e cardinalidade: por que joins multiplicam linhas</a></li>
+        <li><span class="num">4</span> <a href="#trilha-04">Window functions: calcular sem perder linhas</a></li>
+        <li class="part">Parte II · Spark por dentro</li>
+        <li><span class="num">5</span> <a href="#trilha-05">Como o Spark executa seu código</a></li>
+        <li><span class="num">6</span> <a href="#trilha-06">Diagnóstico de performance: medir antes de mexer</a></li>
+        <li class="part">Parte III · Delta e cargas</li>
+        <li><span class="num">7</span> <a href="#trilha-07">Delta e MERGE idempotente: rodar duas vezes, mesmo resultado</a></li>
+        <li><span class="num">8</span> <a href="#trilha-08">Cargas full, incremental e CDC</a></li>
+        <li class="part">Parte IV · Modelagem</li>
+        <li><span class="num">9</span> <a href="#trilha-09">SCD2 e modelagem dimensional: o passado não pode mudar sozinho</a></li>
+        <li class="part">Parte V · Plataforma</li>
+        <li class="pending"><span class="num">·</span> Orquestração: Lakeflow Jobs e ADF <em>(em breve)</em></li>
+        <li class="pending"><span class="num">·</span> Ingestão: Auto Loader, COPY INTO e fontes externas <em>(em breve)</em></li>
+        <li class="pending"><span class="num">·</span> Testes de pipelines <em>(em breve)</em></li>
+        <li class="pending"><span class="num">·</span> Unity Catalog e governança <em>(em breve)</em></li>
+        <li class="pending"><span class="num">·</span> Bundles e CI/CD <em>(em breve)</em></li>
       </ul>
     </div>
     <div class="home-card">
-      <h3><span class="icon">📚</span> Lições <span class="tag sql-tag">9 lições</span></h3>
+      <h3><span class="icon">🧭</span> Como estudar cada capítulo</h3>
       <ul>
-        <li><span class="num">01</span> <a href="#trilha-01">Ordem lógica do SQL: o que a consulta enxerga em cada cláusula</a></li>
-        <li><span class="num">02</span> <a href="#trilha-02">NULL e lógica de três valores</a></li>
-        <li><span class="num">03</span> <a href="#trilha-03">Grão e cardinalidade: por que joins multiplicam linhas</a></li>
-        <li><span class="num">04</span> <a href="#trilha-04">Window functions: calcular sem perder linhas</a></li>
-        <li><span class="num">05</span> <a href="#trilha-05">Como o Spark executa seu código</a></li>
-        <li><span class="num">06</span> <a href="#trilha-06">Diagnóstico de performance: medir antes de mexer</a></li>
-        <li><span class="num">07</span> <a href="#trilha-07">Delta e MERGE idempotente: rodar duas vezes, mesmo resultado</a></li>
-        <li><span class="num">08</span> <a href="#trilha-08">Cargas full, incremental e CDC</a></li>
-        <li><span class="num">09</span> <a href="#trilha-09">SCD2 e modelagem dimensional: o passado não pode mudar sozinho</a></li>
+        <li><span class="num">1</span> Leia e <strong>preveja</strong> cada resultado antes de rodar.</li>
+        <li><span class="num">2</span> Rode os exemplos e os "quebre de propósito" num notebook com dados fictícios.</li>
+        <li><span class="num">3</span> Responda a checagem sem consultar; depois abra as respostas.</li>
+        <li><span class="num">4</span> Feche com a evidência de "Na prática" e os desafios do capítulo.</li>
+      </ul>
+      <h3 style="margin-top:18px"><span class="icon">📎</span> Apêndices</h3>
+      <ul>
+        <li><a href="cheatsheets.html">Cheatsheets</a>: consulta rápida de sintaxe e cuidados</li>
+        <li><a href="desafio.html">Desafio do Dia</a>: repetição diária, 10–15 min</li>
+        <li><a href="plano-12-semanas.html">Plano de 12 semanas</a> e <a href="plano_12_meses_engenheiro_dados.html">plano de 12 meses</a></li>
       </ul>
     </div>
   </div>
 </section>
 
   <section id="trilha-01" class="cheat-section">
-<h2><span class="sec-num trilha">Trilha 01</span> Ordem lógica do SQL: o que a consulta enxerga em cada cláusula</h2>
+<h2><span class="sec-num trilha">Capítulo 1</span> Ordem lógica do SQL: o que a consulta enxerga em cada cláusula</h2>
 <blockquote>
 <p><strong>Objetivo:</strong> prever em que momento cada cláusula é avaliada e, com isso, saber onde filtrar, onde um alias existe e por que alguns erros acontecem. <strong>Tempo:</strong> 1 h. <strong>Pré-requisitos:</strong> <code>SELECT</code>, <code>WHERE</code>, <code>GROUP BY</code>.</p>
 </blockquote>
@@ -620,16 +666,31 @@ ORDER BY receita DESC;
 <li>Por que <code>LIMIT</code> sem <code>ORDER BY</code> não serve para "pegar os maiores"?</li>
 <li>Como filtrar pelo resultado de <code>row_number()</code> sem <code>QUALIFY</code>?</li>
 </ol>
+<details>
+<summary>Respostas</summary>
+<ol>
+<li>O <code>WHERE</code> é avaliado antes do <code>SELECT</code>. Quando ele roda, o alias ainda não foi criado.</li>
+<li>Depois do <code>GROUP BY</code>/<code>HAVING</code> e antes do <code>SELECT</code>. Por isso a janela enxerga os agregados: <code>sum(sum(valor)) OVER ()</code> soma os totais dos grupos.</li>
+<li><code>WHERE status = 'FECHADA'</code> filtra linhas antes de agrupar; <code>HAVING sum(valor) &gt; 100</code> só existe depois do agrupamento.</li>
+<li>Sem <code>ORDER BY</code>, a ordem das linhas não é garantida. O <code>LIMIT</code> corta "as primeiras que chegarem", que podem mudar a cada execução.</li>
+<li>Calcule o <code>row_number()</code> numa subconsulta ou CTE e filtre por fora: <code>SELECT ... FROM (SELECT ..., row_number() OVER (...) AS rn ...) WHERE rn = 1</code>.</li>
+</ol>
+</details>
 <h2 id="trilha-01-proximos-passos">Próximos passos</h2>
 <ul>
 <li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-01-ordem-logica-de-avaliacao">Ordem lógica de avaliação</a> · <a href="cheatsheets.html#sql-05-ctes-para-organizar-a-logica">CTEs para organizar a lógica</a> · <a href="cheatsheets.html#sql-06-agregacoes-e-filtros-por-agregacao">Agregações e filtros por agregação</a></li>
 <li><strong>Prática:</strong> <a href="desafio.html?id=sql-01-ordem-logica">desafio de ordem lógica</a> · <a href="desafio.html?id=sql-06-agregacoes-filter">desafio de agregações e HAVING</a> · <a href="desafio.html?id=sql-05-ctes-organizar">desafio de CTEs</a></li>
 <li><strong>Aplicação real:</strong> pegue uma consulta longa autorizada e numere cada cláusula pela ordem de avaliação. Verifique se há filtro de linha no <code>HAVING</code> ou <code>LIMIT</code> sem <code>ORDER BY</code>.</li>
 </ul>
+<div class="chapter-foot">
+<h3 id="trilha-01-na-pratica">✅ Na prática</h3>
+<p>Feche o capítulo com a evidência da semana no plano:</p><ul><li><a href="plano-12-semanas.html#semana-01">Semana 01 · Leitura e filtros</a>: Produzir uma consulta filtrada e ordenada, justificar os filtros e validar o resultado; documentação oficial pode ser consultada.</li></ul>
+<nav class="chapter-nav"><span></span><a href="#trilha-02">NULL e lógica de três valores →</a></nav>
+</div>
 </section>
 
 <section id="trilha-02" class="cheat-section">
-<h2><span class="sec-num trilha">Trilha 02</span> NULL e lógica de três valores</h2>
+<h2><span class="sec-num trilha">Capítulo 2</span> NULL e lógica de três valores</h2>
 <blockquote>
 <p><strong>Objetivo:</strong> prever o efeito de <code>NULL</code> em comparações, filtros, agregações, joins e <code>NOT IN</code>, e escolher explicitamente o tratamento certo. <strong>Tempo:</strong> 1 h. <strong>Pré-requisitos:</strong> <a href="#trilha-01">Ordem lógica do SQL</a>.</p>
 </blockquote>
@@ -706,16 +767,31 @@ clientes.join(bloqueados, "id", "left_anti")                                 # e
 <li>Qual a diferença entre <code>COUNT(*)</code> e <code>COUNT(coluna)</code>?</li>
 <li>Quando <code>coalesce(nota, 0)</code> é correto e quando distorce o resultado?</li>
 </ol>
+<details>
+<summary>Respostas</summary>
+<ol>
+<li>NULL significa "desconhecido". Comparar dois desconhecidos dá desconhecido (UNKNOWN), não verdadeiro. Para comparar com segurança, use <code>&lt;=&gt;</code> ou <code>IS NULL</code>.</li>
+<li>Descarta a linha. O <code>WHERE</code> só mantém o que é TRUE; FALSE e UNKNOWN saem.</li>
+<li><code>x NOT IN (a, NULL)</code> equivale a <code>x &lt;&gt; a AND x &lt;&gt; NULL</code>. A segunda parte é sempre UNKNOWN, então o resultado nunca é TRUE. Use <code>NOT EXISTS</code> ou <code>LEFT ANTI JOIN</code>.</li>
+<li><code>COUNT(*)</code> conta linhas; <code>COUNT(coluna)</code> conta só as linhas em que a coluna não é nula.</li>
+<li>É correto quando ausente <em>significa</em> zero pela regra de negócio, como "sem desconto". Distorce quando significa "não informado": a média cai porque desconhecidos viram zeros.</li>
+</ol>
+</details>
 <h2 id="trilha-02-proximos-passos">Próximos passos</h2>
 <ul>
 <li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-04-null-em-agregacoes-e-comparacoes">NULL em agregações e comparações</a> · <a href="cheatsheets.html#sql-01-filtros-in-between-e-like">Filtros: IN, BETWEEN e LIKE</a> · <a href="cheatsheets.html#pyspark-05-when-otherwise-e-coalesce">when / otherwise e coalesce no PySpark</a></li>
 <li><strong>Prática:</strong> <a href="desafio.html?id=sql-04-null-agregacoes">desafio de NULL em agregações</a> · <a href="desafio.html?id=sql-04-coalesce-case">desafio de COALESCE e CASE</a> · <a href="desafio.html?id=spk-12-nulos-coluna">desafio de percentual de nulos</a></li>
 <li><strong>Aplicação real:</strong> em uma tabela autorizada, meça o percentual de nulos das colunas usadas em filtros e chaves de join. Revise uma consulta que use <code>NOT IN</code> ou <code>&lt;&gt;</code> sobre essas colunas.</li>
 </ul>
+<div class="chapter-foot">
+<h3 id="trilha-02-na-pratica">✅ Na prática</h3>
+<p>Feche o capítulo com a evidência da semana no plano:</p><ul><li><a href="plano-12-semanas.html#semana-03">Semana 03 · Subqueries e lógica condicional</a>: Escrever e explicar uma query com CTE, tipos, nulos e CASE; validar casos de borda com uma amostra controlada.</li></ul>
+<nav class="chapter-nav"><a href="#trilha-01">← Ordem lógica do SQL: o que a consulta enxerga em cada cláusula</a><a href="#trilha-03">Grão e cardinalidade: por que joins multiplicam linhas →</a></nav>
+</div>
 </section>
 
 <section id="trilha-03" class="cheat-section">
-<h2><span class="sec-num trilha">Trilha 03</span> Grão e cardinalidade: por que joins multiplicam linhas</h2>
+<h2><span class="sec-num trilha">Capítulo 3</span> Grão e cardinalidade: por que joins multiplicam linhas</h2>
 <blockquote>
 <p><strong>Objetivo:</strong> declarar o grão de cada tabela antes de cruzar, prever a cardinalidade de um join e provar com contagens que o resultado não duplicou nem perdeu linhas. <strong>Tempo:</strong> 1–2 h. <strong>Pré-requisitos:</strong> <code>JOIN</code>, <code>GROUP BY</code> e <code>COUNT</code>.</p>
 </blockquote>
@@ -790,16 +866,31 @@ cruzado.agg(F.countDistinct("id_venda"), F.sum("receita")).show()         # 3 ve
 <li>Quais duas contagens você compara para mostrar que um join manteve o grão?</li>
 <li>Quando <code>LEFT SEMI JOIN</code> é melhor que <code>JOIN</code> + <code>DISTINCT</code>?</li>
 </ol>
+<details>
+<summary>Respostas</summary>
+<ol>
+<li>"uma venda". A chave é o <code>id</code> da venda: a combinação de colunas que identifica uma linha sem repetir.</li>
+<li>O <code>LEFT JOIN</code> só garante que nenhuma linha da esquerda some. Se a chave se repete do lado direito, cada linha da esquerda se multiplica do mesmo jeito.</li>
+<li><code>SELECT count(*), count(DISTINCT chave) FROM tabela</code>: os dois números precisam ser iguais, e a chave não pode ter NULL. Ou <code>GROUP BY chave HAVING count(*) &gt; 1</code> voltando vazio.</li>
+<li>A contagem de linhas (ou de chaves distintas) da tabela base antes e depois do join, e a soma da medida principal antes e depois.</li>
+<li>Quando você só quer saber se <em>existe</em> par do outro lado. O semi join não traz colunas da direita nem duplica, e evita o custo e o risco do <code>DISTINCT</code> sobre todas as colunas.</li>
+</ol>
+</details>
 <h2 id="trilha-03-proximos-passos">Próximos passos</h2>
 <ul>
 <li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-07-cardinalidade-e-exploding-join">Cardinalidade e exploding join</a> · <a href="cheatsheets.html#sql-07-quando-usar">Quando usar cada join</a> · <a href="cheatsheets.html#pyspark-07-semi-e-anti-join">Semi e anti join no PySpark</a></li>
 <li><strong>Prática:</strong> <a href="desafio.html?id=sql-07-cardinalidade">desafio de cardinalidade</a> · <a href="desafio.html?id=sql-07-tipos-de-join">desafio de tipos de join</a> · <a href="desafio.html?id=spk-07-semi-anti">desafio de semi e anti join</a></li>
 <li><strong>Aplicação real:</strong> escolha uma consulta autorizada que cruze fato e dimensão. Escreva o grão de cada tabela, prove as chaves e registre as contagens antes e depois do join, como pede o critério de avanço da semana 2 do plano.</li>
 </ul>
+<div class="chapter-foot">
+<h3 id="trilha-03-na-pratica">✅ Na prática</h3>
+<p>Feche o capítulo com a evidência da semana no plano:</p><ul><li><a href="plano-12-semanas.html#semana-02">Semana 02 · Agregações e JOINs</a>: Cruzar duas tabelas preservando o grão esperado e apresentar contagens antes/depois como evidência.</li><li><a href="plano-12-semanas.html#semana-07">Semana 07 · Transformações e joins</a>: Cruzar duas tabelas Delta, validar cardinalidade e qualidade, e gravar uma saída idempotente em ambiente autorizado.</li></ul>
+<nav class="chapter-nav"><a href="#trilha-02">← NULL e lógica de três valores</a><a href="#trilha-04">Window functions: calcular sem perder linhas →</a></nav>
+</div>
 </section>
 
 <section id="trilha-04" class="cheat-section">
-<h2><span class="sec-num trilha">Trilha 04</span> Window functions: calcular sem perder linhas</h2>
+<h2><span class="sec-num trilha">Capítulo 4</span> Window functions: calcular sem perder linhas</h2>
 <blockquote>
 <p><strong>Objetivo:</strong> escolher entre <code>GROUP BY</code> e janela, montar <code>PARTITION BY</code> / <code>ORDER BY</code> / frame com intenção e prever o efeito de empates. <strong>Tempo:</strong> 1–2 h. <strong>Pré-requisitos:</strong> <a href="#trilha-03">Grão e cardinalidade</a>.</p>
 </blockquote>
@@ -945,16 +1036,31 @@ por_dia = Window.partitionBy("loja").orderBy("dia")
 <li>Por que <code>row_number</code> precisa de desempate para deduplicar?</li>
 <li>Por que não dá para usar <code>row_number()</code> dentro de <code>WHERE</code>?</li>
 </ol>
+<details>
+<summary>Respostas</summary>
+<ol>
+<li>Quando você precisa do cálculo do grupo <strong>sem perder as linhas</strong>: ranking, valor anterior, acumulado, participação no total.</li>
+<li><code>RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code>. Linhas com o mesmo valor de <code>x</code> são "pares" e entram juntas, então o acumulado salta de uma vez nos empates.</li>
+<li>Nos empates os dois repetem a posição, mas depois o <code>rank</code> pula posições (1, 2, 2, 4) e o <code>dense_rank</code> não pula (1, 2, 2, 3).</li>
+<li>Sem desempate, linhas com o mesmo valor de ordenação recebem 1 e 2 de forma arbitrária, e a linha "mantida" pode mudar entre execuções.</li>
+<li>Porque as janelas são calculadas depois do <code>WHERE</code>. Filtre numa subconsulta (ou com <code>QUALIFY</code> no Databricks).</li>
+</ol>
+</details>
 <h2 id="trilha-04-proximos-passos">Próximos passos</h2>
 <ul>
 <li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-08-exemplos">Exemplos em SQL</a> · <a href="cheatsheets.html#sql-08-rows-versus-range">Rows versus range</a> · <a href="cheatsheets.html#pyspark-08-deduplicacao-deterministica">Deduplicação determinística no PySpark</a> · <a href="cheatsheets.html#pyspark-08-frames-e-tempo">Frames e tempo no PySpark</a></li>
 <li><strong>Prática:</strong> <a href="desafio.html?id=sql-08-row-number-lag-acumulado">ranking, lag e acumulado</a> · <a href="desafio.html?id=sql-08-rows-range">ROWS vs RANGE</a> · <a href="desafio.html?id=spk-08-dedup-row-number">deduplicação no PySpark</a> · <a href="desafio.html?id=spk-08-frames-tempo">frames por tempo</a></li>
 <li><strong>Aplicação real:</strong> siga os estágios 4 e 5 do <a href="framework_dominio_tecnico.html">framework</a>: aplique em uma métrica autorizada (top-3 por categoria, variação MoM) e explique o frame escolhido para alguém do time.</li>
 </ul>
+<div class="chapter-foot">
+<h3 id="trilha-04-na-pratica">✅ Na prática</h3>
+<p>Feche o capítulo com a evidência da semana no plano:</p><ul><li><a href="plano-12-semanas.html#semana-04">Semana 04 · Window functions</a>: Calcular ranking e acumulado, explicar empates e frame, e validar o resultado contra uma agregação de controle.</li><li><a href="plano-12-semanas.html#semana-08">Semana 08 · Window functions no PySpark</a>: Entregar uma tabela validada com teste reproduzível e explicar as decisões, limites e evidências.</li></ul>
+<nav class="chapter-nav"><a href="#trilha-03">← Grão e cardinalidade: por que joins multiplicam linhas</a><a href="#trilha-05">Como o Spark executa seu código →</a></nav>
+</div>
 </section>
 
 <section id="trilha-05" class="cheat-section">
-<h2><span class="sec-num trilha">Trilha 05</span> Como o Spark executa seu código</h2>
+<h2><span class="sec-num trilha">Capítulo 5</span> Como o Spark executa seu código</h2>
 <blockquote>
 <p><strong>Objetivo:</strong> prever quando o Spark realmente processa dados, onde há shuffle e ler o essencial de um <code>explain</code>. <strong>Tempo:</strong> 1–2 h. <strong>Pré-requisitos:</strong> saber criar um DataFrame e usar <code>select</code>/<code>filter</code>/<code>groupBy</code>.</p>
 </blockquote>
@@ -1022,16 +1128,31 @@ SELECT loja, count(*) AS qtd FROM vendas WHERE loja = 3 GROUP BY loja;
 <li>Por que há dois <code>HashAggregate</code> em um <code>groupBy</code> simples?</li>
 <li>Em que situação um join não precisa embaralhar a tabela grande?</li>
 </ol>
+<details>
+<summary>Respostas</summary>
+<ol>
+<li>Transformações só descrevem o plano (avaliação preguiçosa). Um job só nasce quando uma <strong>ação</strong> (<code>count</code>, <code>show</code>, <code>write</code>...) pede o resultado.</li>
+<li>É o nó do plano que redistribui linhas pela rede (shuffle) para juntar as mesmas chaves. Como cada partição de saída depende de todas as de entrada, o stage anterior precisa terminar antes do próximo começar.</li>
+<li>Narrow: <code>select</code>, <code>filter</code>, <code>withColumn</code>. Wide: <code>groupBy</code>, <code>join</code> sem broadcast, <code>distinct</code>, <code>orderBy</code>, <code>repartition</code>.</li>
+<li>Um parcial antes do shuffle (cada partição agrega localmente) e um final depois (combina os parciais). Isso reduz o volume que trafega.</li>
+<li>Quando um lado é pequeno o bastante para broadcast: ele é copiado para cada executor e a tabela grande não é embaralhada (<code>BroadcastHashJoin</code>).</li>
+</ol>
+</details>
 <h2 id="trilha-05-proximos-passos">Próximos passos</h2>
 <ul>
 <li><strong>Consulta:</strong> <a href="cheatsheets.html#pyspark-01-transformacoes-e-acoes">Transformações e ações</a> · <a href="cheatsheets.html#pyspark-13-diagnostico-antes-da-otimizacao">Diagnóstico antes da otimização</a> · <a href="cheatsheets.html#sql-12-shuffle-skew-e-spill">Shuffle, skew e spill</a></li>
 <li><strong>Prática:</strong> <a href="desafio.html?id=spk-01-transformacoes-acoes">desafio de transformações e ações</a> · <a href="desafio.html?id=spk-13-diagnostico">desafio de diagnóstico</a> · <a href="desafio.html?id=sql-12-shuffle-skew-spill">desafio de shuffle, skew e spill</a></li>
 <li><strong>Aplicação real:</strong> abra um notebook autorizado que você já usa, rode <code>explain("formatted")</code> na consulta principal e anote: quantos <code>Exchange</code>, que estratégia de join e se há UDF Python. Explique o plano para alguém do time.</li>
 </ul>
+<div class="chapter-foot">
+<h3 id="trilha-05-na-pratica">✅ Na prática</h3>
+<p>Feche o capítulo com a evidência da semana no plano:</p><ul><li><a href="plano-12-semanas.html#semana-06">Semana 06 · PySpark, planos e inspeção</a>: Mapear o fluxo de um notebook desconhecido e explicar ao menos uma transformação e seu plano de execução.</li></ul>
+<nav class="chapter-nav"><a href="#trilha-04">← Window functions: calcular sem perder linhas</a><a href="#trilha-06">Diagnóstico de performance: medir antes de mexer →</a></nav>
+</div>
 </section>
 
 <section id="trilha-06" class="cheat-section">
-<h2><span class="sec-num trilha">Trilha 06</span> Diagnóstico de performance: medir antes de mexer</h2>
+<h2><span class="sec-num trilha">Capítulo 6</span> Diagnóstico de performance: medir antes de mexer</h2>
 <blockquote>
 <p><strong>Objetivo:</strong> seguir uma sequência de diagnóstico, reconhecer skew, spill e excesso de shuffle nas evidências e escolher uma intervenção proporcional. <strong>Tempo:</strong> 2 h. <strong>Pré-requisitos:</strong> <a href="#trilha-05">Como o Spark executa seu código</a>.</p>
 </blockquote>
@@ -1102,16 +1223,31 @@ vendas.groupBy("loja").count().orderBy(F.desc("count")).show(3)
 <li>Por que salting não garante partições equilibradas?</li>
 <li>Que métrica da Spark UI mostra skew?</li>
 </ol>
+<details>
+<summary>Respostas</summary>
+<ol>
+<li>Ler demais (muitos bytes/arquivos, sem pruning), embaralhar demais (muitos <code>Exchange</code>, shuffle grande), skew (poucas tasks muito mais lentas que a mediana) e spill/memória (<code>spill (disk)</code> nas métricas).</li>
+<li>A agregação parcial reduz a chave quente a uma linha por partição antes do shuffle. No join, todas as linhas da chave quente precisam ir para a mesma task.</li>
+<li>Junta partições pequenas depois do shuffle (coalesce), divide partições com skew em joins e pode trocar a estratégia de join em tempo de execução.</li>
+<li>Ele espalha a chave quente em N pedaços, mas cada pedaço ainda pode ser maior que as chaves comuns, e o hash pode colocar vários pedaços na mesma partição. Diminui o pior caso (no exemplo, de 900 mil para cerca de 240 mil), mas não iguala.</li>
+<li>No resumo das tasks do stage: a duração <strong>máxima</strong> (e o shuffle read máximo) muito acima da <strong>mediana</strong>.</li>
+</ol>
+</details>
 <h2 id="trilha-06-proximos-passos">Próximos passos</h2>
 <ul>
 <li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-12-sequencia-de-diagnostico">Sequência de diagnóstico</a> · <a href="cheatsheets.html#sql-12-shuffle-skew-e-spill">Shuffle, skew e spill</a> · <a href="cheatsheets.html#pyspark-13-aqe-e-particoes">AQE e partições</a> · <a href="cheatsheets.html#pyspark-13-skew-e-salting">Skew e salting</a></li>
 <li><strong>Prática:</strong> <a href="desafio.html?id=sql-12-sequencia-diagnostico">sequência de diagnóstico</a> · <a href="desafio.html?id=spk-13-aqe-particoes">AQE e partições</a> · <a href="desafio.html?id=spk-13-skew-salting">skew e salting</a> · <a href="desafio.html?id=sql-12-pruning-pushdown">pruning e pushdown</a></li>
 <li><strong>Aplicação real:</strong> escolha o job autorizado mais lento que você acompanha. Registre os bytes lidos, o maior stage, máxima × mediana das tasks e o spill. Proponha <strong>uma</strong> mudança e meça antes e depois.</li>
 </ul>
+<div class="chapter-foot">
+<h3 id="trilha-06-na-pratica">✅ Na prática</h3>
+<p>Feche o capítulo com a evidência da semana no plano:</p><ul><li><a href="plano-12-semanas.html#semana-06">Semana 06 · PySpark, planos e inspeção</a>: Mapear o fluxo de um notebook desconhecido e explicar ao menos uma transformação e seu plano de execução.</li></ul>
+<nav class="chapter-nav"><a href="#trilha-05">← Como o Spark executa seu código</a><a href="#trilha-07">Delta e MERGE idempotente: rodar duas vezes, mesmo resultado →</a></nav>
+</div>
 </section>
 
 <section id="trilha-07" class="cheat-section">
-<h2><span class="sec-num trilha">Trilha 07</span> Delta e MERGE idempotente: rodar duas vezes, mesmo resultado</h2>
+<h2><span class="sec-num trilha">Capítulo 7</span> Delta e MERGE idempotente: rodar duas vezes, mesmo resultado</h2>
 <blockquote>
 <p><strong>Objetivo:</strong> entender o que o log transacional do Delta garante, escolher entre <code>append</code>, <code>overwrite</code>, <code>replaceWhere</code> e <code>MERGE</code>, e escrever um <code>MERGE</code> que pode ser reexecutado sem estragar a tabela. <strong>Tempo:</strong> 2 h. <strong>Pré-requisitos:</strong> <a href="#trilha-03">Grão e cardinalidade</a>, <a href="#trilha-04">Window functions</a>.</p>
 </blockquote>
@@ -1214,16 +1350,31 @@ lote_unico = lote.withColumn("rn", F.row_number().over(w)).filter("rn = 1").drop
 <li>Quando <code>replaceWhere</code> é melhor que <code>MERGE</code>?</li>
 <li>Como provar, com <code>DESCRIBE HISTORY</code>, que uma reexecução não mudou nada?</li>
 </ol>
+<details>
+<summary>Respostas</summary>
+<ol>
+<li>Garante atomicidade: cada escrita vira uma versão inteira ou não acontece. <strong>Não</strong> garante idempotência: nada impede gravar o mesmo lote duas vezes.</li>
+<li>Origem com no máximo uma linha por chave; atualização condicional (só quando algo mudou); valores vindos do dado, não do relógio.</li>
+<li>Com duas linhas de origem para o mesmo destino, o resultado dependeria da ordem, e o Delta se recusa a escolher. Deduplique a origem antes.</li>
+<li>Quando você recalcula uma faixa inteira (uma data, uma partição), inclusive o que sumiu da origem. Substituir a faixa é mais simples e mais barato que casar chave a chave.</li>
+<li>Rode duas vezes e veja a última versão no <code>DESCRIBE HISTORY</code>: as métricas da operação (linhas atualizadas e inseridas) devem ser zero, ou nem deve haver versão nova.</li>
+</ol>
+</details>
 <h2 id="trilha-07-proximos-passos">Próximos passos</h2>
 <ul>
 <li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-10-merge">Merge em SQL</a> · <a href="cheatsheets.html#sql-10-time-travel-e-restore">Time travel e restore</a> · <a href="cheatsheets.html#pyspark-10-merge">Merge no PySpark</a> · <a href="cheatsheets.html#pyspark-08-deduplicacao-deterministica">Deduplicação determinística</a></li>
 <li><strong>Prática:</strong> <a href="desafio.html?id=sql-10-merge">desafio de MERGE em SQL</a> · <a href="desafio.html?id=spk-10-merge">desafio de MERGE no PySpark</a> · <a href="desafio.html?id=sql-10-time-travel">time travel</a> · <a href="desafio.html?id=spk-08-dedup-row-number">deduplicação</a></li>
 <li><strong>Aplicação real:</strong> em um pipeline autorizado, simule em ambiente de desenvolvimento a reexecução do mesmo lote. Prove com <code>DESCRIBE HISTORY</code> e contagens por chave que nada duplicou. Esse é o critério de avanço da semana 7 do plano.</li>
 </ul>
+<div class="chapter-foot">
+<h3 id="trilha-07-na-pratica">✅ Na prática</h3>
+<p>Feche o capítulo com a evidência da semana no plano:</p><ul><li><a href="plano-12-semanas.html#semana-05">Semana 05 · Orientação no ambiente</a>: Executar e explicar um notebook existente, identificar entradas/saídas e registrar riscos de ambiente ou dados.</li><li><a href="plano-12-semanas.html#semana-07">Semana 07 · Transformações e joins</a>: Cruzar duas tabelas Delta, validar cardinalidade e qualidade, e gravar uma saída idempotente em ambiente autorizado.</li></ul>
+<nav class="chapter-nav"><a href="#trilha-06">← Diagnóstico de performance: medir antes de mexer</a><a href="#trilha-08">Cargas full, incremental e CDC →</a></nav>
+</div>
 </section>
 
 <section id="trilha-08" class="cheat-section">
-<h2><span class="sec-num trilha">Trilha 08</span> Cargas full, incremental e CDC</h2>
+<h2><span class="sec-num trilha">Capítulo 8</span> Cargas full, incremental e CDC</h2>
 <blockquote>
 <p><strong>Objetivo:</strong> escolher entre carga full, incremental por watermark e CDC, prever o que cada uma perde ou duplica e montar uma janela de segurança que torne o reprocessamento inofensivo. <strong>Tempo:</strong> 2 h. <strong>Pré-requisitos:</strong> <a href="#trilha-07">Delta e MERGE idempotente</a>.</p>
 </blockquote>
@@ -1345,16 +1496,31 @@ WHEN NOT MATCHED AND s.op &lt;&gt; 'D' THEN INSERT (id, valor, seq) VALUES (s.id
 <li>Por que aplicar só o último evento por chave em CDC?</li>
 <li>Quando atualizar o watermark: antes ou depois da escrita? Por quê?</li>
 </ol>
+<details>
+<summary>Respostas</summary>
+<ol>
+<li>Os dois só olham para frente. Um registro atrasado chega com horário <strong>anterior</strong> ao watermark e fica de fora nos dois casos; o <code>&gt;=</code> só resolve o empate exato na borda.</li>
+<li>Porque o que foi relido é aplicado com <code>MERGE</code> idempotente e não muda nada. A pré-condição é justamente essa: escrita idempotente por chave, nunca <code>append</code>.</li>
+<li>Deletes (a linha some da origem e não há o que ler) e registros cuja coluna de controle não é atualizada nas mudanças.</li>
+<li>Só o último evento representa o estado atual. Aplicar todos os eventos de uma vez gera várias linhas de origem para a mesma chave (o <code>MERGE</code> falha) ou um resultado que depende da ordem.</li>
+<li>Depois do commit da escrita. Se avançar antes e a carga falhar, os registros daquele intervalo nunca mais serão lidos.</li>
+</ol>
+</details>
 <h2 id="trilha-08-proximos-passos">Próximos passos</h2>
 <ul>
 <li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-10-merge">Merge em SQL</a> · <a href="cheatsheets.html#pyspark-02-arquivos-com-schema-explicito">Leitura de arquivos com schema explícito</a> · <a href="cheatsheets.html#pyspark-14-4-colunas-tecnicas-uteis">Colunas técnicas úteis no medalhão</a></li>
 <li><strong>Prática:</strong> <a href="desafio.html?id=sql-10-merge">MERGE em SQL</a> · <a href="desafio.html?id=spk-14-colunas-tecnicas">colunas técnicas</a> · <a href="desafio.html?id=spk-12-perda-join">perda de linhas em joins (reconciliação)</a></li>
 <li><strong>Aplicação real:</strong> para uma ingestão autorizada, escreva qual é a estratégia (full, watermark ou CDC), a coluna de controle, onde o watermark fica gravado, a janela de segurança e como deletes são tratados. É a base do critério de avanço das semanas 9–10 do plano.</li>
 </ul>
+<div class="chapter-foot">
+<h3 id="trilha-08-na-pratica">✅ Na prática</h3>
+<p>Feche o capítulo com a evidência da semana no plano:</p><ul><li><a href="plano-12-semanas.html#semana-09">Semana 09 · ADF — fundação e ingestões básicas</a>: Mapear um pipeline autorizado, explicar dependências e demonstrar como reprocessá-lo com segurança após uma falha simulada.</li><li><a href="plano-12-semanas.html#semana-10">Semana 10 · Ingestões via API e SFTP</a>: Implementar em ambiente seguro uma ingestão revisada, com paginação ou arquivo, reexecução idempotente e evidência de monitoramento.</li></ul>
+<nav class="chapter-nav"><a href="#trilha-07">← Delta e MERGE idempotente: rodar duas vezes, mesmo resultado</a><a href="#trilha-09">SCD2 e modelagem dimensional: o passado não pode mudar sozinho →</a></nav>
+</div>
 </section>
 
 <section id="trilha-09" class="cheat-section">
-<h2><span class="sec-num trilha">Trilha 09</span> SCD2 e modelagem dimensional: o passado não pode mudar sozinho</h2>
+<h2><span class="sec-num trilha">Capítulo 9</span> SCD2 e modelagem dimensional: o passado não pode mudar sozinho</h2>
 <blockquote>
 <p><strong>Objetivo:</strong> separar fato e dimensão pelo grão, decidir quando um atributo precisa de histórico, implementar SCD tipo 2 com <code>MERGE</code> e cruzar a fato com a versão vigente na data do evento. <strong>Tempo:</strong> 2–3 h. <strong>Pré-requisitos:</strong> <a href="#trilha-03">Grão e cardinalidade</a>, <a href="#trilha-07">Delta e MERGE idempotente</a>.</p>
 </blockquote>
@@ -1478,17 +1644,32 @@ GROUP BY d.segmento;
 <li>Por que o fim da vigência deve ser exclusivo?</li>
 <li>Quando um atributo deveria ser tipo 1 e não tipo 2?</li>
 </ol>
+<details>
+<summary>Respostas</summary>
+<ol>
+<li>A chave de negócio identifica a entidade (o cliente) e se repete entre versões. A surrogate key identifica <strong>cada versão</strong> e não se repete, e é ela que a fato usa para apontar a versão certa.</li>
+<li>Uma vez com a chave preenchida, para casar com a versão atual e fechá-la; outra com a chave de merge nula, que não casa com nada e por isso <strong>insere</strong> a versão nova.</li>
+<li>No máximo uma versão atual por chave de negócio; vigências sem sobreposição; nenhuma lacuna entre versões.</li>
+<li>Para um instante cair em exatamente uma versão. Com o fim inclusivo, o dia da troca casa com duas versões e o join duplica a fato.</li>
+<li>Quando é correção de erro ou o atributo não muda a interpretação do passado (por exemplo, um telefone ou a grafia de um nome). Historizar isso só infla a dimensão.</li>
+</ol>
+</details>
 <h2 id="trilha-09-proximos-passos">Próximos passos</h2>
 <ul>
 <li><strong>Consulta:</strong> <a href="01_cheatsheets/03_modeling-e-analytics/03_slowly-changing-dimensions.md">SCDs (complementar)</a> · <a href="01_cheatsheets/03_modeling-e-analytics/01_modelagem-dimensional.md">Modelagem dimensional (complementar)</a> · <a href="01_cheatsheets/03_modeling-e-analytics/02_tipos-tabelas-fato.md">Tipos de fato (complementar)</a> · <a href="cheatsheets.html#sql-10-merge">Merge em SQL</a></li>
 <li><strong>Prática:</strong> <a href="desafio.html?id=sql-10-merge">MERGE em SQL</a> · <a href="desafio.html?id=sql-11-grao-unicidade">unicidade do grão</a> · <a href="desafio.html?id=sql-07-cardinalidade">cardinalidade</a> · <a href="desafio.html?id=spk-14-granularidade">granularidade no medalhão</a></li>
 <li><strong>Aplicação real:</strong> em uma dimensão autorizada, liste os atributos e classifique cada um como tipo 1 ou 2, com justificativa. Escreva o teste de "uma versão atual por chave". É o "SCD Type 2 do zero" do mês 9 do plano de 12 meses.</li>
 </ul>
+<div class="chapter-foot">
+<h3 id="trilha-09-na-pratica">✅ Na prática</h3>
+<p>Este capítulo não tem semana no plano de 12 semanas. Aplique pelo <a href="plano_12_meses_engenheiro_dados.html">plano de 12 meses</a>.</p>
+<nav class="chapter-nav"><a href="#trilha-08">← Cargas full, incremental e CDC</a><a href="#home">Parte V em construção · voltar ao sumário ↑</a></nav>
+</div>
 </section>
 
 <footer>
   <p>Data Engineering Playbook — <a href="https://github.com/thiagosousacruz/dep">GitHub</a></p>
-  <p>Conteúdo gerado automaticamente de 03_trilhas/.</p>
+  <p>Conteúdo gerado automaticamente de 03_trilhas/ (ordem em _livro.json).</p>
 </footer>
 
 </main>

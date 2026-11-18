@@ -24,6 +24,8 @@ PLACEHOLDERS = ("{{ SIDEBAR_SQL }}", "{{ SIDEBAR_PYSPARK }}", "{{ CONTENT_INJECT
 
 TRAIL_TEMPLATE_PATH = ROOT / "trilhas_template.html"
 TRAIL_OUTPUT_PATH = ROOT / "trilhas.html"
+BOOK_PATH = ROOT / "03_trilhas" / "_livro.json"
+PLAN_12_WEEKS_PATH = ROOT / "plano-12-semanas.html"
 TRAIL_PLACEHOLDERS = ("{{ SIDEBAR_TRILHAS }}", "{{ HOME_TRILHAS }}", "{{ TOTAL_TRILHAS }}", "{{ CONTENT_INJECT }}")
 
 HAND_WRITTEN_PAGES = (
@@ -53,7 +55,7 @@ AREAS = (
     Area(ROOT / "01_cheatsheets" / "01_sql", "SQL", "sql"),
     Area(ROOT / "01_cheatsheets" / "02_pyspark", "PySpark", "pyspark"),
 )
-TRAIL_AREA = Area(ROOT / "03_trilhas", "Trilha", "trilha")
+TRAIL_AREA = Area(ROOT / "03_trilhas", "Capítulo", "trilha")
 
 # Mapa de links: arquivo Markdown -> (pagina HTML, id da secao).
 LinkMap = dict[Path, tuple[str, str]]
@@ -160,7 +162,7 @@ def render_section(
     title = title_from(markdown_text, path)
     rendered = markdown.markdown(
         markdown_text,
-        extensions=["fenced_code", "tables", "sane_lists"],
+        extensions=["fenced_code", "tables", "sane_lists", "md_in_html"],
         output_format="html5",
     )
     soup = BeautifulSoup(rendered, "html.parser")
@@ -174,7 +176,7 @@ def render_section(
         heading.name = "h2"
         heading.clear()
         number = soup.new_tag("span", attrs={"class": f"sec-num {area.css_class}"})
-        number.string = f"{area.label} {index:02d}"
+        number.string = f"{area.label} {index}" if area is TRAIL_AREA else f"{area.label} {index:02d}"
         heading.extend((number, f" {title}"))
 
     for link in soup.find_all("a", href=True):
@@ -267,6 +269,52 @@ def build() -> str:
     return f"Build concluido: {len(navigation['sql'])} SQL + {len(navigation['pyspark'])} PySpark."
 
 
+def weeks_by_trail() -> dict[str, list[tuple[str, str, str, str]]]:
+    """Le o plano de 12 semanas: id da trilha -> [(id do card, semana, titulo, criterio de avanco)]."""
+    soup = BeautifulSoup(PLAN_12_WEEKS_PATH.read_text(encoding="utf-8"), "html.parser")
+    result: dict[str, list[tuple[str, str, str, str]]] = {}
+    for card in soup.select("div.week-card"):
+        criteria = card.select_one(".criteria p")
+        week = (
+            card.get("id", ""),
+            card.select_one(".week-num").get_text(strip=True),
+            card.select_one(".week-title").get_text(strip=True),
+            criteria.get_text(" ", strip=True) if criteria else "",
+        )
+        for link in card.select(".week-trilha a[href]"):
+            fragment = urlsplit(link["href"]).fragment
+            if fragment:
+                result.setdefault(fragment, []).append(week)
+    return result
+
+
+def chapter_footer(section_id: str, weeks: list[tuple[str, str, str, str]], chapters: list, position: int) -> str:
+    """Rodape do capitulo: pratica da semana no plano e navegacao anterior/proximo."""
+    if weeks:
+        items = "".join(
+            f'<li><a href="plano-12-semanas.html#{card_id}">{week} · {title}</a>: {criteria}</li>'
+            for card_id, week, title, criteria in weeks
+        )
+        practice = f"<p>Feche o capítulo com a evidência da semana no plano:</p><ul>{items}</ul>"
+    else:
+        practice = (
+            '<p>Este capítulo não tem semana no plano de 12 semanas. Aplique pelo '
+            '<a href="plano_12_meses_engenheiro_dados.html">plano de 12 meses</a>.</p>'
+        )
+    prev_link = (
+        f'<a href="#{chapters[position - 1][1]}">← {chapters[position - 1][2]}</a>' if position > 0 else "<span></span>"
+    )
+    next_link = (
+        f'<a href="#{chapters[position + 1][1]}">{chapters[position + 1][2]} →</a>'
+        if position + 1 < len(chapters)
+        else '<a href="#home">Parte V em construção · voltar ao sumário ↑</a>'
+    )
+    return (
+        f'<div class="chapter-foot">\n<h3 id="{section_id}-na-pratica">✅ Na prática</h3>\n{practice}\n'
+        f'<nav class="chapter-nav">{prev_link}{next_link}</nav>\n</div>'
+    )
+
+
 def build_trails() -> str:
     template = TRAIL_TEMPLATE_PATH.read_text(encoding="utf-8")
     files = markdown_files(TRAIL_AREA)
@@ -276,23 +324,48 @@ def build_trails() -> str:
     if errors:
         raise RuntimeError("Falha na validacao das trilhas:\n- " + "\n- ".join(errors))
 
+    book = json.loads(BOOK_PATH.read_text(encoding="utf-8"))
+    order = [TRAIL_AREA.directory / name for part in book["partes"] for name in part["capitulos"]]
+    missing = sorted({p.name for p in files} - {p.name for p in order})
+    unknown = sorted({p.name for p in order} - {p.name for p in files})
+    repeated = sorted({p.name for p in order if order.count(p) > 1})
+    if missing or unknown or repeated:
+        raise RuntimeError(
+            f"_livro.json inconsistente: fora do sumario {missing}, inexistentes {unknown}, repetidos {repeated}"
+        )
+
     link_map = build_link_map()
+    weeks = weeks_by_trail()
+    chapters = [(path, link_map[path.resolve()][1], title_from(path.read_text(encoding="utf-8"), path)) for path in order]
     content: list[str] = []
-    navigation: list[str] = []
-    home: list[str] = []
-    for index, path in enumerate(files, 1):
-        section, nav = render_section(path, index, TRAIL_AREA, link_map, page="trilhas.html")
-        content.append(section)
-        navigation.append(nav)
-        title = title_from(path.read_text(encoding="utf-8"), path)
-        home.append(f'<li><span class="num">{index:02d}</span> <a href="#trilha-{index:02d}">{title}</a></li>')
+    sidebar: list[str] = []
+    summary: list[str] = []
+    number = 0
+    for part in book["partes"]:
+        part_nav: list[str] = []
+        part_items: list[str] = []
+        for _name in part["capitulos"]:
+            path, section_id, title = chapters[number]
+            number += 1
+            section, nav = render_section(path, number, TRAIL_AREA, link_map, page="trilhas.html")
+            footer = chapter_footer(section_id, weeks.get(section_id, []), chapters, number - 1)
+            content.append(section.removesuffix("\n</section>") + f"\n{footer}\n</section>")
+            part_nav.append(nav)
+            part_items.append(f'<li><span class="num">{number}</span> <a href="#{section_id}">{title}</a></li>')
+        for pending in part.get("a_escrever", []):
+            part_items.append(f'<li class="pending"><span class="num">·</span> {pending} <em>(em breve)</em></li>')
+        sidebar.append(
+            f'<div class="nav-section">\n    <div class="nav-section-title"><span>{part["titulo"]}</span></div>\n    '
+            + ("\n    ".join(part_nav) or '<div class="nav-pending">em breve</div>')
+            + "\n  </div>"
+        )
+        summary.append(f'<li class="part">{part["titulo"]}</li>\n        ' + "\n        ".join(part_items))
 
     html = template
-    html = html.replace("{{ SIDEBAR_TRILHAS }}", "\n    ".join(navigation))
-    html = html.replace("{{ HOME_TRILHAS }}", "\n        ".join(home))
-    html = html.replace("{{ TOTAL_TRILHAS }}", f"{len(files)} lições")
+    html = html.replace("{{ SIDEBAR_TRILHAS }}", "\n  ".join(sidebar))
+    html = html.replace("{{ HOME_TRILHAS }}", "\n        ".join(summary))
+    html = html.replace("{{ TOTAL_TRILHAS }}", f"{len(files)} capítulos")
     html = html.replace("{{ CONTENT_INJECT }}", "\n\n".join(content))
-    html = re.sub(r'(<span>Trilhas</span> <span class="badge">)\d+(</span>)', rf"\g<1>{len(files)}\g<2>", html)
 
     soup = BeautifulSoup(html, "html.parser")
     ids = {tag["id"] for tag in soup.find_all(id=True)}
@@ -302,7 +375,7 @@ def build_trails() -> str:
     if broken:
         raise RuntimeError("Links internos quebrados em trilhas.html: " + ", ".join(broken))
     TRAIL_OUTPUT_PATH.write_text(html, encoding="utf-8", newline="\n")
-    return f"Trilhas: {len(files)} licoes."
+    return f"Livro: {len(files)} capitulos."
 
 
 def validate_cross_links(challenge_ids: set[str]) -> None:
@@ -315,6 +388,7 @@ def validate_cross_links(challenge_ids: set[str]) -> None:
     # Paginas escritas a mao tambem linkam para ancoras das geradas: valide-as como origem.
     for name in HAND_WRITTEN_PAGES:
         soups[name] = BeautifulSoup((ROOT / name).read_text(encoding="utf-8"), "html.parser")
+        ids[name] = {tag["id"] for tag in soups[name].find_all(id=True)}
     errors: set[str] = set()
     for name, soup in soups.items():
         for link in soup.find_all("a", href=True):

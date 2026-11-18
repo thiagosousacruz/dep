@@ -100,6 +100,17 @@ from pyspark.sql import functions as F
 4. Por que `LIMIT` sem `ORDER BY` não serve para "pegar os maiores"?
 5. Como filtrar pelo resultado de `row_number()` sem `QUALIFY`?
 
+<details markdown="1">
+<summary>Respostas</summary>
+
+1. O `WHERE` é avaliado antes do `SELECT`. Quando ele roda, o alias ainda não foi criado.
+2. Depois do `GROUP BY`/`HAVING` e antes do `SELECT`. Por isso a janela enxerga os agregados: `sum(sum(valor)) OVER ()` soma os totais dos grupos.
+3. `WHERE status = 'FECHADA'` filtra linhas antes de agrupar; `HAVING sum(valor) > 100` só existe depois do agrupamento.
+4. Sem `ORDER BY`, a ordem das linhas não é garantida. O `LIMIT` corta "as primeiras que chegarem", que podem mudar a cada execução.
+5. Calcule o `row_number()` numa subconsulta ou CTE e filtre por fora: `SELECT ... FROM (SELECT ..., row_number() OVER (...) AS rn ...) WHERE rn = 1`.
+
+</details>
+
 ## Próximos passos
 
 - **Consulta:** [Ordem lógica de avaliação](../01_cheatsheets/01_sql/01_sintaxe-basica.md#ordem-logica-de-avaliacao) · [CTEs para organizar a lógica](../01_cheatsheets/01_sql/05_ctes.md#ctes-para-organizar-a-logica) · [Agregações e filtros por agregação](../01_cheatsheets/01_sql/06_group-by-e-pivots.md#agregacoes-e-filtros-por-agregacao)

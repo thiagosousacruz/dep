@@ -85,6 +85,17 @@ cruzado.agg(F.countDistinct("id_venda"), F.sum("receita")).show()         # 3 ve
 4. Quais duas contagens você compara para mostrar que um join manteve o grão?
 5. Quando `LEFT SEMI JOIN` é melhor que `JOIN` + `DISTINCT`?
 
+<details markdown="1">
+<summary>Respostas</summary>
+
+1. "uma venda". A chave é o `id` da venda: a combinação de colunas que identifica uma linha sem repetir.
+2. O `LEFT JOIN` só garante que nenhuma linha da esquerda some. Se a chave se repete do lado direito, cada linha da esquerda se multiplica do mesmo jeito.
+3. `SELECT count(*), count(DISTINCT chave) FROM tabela`: os dois números precisam ser iguais, e a chave não pode ter NULL. Ou `GROUP BY chave HAVING count(*) > 1` voltando vazio.
+4. A contagem de linhas (ou de chaves distintas) da tabela base antes e depois do join, e a soma da medida principal antes e depois.
+5. Quando você só quer saber se *existe* par do outro lado. O semi join não traz colunas da direita nem duplica, e evita o custo e o risco do `DISTINCT` sobre todas as colunas.
+
+</details>
+
 ## Próximos passos
 
 - **Consulta:** [Cardinalidade e exploding join](../01_cheatsheets/01_sql/07_joins.md#cardinalidade-e-exploding-join) · [Quando usar cada join](../01_cheatsheets/01_sql/07_joins.md#quando-usar) · [Semi e anti join no PySpark](../01_cheatsheets/02_pyspark/07_joins-relacionais.md#semi-e-anti-join)

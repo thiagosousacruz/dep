@@ -114,6 +114,17 @@ Resultado: **Bronze 100, Ouro 200, Prata 50.** A venda de março continua Bronze
 4. Por que o fim da vigência deve ser exclusivo?
 5. Quando um atributo deveria ser tipo 1 e não tipo 2?
 
+<details markdown="1">
+<summary>Respostas</summary>
+
+1. A chave de negócio identifica a entidade (o cliente) e se repete entre versões. A surrogate key identifica **cada versão** e não se repete, e é ela que a fato usa para apontar a versão certa.
+2. Uma vez com a chave preenchida, para casar com a versão atual e fechá-la; outra com a chave de merge nula, que não casa com nada e por isso **insere** a versão nova.
+3. No máximo uma versão atual por chave de negócio; vigências sem sobreposição; nenhuma lacuna entre versões.
+4. Para um instante cair em exatamente uma versão. Com o fim inclusivo, o dia da troca casa com duas versões e o join duplica a fato.
+5. Quando é correção de erro ou o atributo não muda a interpretação do passado (por exemplo, um telefone ou a grafia de um nome). Historizar isso só infla a dimensão.
+
+</details>
+
 ## Próximos passos
 
 - **Consulta:** [SCDs (complementar)](../01_cheatsheets/03_modeling-e-analytics/03_slowly-changing-dimensions.md) · [Modelagem dimensional (complementar)](../01_cheatsheets/03_modeling-e-analytics/01_modelagem-dimensional.md) · [Tipos de fato (complementar)](../01_cheatsheets/03_modeling-e-analytics/02_tipos-tabelas-fato.md) · [Merge em SQL](../01_cheatsheets/01_sql/10_delta-dml.md#merge)

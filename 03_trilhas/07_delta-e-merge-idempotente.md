@@ -116,6 +116,17 @@ lote_unico = lote.withColumn("rn", F.row_number().over(w)).filter("rn = 1").drop
 4. Quando `replaceWhere` é melhor que `MERGE`?
 5. Como provar, com `DESCRIBE HISTORY`, que uma reexecução não mudou nada?
 
+<details markdown="1">
+<summary>Respostas</summary>
+
+1. Garante atomicidade: cada escrita vira uma versão inteira ou não acontece. **Não** garante idempotência: nada impede gravar o mesmo lote duas vezes.
+2. Origem com no máximo uma linha por chave; atualização condicional (só quando algo mudou); valores vindos do dado, não do relógio.
+3. Com duas linhas de origem para o mesmo destino, o resultado dependeria da ordem, e o Delta se recusa a escolher. Deduplique a origem antes.
+4. Quando você recalcula uma faixa inteira (uma data, uma partição), inclusive o que sumiu da origem. Substituir a faixa é mais simples e mais barato que casar chave a chave.
+5. Rode duas vezes e veja a última versão no `DESCRIBE HISTORY`: as métricas da operação (linhas atualizadas e inseridas) devem ser zero, ou nem deve haver versão nova.
+
+</details>
+
 ## Próximos passos
 
 - **Consulta:** [Merge em SQL](../01_cheatsheets/01_sql/10_delta-dml.md#merge) · [Time travel e restore](../01_cheatsheets/01_sql/10_delta-dml.md#time-travel-e-restore) · [Merge no PySpark](../01_cheatsheets/02_pyspark/10_delta-lake-api.md#merge) · [Deduplicação determinística](../01_cheatsheets/02_pyspark/08_window-functions.md#deduplicacao-deterministica)

@@ -24,9 +24,16 @@ Dados pequenos e controlados. Peça explicitamente: **anote o resultado antes de
 
 ## Cheque seu entendimento
 
-Perguntas para responder com suas palavras, sem consultar. Respostas curtas em `<details>` são opcionais.
+Perguntas para responder com suas palavras, sem consultar. As respostas ficam logo abaixo, recolhidas (obrigatório: sem elas o livro não serve para estudar sozinho).
 
 1. Pergunta?
+
+<details markdown="1">
+<summary>Respostas</summary>
+
+1. Resposta curta, coerente com o texto da lição.
+
+</details>
 
 ## Próximos passos
 

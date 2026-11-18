@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trilhas — DataEng Playbook</title>
+<title>Livro — DataEng Playbook</title>
 <meta name="description" content="Base de conhecimento consolidada com guias de referência rápida para Databricks/Spark SQL e PySpark.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -323,6 +323,19 @@
   }
   .sec-num.sql { background: var(--sql-bg-strong); color: var(--sql-color); }
   .sec-num.trilha { background: var(--sql-bg-strong); color: var(--sql-color); }
+  /* ── LIVRO ── */
+  .start-btn { display: inline-block; margin-top: 8px; padding: 10px 18px; border-radius: 8px;
+    background: var(--sql-bg-strong); color: var(--sql-color); font-weight: 600; text-decoration: none; }
+  .book-summary li.part { font-weight: 700; margin-top: 12px; list-style: none; color: var(--text-primary); }
+  .book-summary li.part:first-child { margin-top: 0; }
+  .book-summary li.pending { color: var(--text-muted); }
+  .nav-pending { font-size: .78rem; color: var(--text-muted); padding: 4px 12px; }
+  details { margin: 12px 0 4px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 8px; }
+  .chapter-foot { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border-color); }
+  .chapter-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  .chapter-nav a { font-weight: 600; text-decoration: none; }
   .nav-item.trilha-item.active { border-left-color: var(--sql-color); }
   .sec-num.pyspark { background: var(--pyspark-bg-strong); color: var(--pyspark-color); }
   .cheat-section .subtitle {
@@ -461,12 +474,12 @@
 <!-- ===== SIDEBAR ===== -->
 <nav class="sidebar" id="sidebar">
   <div class="logo">
-    <span>🧭 DataEng</span> <small>Trilhas · aprender o conceito</small>
+    <span>🧭 DataEng</span> <small>Livro · engenharia de dados na prática</small>
   </div>
   <div class="search-box">
     <div class="search-wrapper">
       <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" placeholder="Buscar lição..." oninput="filterNav()">
+      <input type="text" id="searchInput" placeholder="Buscar capítulo..." oninput="filterNav()">
       <button class="clear-btn" id="clearSearchBtn" onclick="document.getElementById('searchInput').value=''; filterNav();">&times;</button>
     </div>
   </div>
@@ -474,9 +487,9 @@
     <div class="nav-section-title">← <a href="index.html" style="color:inherit;text-decoration:none;">Voltar ao Hub</a></div>
   </div>
   <div class="nav-section">
-    <div class="nav-section-title"><span>Trilhas</span> <span class="badge">0</span></div>
-    {{ SIDEBAR_TRILHAS }}
+    <a class="nav-item" href="#home"><span class="num">☰</span>Sumário</a>
   </div>
+  {{ SIDEBAR_TRILHAS }}
   <div class="sidebar-footer">
     <a href="#home" style="color:var(--text-muted);font-size:.72rem;">↑ Voltar ao topo</a>
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
@@ -491,23 +504,30 @@
 <!-- ===== HOME ===== -->
 <section id="home">
   <div class="home-hero">
-    <h1>Trilhas de <span class="sql">aprendizado</span></h1>
-    <p>Lições para entender o conceito antes de consultar a referência. Cada lição segue o framework: problema, modelo mental, exemplo para prever, quebrar de propósito, erros comuns e checagem — e termina apontando para o cheatsheet e os desafios do tema.</p>
+    <h1>Engenharia de dados <span class="sql">na prática</span></h1>
+    <p>Um livro para abrir e ir seguindo, capítulo a capítulo. Cada capítulo explica o conceito com um exemplo para você prever, mostra como quebrar de propósito, lista os erros comuns e termina com a checagem (com respostas) e a prática da semana no plano.</p>
+    <p><a class="start-btn" href="#trilha-01">Começar pelo capítulo 1 →</a></p>
   </div>
   <div class="home-cards">
     <div class="home-card">
-      <h3><span class="icon">🧭</span> Como usar</h3>
-      <ul>
-        <li><span class="num">1</span> Leia a lição e <strong>preveja</strong> cada resultado antes de rodar.</li>
-        <li><span class="num">2</span> Rode os exemplos e os casos de borda em um notebook com dados fictícios.</li>
-        <li><span class="num">3</span> Responda a checagem com suas palavras, sem consultar.</li>
-        <li><span class="num">4</span> Pratique nos desafios linkados e use o <a href="cheatsheets.html">cheatsheet</a> como consulta.</li>
+      <h3><span class="icon">📚</span> Sumário <span class="tag sql-tag">{{ TOTAL_TRILHAS }}</span></h3>
+      <ul class="book-summary">
+        {{ HOME_TRILHAS }}
       </ul>
     </div>
     <div class="home-card">
-      <h3><span class="icon">📚</span> Lições <span class="tag sql-tag">{{ TOTAL_TRILHAS }}</span></h3>
+      <h3><span class="icon">🧭</span> Como estudar cada capítulo</h3>
       <ul>
-        {{ HOME_TRILHAS }}
+        <li><span class="num">1</span> Leia e <strong>preveja</strong> cada resultado antes de rodar.</li>
+        <li><span class="num">2</span> Rode os exemplos e os "quebre de propósito" num notebook com dados fictícios.</li>
+        <li><span class="num">3</span> Responda a checagem sem consultar; depois abra as respostas.</li>
+        <li><span class="num">4</span> Feche com a evidência de "Na prática" e os desafios do capítulo.</li>
+      </ul>
+      <h3 style="margin-top:18px"><span class="icon">📎</span> Apêndices</h3>
+      <ul>
+        <li><a href="cheatsheets.html">Cheatsheets</a>: consulta rápida de sintaxe e cuidados</li>
+        <li><a href="desafio.html">Desafio do Dia</a>: repetição diária, 10–15 min</li>
+        <li><a href="plano-12-semanas.html">Plano de 12 semanas</a> e <a href="plano_12_meses_engenheiro_dados.html">plano de 12 meses</a></li>
       </ul>
     </div>
   </div>
@@ -517,7 +537,7 @@
 
 <footer>
   <p>Data Engineering Playbook — <a href="https://github.com/thiagosousacruz/dep">GitHub</a></p>
-  <p>Conteúdo gerado automaticamente de 03_trilhas/.</p>
+  <p>Conteúdo gerado automaticamente de 03_trilhas/ (ordem em _livro.json).</p>
 </footer>
 
 </main>

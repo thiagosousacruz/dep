@@ -79,6 +79,17 @@ Com AQE ligado (padrão no Databricks), o plano final pode mostrar `AdaptiveSpar
 4. Por que há dois `HashAggregate` em um `groupBy` simples?
 5. Em que situação um join não precisa embaralhar a tabela grande?
 
+<details markdown="1">
+<summary>Respostas</summary>
+
+1. Transformações só descrevem o plano (avaliação preguiçosa). Um job só nasce quando uma **ação** (`count`, `show`, `write`...) pede o resultado.
+2. É o nó do plano que redistribui linhas pela rede (shuffle) para juntar as mesmas chaves. Como cada partição de saída depende de todas as de entrada, o stage anterior precisa terminar antes do próximo começar.
+3. Narrow: `select`, `filter`, `withColumn`. Wide: `groupBy`, `join` sem broadcast, `distinct`, `orderBy`, `repartition`.
+4. Um parcial antes do shuffle (cada partição agrega localmente) e um final depois (combina os parciais). Isso reduz o volume que trafega.
+5. Quando um lado é pequeno o bastante para broadcast: ele é copiado para cada executor e a tabela grande não é embaralhada (`BroadcastHashJoin`).
+
+</details>
+
 ## Próximos passos
 
 - **Consulta:** [Transformações e ações](../01_cheatsheets/02_pyspark/01_fundamentos-dags-sql.md#transformacoes-e-acoes) · [Diagnóstico antes da otimização](../01_cheatsheets/02_pyspark/13_performance-e-arquitetura.md#diagnostico-antes-da-otimizacao) · [Shuffle, skew e spill](../01_cheatsheets/01_sql/12_performance-tuning.md#shuffle-skew-e-spill)

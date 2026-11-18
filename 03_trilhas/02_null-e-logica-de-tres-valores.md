@@ -84,6 +84,17 @@ clientes.join(bloqueados, "id", "left_anti")                                 # e
 4. Qual a diferença entre `COUNT(*)` e `COUNT(coluna)`?
 5. Quando `coalesce(nota, 0)` é correto e quando distorce o resultado?
 
+<details markdown="1">
+<summary>Respostas</summary>
+
+1. NULL significa "desconhecido". Comparar dois desconhecidos dá desconhecido (UNKNOWN), não verdadeiro. Para comparar com segurança, use `<=>` ou `IS NULL`.
+2. Descarta a linha. O `WHERE` só mantém o que é TRUE; FALSE e UNKNOWN saem.
+3. `x NOT IN (a, NULL)` equivale a `x <> a AND x <> NULL`. A segunda parte é sempre UNKNOWN, então o resultado nunca é TRUE. Use `NOT EXISTS` ou `LEFT ANTI JOIN`.
+4. `COUNT(*)` conta linhas; `COUNT(coluna)` conta só as linhas em que a coluna não é nula.
+5. É correto quando ausente *significa* zero pela regra de negócio, como "sem desconto". Distorce quando significa "não informado": a média cai porque desconhecidos viram zeros.
+
+</details>
+
 ## Próximos passos
 
 - **Consulta:** [NULL em agregações e comparações](../01_cheatsheets/01_sql/04_nulos-e-condicionais.md#null-em-agregacoes-e-comparacoes) · [Filtros: IN, BETWEEN e LIKE](../01_cheatsheets/01_sql/01_sintaxe-basica.md#filtros-in-between-e-like) · [when / otherwise e coalesce no PySpark](../01_cheatsheets/02_pyspark/05_nulos-e-condicionais.md#when-otherwise-e-coalesce)

@@ -111,6 +111,17 @@ WHEN NOT MATCHED AND s.op <> 'D' THEN INSERT (id, valor, seq) VALUES (s.id, s.va
 4. Por que aplicar só o último evento por chave em CDC?
 5. Quando atualizar o watermark: antes ou depois da escrita? Por quê?
 
+<details markdown="1">
+<summary>Respostas</summary>
+
+1. Os dois só olham para frente. Um registro atrasado chega com horário **anterior** ao watermark e fica de fora nos dois casos; o `>=` só resolve o empate exato na borda.
+2. Porque o que foi relido é aplicado com `MERGE` idempotente e não muda nada. A pré-condição é justamente essa: escrita idempotente por chave, nunca `append`.
+3. Deletes (a linha some da origem e não há o que ler) e registros cuja coluna de controle não é atualizada nas mudanças.
+4. Só o último evento representa o estado atual. Aplicar todos os eventos de uma vez gera várias linhas de origem para a mesma chave (o `MERGE` falha) ou um resultado que depende da ordem.
+5. Depois do commit da escrita. Se avançar antes e a carga falhar, os registros daquele intervalo nunca mais serão lidos.
+
+</details>
+
 ## Próximos passos
 
 - **Consulta:** [Merge em SQL](../01_cheatsheets/01_sql/10_delta-dml.md#merge) · [Leitura de arquivos com schema explícito](../01_cheatsheets/02_pyspark/02_leitura-escrita-io.md#arquivos-com-schema-explicito) · [Colunas técnicas úteis no medalhão](../01_cheatsheets/02_pyspark/14_medallion-architecture.md#4-colunas-tecnicas-uteis)

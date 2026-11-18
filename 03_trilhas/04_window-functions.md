@@ -101,6 +101,17 @@ por_dia = Window.partitionBy("loja").orderBy("dia")
 4. Por que `row_number` precisa de desempate para deduplicar?
 5. Por que não dá para usar `row_number()` dentro de `WHERE`?
 
+<details markdown="1">
+<summary>Respostas</summary>
+
+1. Quando você precisa do cálculo do grupo **sem perder as linhas**: ranking, valor anterior, acumulado, participação no total.
+2. `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`. Linhas com o mesmo valor de `x` são "pares" e entram juntas, então o acumulado salta de uma vez nos empates.
+3. Nos empates os dois repetem a posição, mas depois o `rank` pula posições (1, 2, 2, 4) e o `dense_rank` não pula (1, 2, 2, 3).
+4. Sem desempate, linhas com o mesmo valor de ordenação recebem 1 e 2 de forma arbitrária, e a linha "mantida" pode mudar entre execuções.
+5. Porque as janelas são calculadas depois do `WHERE`. Filtre numa subconsulta (ou com `QUALIFY` no Databricks).
+
+</details>
+
 ## Próximos passos
 
 - **Consulta:** [Exemplos em SQL](../01_cheatsheets/01_sql/08_window-functions.md#exemplos) · [Rows versus range](../01_cheatsheets/01_sql/08_window-functions.md#rows-versus-range) · [Deduplicação determinística no PySpark](../01_cheatsheets/02_pyspark/08_window-functions.md#deduplicacao-deterministica) · [Frames e tempo no PySpark](../01_cheatsheets/02_pyspark/08_window-functions.md#frames-e-tempo)

@@ -81,6 +81,17 @@ SELECT loja, count(*) AS n FROM vendas GROUP BY loja ORDER BY n DESC LIMIT 20;
 4. Por que salting não garante partições equilibradas?
 5. Que métrica da Spark UI mostra skew?
 
+<details markdown="1">
+<summary>Respostas</summary>
+
+1. Ler demais (muitos bytes/arquivos, sem pruning), embaralhar demais (muitos `Exchange`, shuffle grande), skew (poucas tasks muito mais lentas que a mediana) e spill/memória (`spill (disk)` nas métricas).
+2. A agregação parcial reduz a chave quente a uma linha por partição antes do shuffle. No join, todas as linhas da chave quente precisam ir para a mesma task.
+3. Junta partições pequenas depois do shuffle (coalesce), divide partições com skew em joins e pode trocar a estratégia de join em tempo de execução.
+4. Ele espalha a chave quente em N pedaços, mas cada pedaço ainda pode ser maior que as chaves comuns, e o hash pode colocar vários pedaços na mesma partição. Diminui o pior caso (no exemplo, de 900 mil para cerca de 240 mil), mas não iguala.
+5. No resumo das tasks do stage: a duração **máxima** (e o shuffle read máximo) muito acima da **mediana**.
+
+</details>
+
 ## Próximos passos
 
 - **Consulta:** [Sequência de diagnóstico](../01_cheatsheets/01_sql/12_performance-tuning.md#sequencia-de-diagnostico) · [Shuffle, skew e spill](../01_cheatsheets/01_sql/12_performance-tuning.md#shuffle-skew-e-spill) · [AQE e partições](../01_cheatsheets/02_pyspark/13_performance-e-arquitetura.md#aqe-e-particoes) · [Skew e salting](../01_cheatsheets/02_pyspark/13_performance-e-arquitetura.md#skew-e-salting)
