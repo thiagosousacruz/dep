@@ -1,5 +1,7 @@
 # Performance Tuning e Leitura de Planos
 
+> **Aprenda o conceito:** trilha [Como o Spark executa seu código](../../03_trilhas/01_como-o-spark-executa.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## Princípio
 
 Otimização começa por evidência: plano físico, métricas da execução, volume lido, shuffle, skew e spill. Evite otimizar apenas pela aparência da consulta.

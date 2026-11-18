@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trilhas — DataEng Playbook</title>
+<meta name="description" content="Base de conhecimento consolidada com guias de referência rápida para Databricks/Spark SQL e PySpark.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ===== DESIGN TOKENS ===== */
+  :root {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f1f5f9;
+    --bg-sidebar: rgba(15, 23, 42, 0.97);
+    --bg-card: rgba(255, 255, 255, 0.7);
+    --bg-card-hover: rgba(255, 255, 255, 0.9);
+    --bg-code: #0f172a;
+    --bg-code-header: linear-gradient(135deg, #1e293b, #0f172a);
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --text-inverse: #f1f5f9;
+    --text-code: #e2e8f0;
+    --border-color: rgba(148, 163, 184, 0.2);
+    --border-card: rgba(148, 163, 184, 0.15);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.08);
+    --shadow-glow-sql: 0 0 20px rgba(14,165,233,0.1);
+    --shadow-glow-pyspark: 0 0 20px rgba(139,92,246,0.1);
+    --accent: #0ea5e9;
+    --accent-hover: #0284c7;
+    --accent2: #8b5cf6;
+    --accent2-hover: #7c3aed;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --sql-color: #0ea5e9;
+    --sql-bg: rgba(14,165,233,0.08);
+    --sql-bg-strong: rgba(14,165,233,0.15);
+    --pyspark-color: #8b5cf6;
+    --pyspark-bg: rgba(139,92,246,0.08);
+    --pyspark-bg-strong: rgba(139,92,246,0.15);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --blur: 16px;
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    --sidebar-width: 300px;
+    --inline-code-bg: #f1f5f9;
+    --inline-code-color: #0f172a;
+    --alert-info-bg: #eff6ff;
+    --alert-info-border: var(--info);
+    --alert-info-text: #1e40af;
+    --alert-warn-bg: #fffbeb;
+    --alert-warn-border: var(--warning);
+    --alert-warn-text: #92400e;
+    --alert-danger-bg: #fef2f2;
+    --alert-danger-border: var(--danger);
+    --alert-danger-text: #991b1b;
+    --alert-success-bg: #f0fdf4;
+    --alert-success-border: var(--success);
+    --alert-success-text: #166534;
+    --scrollbar-thumb: rgba(148,163,184,0.3);
+    --scrollbar-track: transparent;
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: #0b0f19;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1e293b;
+    --bg-sidebar: rgba(7, 11, 20, 0.97);
+    --bg-card: rgba(30, 41, 59, 0.5);
+    --bg-card-hover: rgba(30, 41, 59, 0.75);
+    --bg-code: #020617;
+    --bg-code-header: linear-gradient(135deg, #1e293b, #0f172a);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-inverse: #0f172a;
+    --text-code: #e2e8f0;
+    --border-color: rgba(148, 163, 184, 0.1);
+    --border-card: rgba(148, 163, 184, 0.08);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+    --shadow-glow-sql: 0 0 30px rgba(14,165,233,0.15);
+    --shadow-glow-pyspark: 0 0 30px rgba(139,92,246,0.15);
+    --inline-code-bg: rgba(30, 41, 59, 0.8);
+    --inline-code-color: #e2e8f0;
+    --alert-info-bg: rgba(59,130,246,0.1);
+    --alert-info-text: #93c5fd;
+    --alert-warn-bg: rgba(245,158,11,0.1);
+    --alert-warn-text: #fcd34d;
+    --alert-danger-bg: rgba(239,68,68,0.1);
+    --alert-danger-text: #fca5a5;
+    --alert-success-bg: rgba(16,185,129,0.1);
+    --alert-success-text: #6ee7b7;
+    --scrollbar-thumb: rgba(148,163,184,0.15);
+  }
+
+  /* ===== BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--text-primary); background: var(--bg-primary); line-height: 1.7;
+    display: flex; min-height: 100vh;
+    transition: background var(--transition-smooth), color var(--transition-smooth);
+  }
+  a { color: var(--accent); text-decoration: none; transition: color var(--transition-fast); }
+  a:hover { color: var(--accent-hover); }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* ===== PROGRESS BAR ===== */
+  .progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px; z-index: 9999;
+    background: linear-gradient(90deg, var(--sql-color), var(--pyspark-color));
+    width: 0%; transition: width 0.1s linear;
+    box-shadow: 0 0 10px var(--sql-color);
+  }
+
+  /* ===== SIDEBAR ===== */
+  nav.sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-width);
+    background: var(--bg-sidebar);
+    backdrop-filter: blur(var(--blur));
+    -webkit-backdrop-filter: blur(var(--blur));
+    color: #cbd5e1; overflow-y: auto;
+    z-index: 100; display: flex; flex-direction: column;
+    border-right: 1px solid var(--border-color);
+    transition: transform var(--transition-smooth);
+  }
+  nav.sidebar .logo {
+    padding: 1.4rem 1.2rem; font-size: 1rem; font-weight: 700;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  }
+  nav.sidebar .logo span { 
+    background: linear-gradient(135deg, var(--sql-color), var(--pyspark-color));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  nav.sidebar .logo small { font-weight: 400; font-size: .72rem; color: var(--text-muted); width: 100%; }
+
+  /* Search */
+  nav.sidebar .search-box {
+    padding: .75rem 1rem; border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .search-wrapper {
+    position: relative; display: flex; align-items: center;
+  }
+  .search-wrapper .search-icon {
+    position: absolute; left: .7rem;
+    color: var(--text-muted); font-size: .85rem; pointer-events: none;
+  }
+  .search-wrapper input {
+    width: 100%; padding: .55rem .75rem .55rem 2.2rem;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: var(--radius-md);
+    background: rgba(255,255,255,.04); color: #fff;
+    font-size: .82rem; font-family: inherit; outline: none;
+    transition: all var(--transition-fast);
+  }
+  .search-wrapper input::placeholder { color: #4b5563; }
+  .search-wrapper input:focus {
+    border-color: var(--accent);
+    background: rgba(255,255,255,.07);
+    box-shadow: 0 0 0 3px rgba(14,165,233,0.1);
+  }
+  .search-wrapper .clear-btn {
+    position: absolute; right: .6rem;
+    background: none; border: none; color: var(--text-muted);
+    cursor: pointer; font-size: 1.1rem; line-height: 1;
+    display: none; padding: 2px;
+    transition: color var(--transition-fast);
+  }
+  .search-wrapper .clear-btn:hover { color: #fff; }
+
+  /* Sidebar Theme Toggle */
+  .sidebar-footer {
+    padding: .75rem 1rem;
+    border-top: 1px solid rgba(255,255,255,.06);
+    margin-top: auto;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .theme-toggle {
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+    color: #cbd5e1; border-radius: var(--radius-md);
+    padding: .4rem .65rem; cursor: pointer; font-size: .85rem;
+    transition: all var(--transition-fast);
+    display: flex; align-items: center; gap: .35rem;
+  }
+  .theme-toggle:hover { background: rgba(255,255,255,.12); color: #fff; }
+  .theme-toggle .label { font-size: .7rem; font-weight: 500; }
+
+  /* Nav Section */
+  .nav-section { padding: .15rem 0; }
+  .nav-section-title {
+    padding: .75rem 1rem .35rem; font-size: .68rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted);
+    cursor: default; display: flex; align-items: center; gap: .5rem;
+  }
+  .nav-section-title .badge {
+    font-size: .6rem;
+    background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+    padding: .15rem .55rem; border-radius: 20px;
+    font-weight: 500; text-transform: none; letter-spacing: 0;
+  }
+  .nav-item {
+    display: block; padding: .45rem 1rem .45rem 1.8rem;
+    font-size: .82rem; color: #94a3b8; cursor: pointer;
+    transition: all var(--transition-fast);
+    border-left: 3px solid transparent;
+    position: relative;
+    text-decoration: none;
+  }
+  .nav-item:hover {
+    background: rgba(255,255,255,.04); color: #e2e8f0;
+    text-decoration: none;
+  }
+  .nav-item.active {
+    color: #fff; background: rgba(14,165,233,.08);
+    border-left-color: var(--accent);
+  }
+  .nav-item.sql-item.active { border-left-color: var(--sql-color); background: rgba(14,165,233,.06); }
+  .nav-item.pyspark-item.active { border-left-color: var(--pyspark-color); background: rgba(139,92,246,.06); }
+  .nav-item .num { color: var(--text-muted); font-size: .68rem; margin-right: .4rem; font-weight: 500; }
+
+  /* ===== MAIN ===== */
+  main.content {
+    margin-left: var(--sidebar-width); flex: 1; min-height: 100vh;
+    padding: 2.5rem 3rem 4rem; max-width: 1000px;
+    transition: margin-left var(--transition-smooth);
+  }
+
+  /* ===== HOME ===== */
+  section[id] { scroll-margin-top: 1.5rem; }
+  .home-hero {
+    text-align: center; padding: 3.5rem 0 2.5rem;
+    border-bottom: 1px solid var(--border-color); margin-bottom: 2.5rem;
+    position: relative;
+  }
+  .home-hero::after {
+    content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+    width: 80px; height: 3px;
+    background: linear-gradient(90deg, var(--sql-color), var(--pyspark-color));
+    border-radius: 2px;
+  }
+  .home-hero h1 {
+    font-size: 2.4rem; font-weight: 800; margin-bottom: .6rem;
+    letter-spacing: -0.02em;
+  }
+  .home-hero h1 span.sql { color: var(--sql-color); }
+  .home-hero h1 span.pyspark { color: var(--pyspark-color); }
+  .home-hero p { color: var(--text-secondary); max-width: 560px; margin: 0 auto; font-size: 1rem; line-height: 1.7; }
+  .home-cards {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0;
+  }
+  .home-card {
+    background: var(--bg-card); border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg); padding: 1.5rem;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: transform var(--transition-bounce), box-shadow var(--transition-smooth), background var(--transition-smooth);
+  }
+  .home-card:hover {
+    transform: translateY(-4px);
+    background: var(--bg-card-hover);
+    box-shadow: var(--shadow-lg);
+  }
+  .home-card h3 { font-size: 1.05rem; margin-bottom: .75rem; display: flex; align-items: center; gap: .5rem; }
+  .home-card h3 .icon { margin-right: 0; }
+  .home-card .tag {
+    display: inline-block; font-size: .62rem; padding: .2rem .6rem;
+    border-radius: 20px; font-weight: 600;
+  }
+  .tag.sql-tag { background: var(--sql-bg-strong); color: var(--sql-color); }
+  .tag.pyspark-tag { background: var(--pyspark-bg-strong); color: var(--pyspark-color); }
+  .home-card ul { list-style: none; padding: 0; }
+  .home-card li { padding: .3rem 0; font-size: .85rem; }
+  .home-card li a { color: var(--text-primary); transition: color var(--transition-fast); }
+  .home-card li a:hover { color: var(--accent); }
+  .home-card li .num { color: var(--text-muted); font-size: .72rem; font-weight: 500; }
+
+  /* ===== CHEAT SECTION ===== */
+  .cheat-section {
+    background: var(--bg-card); border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg); padding: 2rem 2.25rem; margin-bottom: 2rem;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: box-shadow var(--transition-smooth), background var(--transition-smooth);
+    /* Fade-in animation */
+    opacity: 0; transform: translateY(24px);
+    animation: none;
+  }
+  .cheat-section.visible {
+    animation: fadeInUp 0.5s var(--transition-smooth) forwards;
+  }
+  @keyframes fadeInUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .cheat-section:hover {
+    box-shadow: var(--shadow-md);
+  }
+  .cheat-section h2 {
+    font-size: 1.45rem; font-weight: 700; margin-bottom: .3rem;
+    display: flex; align-items: center; gap: .6rem;
+    letter-spacing: -0.01em;
+  }
+  .cheat-section h2 .sec-num {
+    font-size: .72rem; font-weight: 600;
+    padding: .2rem .65rem; border-radius: 20px;
+  }
+  .sec-num.sql { background: var(--sql-bg-strong); color: var(--sql-color); }
+  .sec-num.trilha { background: var(--sql-bg-strong); color: var(--sql-color); }
+  .nav-item.trilha-item.active { border-left-color: var(--sql-color); }
+  .sec-num.pyspark { background: var(--pyspark-bg-strong); color: var(--pyspark-color); }
+  .cheat-section .subtitle {
+    color: var(--text-secondary); font-size: .88rem; margin-bottom: 1.25rem;
+    padding-bottom: .75rem; border-bottom: 1px solid var(--border-color);
+  }
+  .cheat-section h3 {
+    font-size: 1.05rem; font-weight: 600; margin: 1.75rem 0 .75rem;
+    color: var(--text-primary);
+  }
+  .cheat-section h4 {
+    font-size: .95rem; font-weight: 600; margin: 1.25rem 0 .5rem; color: var(--text-secondary);
+  }
+  .cheat-section p { margin-bottom: .75rem; color: var(--text-secondary); }
+  .cheat-section ul, .cheat-section ol { margin: 0 0 1rem 1.5rem; color: var(--text-secondary); }
+  .cheat-section li { margin-bottom: .3rem; }
+  .cheat-section strong { font-weight: 600; color: var(--text-primary); }
+  .cheat-section code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: .82em; background: var(--inline-code-bg); color: var(--inline-code-color);
+    padding: .15rem .45rem; border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+  }
+
+  /* ===== ALERTS ===== */
+  .alert {
+    padding: 1rem 1.25rem; border-radius: var(--radius-md); margin: 1rem 0;
+    font-size: .9rem; border-left: 4px solid; line-height: 1.6;
+  }
+  .alert.info { background: var(--alert-info-bg); border-color: var(--info); color: var(--alert-info-text); }
+  .alert.warn { background: var(--alert-warn-bg); border-color: var(--warning); color: var(--alert-warn-text); }
+  .alert.danger { background: var(--alert-danger-bg); border-color: var(--danger); color: var(--alert-danger-text); }
+  .alert.success { background: var(--alert-success-bg); border-color: var(--success); color: var(--alert-success-text); }
+  .alert strong { display: block; margin-bottom: .25rem; }
+
+  /* ===== CODE BLOCKS ===== */
+  .code-wrap {
+    position: relative; margin: 1rem 0; border-radius: var(--radius-md);
+    overflow: hidden; border: 1px solid var(--border-color);
+    transition: box-shadow var(--transition-smooth);
+  }
+  .code-wrap:hover { box-shadow: var(--shadow-md); }
+  .code-wrap .code-lang {
+    display: inline-block; font-size: .68rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em;
+    padding: .25rem .8rem; border-radius: 0 0 var(--radius-sm) 0;
+  }
+  .code-wrap .code-lang.sql-lang { background: var(--sql-bg-strong); color: var(--sql-color); }
+  .code-wrap .code-lang.pyspark-lang { background: var(--pyspark-bg-strong); color: var(--pyspark-color); }
+  .code-wrap .copy-btn {
+    position: absolute; top: .5rem; right: .5rem;
+    background: rgba(255,255,255,.06); color: #94a3b8;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: var(--radius-sm); padding: .3rem .7rem;
+    cursor: pointer; font-size: .72rem; font-family: inherit;
+    transition: all var(--transition-fast); z-index: 10;
+    backdrop-filter: blur(4px);
+  }
+  .code-wrap .copy-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+  .code-wrap .copy-btn.copied {
+    background: var(--success); color: #fff; border-color: var(--success);
+  }
+  pre {
+    background: var(--bg-code); color: var(--text-code);
+    padding: 1.25rem 1.5rem; overflow-x: auto;
+    font-size: .83rem; line-height: 1.65;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    tab-size: 4; margin: 0;
+  }
+
+  /* ===== BACK TO TOP ===== */
+  .back-top {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: linear-gradient(135deg, var(--sql-color), var(--pyspark-color));
+    color: #fff; width: 44px; height: 44px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; border: none; font-size: 1.1rem;
+    box-shadow: 0 4px 16px rgba(14,165,233,0.3);
+    transition: all var(--transition-smooth);
+    z-index: 50; opacity: 0; pointer-events: none;
+    transform: translateY(10px);
+  }
+  .back-top.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .back-top:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(14,165,233,0.4); }
+
+  /* ===== FOOTER ===== */
+  footer {
+    text-align: center; color: var(--text-muted); font-size: .8rem;
+    padding: 2.5rem 0 1rem; border-top: 1px solid var(--border-color); margin-top: 2.5rem;
+  }
+  footer a { color: var(--accent); }
+
+  .filter-empty {
+    padding: 1rem; color: var(--text-muted); font-size: .85rem; text-align: center;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    nav.sidebar { width: 260px; }
+    main.content { margin-left: 260px; padding: 1.5rem; }
+  }
+  @media (max-width: 700px) {
+    nav.sidebar {
+      transform: translateX(-100%);
+      width: 280px;
+    }
+    nav.sidebar.open { transform: translateX(0); }
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0; z-index: 99;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+    }
+    .sidebar-overlay.show { display: block; }
+    main.content { margin-left: 0; padding: 1.25rem; }
+    body { flex-direction: column; }
+    .sidebar-toggle {
+      display: flex !important; position: fixed; top: .75rem; left: .75rem; z-index: 200;
+      background: var(--bg-sidebar); color: #fff; border: 1px solid var(--border-color);
+      padding: .5rem .7rem; border-radius: var(--radius-md);
+      cursor: pointer; font-size: 1.1rem;
+      backdrop-filter: blur(var(--blur));
+    }
+    .home-cards { grid-template-columns: 1fr; }
+    .cheat-section { padding: 1.5rem; }
+    main.content { padding-top: 3.5rem; }
+  }
+  .sidebar-toggle { display: none; }
+</style>
+</head>
+<body>
+<!-- GERADO POR build_docs.py A PARTIR DOS ARQUIVOS MARKDOWN. NAO EDITE cheatsheets.html. -->
+
+<div class="progress-bar" id="progressBar"></div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">☰</button>
+
+<!-- ===== SIDEBAR ===== -->
+<nav class="sidebar" id="sidebar">
+  <div class="logo">
+    <span>🧭 DataEng</span> <small>Trilhas · aprender o conceito</small>
+  </div>
+  <div class="search-box">
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Buscar lição..." oninput="filterNav()">
+      <button class="clear-btn" id="clearSearchBtn" onclick="document.getElementById('searchInput').value=''; filterNav();">&times;</button>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">← <a href="index.html" style="color:inherit;text-decoration:none;">Voltar ao Hub</a></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title"><span>Trilhas</span> <span class="badge">3</span></div>
+    <a class="nav-item trilha-item" href="#trilha-01" data-search="como o spark executa seu código"><span class="num">01</span>Como o Spark executa seu código</a>
+    <a class="nav-item trilha-item" href="#trilha-02" data-search="grão e cardinalidade  por que joins multiplicam linhas"><span class="num">02</span>Grão e cardinalidade: por que joins multiplicam linhas</a>
+    <a class="nav-item trilha-item" href="#trilha-03" data-search="window functions  calcular sem perder linhas"><span class="num">03</span>Window functions: calcular sem perder linhas</a>
+  </div>
+  <div class="sidebar-footer">
+    <a href="#home" style="color:var(--text-muted);font-size:.72rem;">↑ Voltar ao topo</a>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+      <span id="themeIcon">☀️</span> <span class="label" id="themeLabel">Light</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ===== MAIN ===== -->
+<main class="content">
+
+<!-- ===== HOME ===== -->
+<section id="home">
+  <div class="home-hero">
+    <h1>Trilhas de <span class="sql">aprendizado</span></h1>
+    <p>Lições para entender o conceito antes de consultar a referência. Cada lição segue o framework: problema, modelo mental, exemplo para prever, quebrar de propósito, erros comuns e checagem — e termina apontando para o cheatsheet e os desafios do tema.</p>
+  </div>
+  <div class="home-cards">
+    <div class="home-card">
+      <h3><span class="icon">🧭</span> Como usar</h3>
+      <ul>
+        <li><span class="num">1</span> Leia a lição e <strong>preveja</strong> cada resultado antes de rodar.</li>
+        <li><span class="num">2</span> Rode os exemplos e os casos de borda em um notebook com dados fictícios.</li>
+        <li><span class="num">3</span> Responda a checagem com suas palavras, sem consultar.</li>
+        <li><span class="num">4</span> Pratique nos desafios linkados e use o <a href="cheatsheets.html">cheatsheet</a> como consulta.</li>
+      </ul>
+    </div>
+    <div class="home-card">
+      <h3><span class="icon">📚</span> Lições <span class="tag sql-tag">3 lições</span></h3>
+      <ul>
+        <li><span class="num">01</span> <a href="#trilha-01">Como o Spark executa seu código</a></li>
+        <li><span class="num">02</span> <a href="#trilha-02">Grão e cardinalidade: por que joins multiplicam linhas</a></li>
+        <li><span class="num">03</span> <a href="#trilha-03">Window functions: calcular sem perder linhas</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+  <section id="trilha-01" class="cheat-section">
+<h2><span class="sec-num trilha">Trilha 01</span> Como o Spark executa seu código</h2>
+<blockquote>
+<p><strong>Objetivo:</strong> prever quando o Spark realmente processa dados, onde há shuffle e ler o essencial de um <code>explain</code>. <strong>Tempo:</strong> 1–2 h. <strong>Pré-requisitos:</strong> saber criar um DataFrame e usar <code>select</code>/<code>filter</code>/<code>groupBy</code>.</p>
+</blockquote>
+<h2 id="trilha-01-o-problema">O problema</h2>
+<p>Uma célula com dez transformações termina em milissegundos; depois um <code>count()</code> leva dez minutos. Outra pessoa "otimiza" trocando a ordem dos filtros e nada muda. Sem um modelo de execução, performance vira tentativa e erro e a depuração engana: o erro aparece na ação, não na linha que o causou.</p>
+<h2 id="trilha-01-modelo-mental">Modelo mental</h2>
+<ul>
+<li><strong>DataFrame é uma receita, não um resultado.</strong> Transformações (<code>select</code>, <code>filter</code>, <code>join</code>, <code>groupBy</code>) só descrevem o plano. Nada é lido até uma <strong>ação</strong> (<code>count</code>, <code>show</code>, <code>collect</code>, <code>write</code>, <code>display</code>).</li>
+<li><strong>O Catalyst reescreve a receita.</strong> Antes de executar, o otimizador empurra filtros para perto da leitura, poda colunas e escolhe estratégias de join. Por isso reordenar filtros à mão raramente muda algo.</li>
+<li><strong>Ação → job → stages → tasks.</strong> Cada ação gera um ou mais jobs. Um job é cortado em <strong>stages</strong> nas fronteiras de <strong>shuffle</strong>; cada stage roda uma <strong>task por partição</strong>.</li>
+<li><strong>Shuffle é redistribuir linhas pela rede</strong> para que linhas com a mesma chave fiquem juntas. Transformações <em>narrow</em> (<code>select</code>, <code>filter</code>, <code>withColumn</code>) não precisam disso; <em>wide</em> (<code>groupBy</code>, <code>join</code> sem broadcast, <code>distinct</code>, <code>orderBy</code>, <code>repartition</code>) precisam.</li>
+</ul>
+<div class="code-wrap"><div class="code-lang trilha-lang">TEXT</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-text">read → filter → withColumn ║ shuffle ║ groupBy/agg ║ shuffle ║ orderBy → write
+└──────── stage 1 ────────┘           └── stage 2 ──┘          └─ stage 3 ─┘
+         (narrow)          Exchange         (wide)    Exchange
+</code></pre></div>
+<p>No plano físico, cada shuffle aparece como um nó <strong><code>Exchange</code></strong>. Contar <code>Exchange</code> é a primeira leitura útil de um <code>explain</code>.</p>
+<h2 id="trilha-01-exemplo-para-prever">Exemplo para prever</h2>
+<p>Antes de rodar, responda: (1) qual linha dispara processamento? (2) quantos <code>Exchange</code> o plano terá? (3) quantas etapas de agregação?</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
+
+vendas = spark.range(1_000_000).withColumn("loja", F.col("id") % 10)
+da_loja_3 = vendas.filter(F.col("loja") == 3)
+resumo = da_loja_3.groupBy("loja").agg(F.count("*").alias("qtd"))
+
+resumo.explain("formatted")   # não processa dados, só mostra o plano
+resumo.show()                 # ação: agora sim roda
+</code></pre></div>
+<p>Resultado esperado:</p>
+<ul>
+<li>Só o <code>show()</code> processa dados; as três atribuições e o <code>explain</code> são instantâneos.</li>
+<li>Um <code>Exchange hashpartitioning(loja, ...)</code>: o <code>groupBy</code> precisa juntar a mesma loja.</li>
+<li><strong>Dois</strong> <code>HashAggregate</code>: um parcial antes do shuffle (cada partição conta localmente) e um final depois. Isso reduz o volume que trafega.</li>
+<li>O <code>Filter</code> aparece antes do <code>Exchange</code>: filtrar cedo diminui o shuffle.</li>
+</ul>
+<p>Com AQE ligado (padrão no Databricks), o plano final pode mostrar <code>AdaptiveSparkPlan</code> e ajustes feitos em tempo de execução; o número de <code>Exchange</code> continua sendo o ponto de partida.</p>
+<h2 id="trilha-01-quebre-de-proposito">Quebre de propósito</h2>
+<ol>
+<li><strong>Duas ações, dois jobs.</strong> Rode <code>resumo.count()</code> duas vezes e observe na Spark UI: o trabalho é refeito. Sem cache, cada ação recalcula a receita inteira.</li>
+<li><strong>Acrescente ordenação.</strong> <code>resumo.orderBy("qtd").explain()</code> — surge um segundo <code>Exchange</code>, agora <code>rangepartitioning</code>. Ordenação global também é shuffle.</li>
+<li><strong>Broadcast × sort-merge.</strong> Crie <code>lojas = spark.createDataFrame([(3, "Centro")], "loja INT, nome STRING")</code> e compare os planos de <code>vendas.join(F.broadcast(lojas), "loja")</code> e <code>vendas.join(lojas.hint("merge"), "loja")</code>. O primeiro vira <code>BroadcastHashJoin</code>, sem <code>Exchange hashpartitioning</code>: a tabela pequena é copiada para cada executor. O segundo vira <code>SortMergeJoin</code>, com <code>Exchange</code> dos dois lados. Sem o hint, o Spark só escolhe broadcast sozinho quando conhece o tamanho da tabela, o que é comum em tabelas Delta e menos garantido em DataFrames criados no notebook.</li>
+<li><strong>UDF Python bloqueia otimização.</strong> Aplique <code>F.udf(lambda x: x * 2, "long")</code> em <code>id</code> e filtre pelo resultado. O plano ganha <code>BatchEvalPython</code>/<code>ArrowEvalPython</code> e o filtro não pode mais ser empurrado para a leitura.</li>
+<li><strong>O erro aparece longe da causa.</strong> Faça <code>withColumn("x", F.col("id").cast("int") / F.lit(0))</code> com ANSI ligado: a célula da transformação passa; o erro só surge no <code>show()</code>.</li>
+</ol>
+<h2 id="trilha-01-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
+<ul>
+<li><strong>"A célula rodou rápido, então está certo."</strong> → transformações não executam. Confirme com uma ação controlada (<code>count</code> em amostra, <code>limit</code> + <code>show</code>).</li>
+<li><strong><code>count()</code> espalhado para depurar</strong> → cada um é um job completo. Use em pontos de checagem deliberados e remova depois.</li>
+<li><strong><code>collect()</code>/<code>toPandas()</code> em tabela grande</strong> → traz tudo para o driver e pode derrubá-lo. Agregue ou limite antes.</li>
+<li><strong>Otimizar sem olhar o plano</strong> → leia <code>explain("formatted")</code> e a Spark UI/Query Profile antes: conte <code>Exchange</code>, procure estratégia de join e UDFs.</li>
+<li><strong>Achar que <code>show()</code> mede o custo total</strong> → ele pode processar só o necessário para exibir as primeiras linhas. Para medir, use a ação real (ex.: <code>write</code>).</li>
+</ul>
+<h2 id="trilha-01-cheque-seu-entendimento">Cheque seu entendimento</h2>
+<ol>
+<li>Por que três transformações seguidas não geram nenhum job?</li>
+<li>O que é um <code>Exchange</code> e por que ele separa stages?</li>
+<li>Dê dois exemplos de transformação narrow e dois de wide.</li>
+<li>Por que há dois <code>HashAggregate</code> em um <code>groupBy</code> simples?</li>
+<li>Em que situação um join não precisa embaralhar a tabela grande?</li>
+</ol>
+<h2 id="trilha-01-proximos-passos">Próximos passos</h2>
+<ul>
+<li><strong>Consulta:</strong> <a href="cheatsheets.html#pyspark-01-transformacoes-e-acoes">Transformações e ações</a> · <a href="cheatsheets.html#pyspark-13-diagnostico-antes-da-otimizacao">Diagnóstico antes da otimização</a> · <a href="cheatsheets.html#sql-12-shuffle-skew-e-spill">Shuffle, skew e spill</a></li>
+<li><strong>Prática:</strong> <a href="desafio.html?id=spk-01-transformacoes-acoes">desafio de transformações e ações</a> · <a href="desafio.html?id=spk-13-diagnostico">desafio de diagnóstico</a> · <a href="desafio.html?id=sql-12-shuffle-skew-spill">desafio de shuffle, skew e spill</a></li>
+<li><strong>Aplicação real:</strong> abra um notebook autorizado que você já usa, rode <code>explain("formatted")</code> na consulta principal e anote: quantos <code>Exchange</code>, que estratégia de join e se há UDF Python. Explique o plano para alguém do time.</li>
+</ul>
+</section>
+
+<section id="trilha-02" class="cheat-section">
+<h2><span class="sec-num trilha">Trilha 02</span> Grão e cardinalidade: por que joins multiplicam linhas</h2>
+<blockquote>
+<p><strong>Objetivo:</strong> declarar o grão de cada tabela antes de cruzar, prever a cardinalidade de um join e provar com contagens que o resultado não duplicou nem perdeu linhas. <strong>Tempo:</strong> 1–2 h. <strong>Pré-requisitos:</strong> <code>JOIN</code>, <code>GROUP BY</code> e <code>COUNT</code>.</p>
+</blockquote>
+<h2 id="trilha-02-o-problema">O problema</h2>
+<p>A receita do mês sai 37% maior que a do relatório oficial. A consulta "parece certa": um <code>JOIN</code> entre vendas e promoções e um <code>SUM(receita)</code>. A causa é quase sempre a mesma: uma das tabelas tinha mais de uma linha por chave e o join <strong>replicou</strong> as vendas. Nenhum erro é lançado; só o número fica errado.</p>
+<h2 id="trilha-02-modelo-mental">Modelo mental</h2>
+<ul>
+<li><strong>Grão</strong> é a frase "uma linha representa ___". Ex.: <em>uma linha por venda</em>, <em>uma linha por produto por dia</em>. Se você não consegue completar a frase, não está pronto para cruzar.</li>
+<li><strong>A chave do grão</strong> é o conjunto de colunas que identifica a linha de forma única. Isso se prova com dados, não se supõe:</li>
+</ul>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT chave1, chave2, count(*) AS n
+FROM tabela
+GROUP BY chave1, chave2
+HAVING count(*) &gt; 1;   -- vazio = a chave é única
+</code></pre></div>
+<ul>
+<li><strong>Cardinalidade do join</strong> depende de quantas linhas cada lado tem <em>por valor da chave do join</em>:</li>
+</ul>
+<div class="code-wrap"><div class="code-lang trilha-lang">TEXT</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-text">esquerda : direita   → linhas por chave no resultado
+   1     :    1      → 1               (seguro)
+   N     :    1      → N               (mantém o grão da esquerda)
+   1     :    N      → N               (muda o grão!)
+   N     :    M      → N × M           (exploding join)
+</code></pre></div>
+<ul>
+<li><strong>Regra prática:</strong> o lado "de enriquecimento" (dimensão, cadastro, de-para) precisa ser único na chave do join. Se não for, resolva antes: deduplique, filtre a vigência ou agregue.</li>
+</ul>
+<h2 id="trilha-02-exemplo-para-prever">Exemplo para prever</h2>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TEMP VIEW vendas AS
+SELECT * FROM VALUES (1, 'P1', 100), (2, 'P1', 50), (3, 'P2', 80) AS t(id_venda, produto, receita);
+
+CREATE OR REPLACE TEMP VIEW categorias AS
+SELECT * FROM VALUES ('P1', 'Calçados'), ('P1', 'Esporte'), ('P2', 'Moda') AS t(produto, categoria);
+
+SELECT count(*) AS linhas, sum(receita) AS receita
+FROM vendas v
+JOIN categorias c USING (produto);
+</code></pre></div>
+<p>Antes de rodar: quantas linhas e qual a receita? A receita real é 230.</p>
+<p>Resultado: <strong>5 linhas e receita 380</strong>. <code>P1</code> tem duas categorias, então as vendas 1 e 2 aparecem duas vezes cada (+150). A tabela <code>categorias</code> não é única em <code>produto</code>: o join é N:M para <code>P1</code>.</p>
+<h2 id="trilha-02-quebre-de-proposito">Quebre de propósito</h2>
+<ol>
+<li><strong>Prove a chave.</strong> Rode o teste de unicidade em <code>categorias</code> por <code>produto</code> e veja <code>P1</code> com <code>n = 2</code>. Esse teste deveria vir <em>antes</em> do join.</li>
+<li><strong>Troque para <code>LEFT JOIN</code> e acrescente <code>P3</code> em vendas</strong> sem categoria. Linhas continuam multiplicadas e agora aparece um <code>NULL</code>: left join preserva a esquerda, mas <strong>não</strong> impede duplicação.</li>
+<li><strong>Resolva de três jeitos</strong> e compare a receita: (a) escolher uma categoria principal com <code>row_number()</code>; (b) agregar as categorias em lista (<code>collect_set</code>) antes do join; (c) usar <code>LEFT SEMI JOIN</code> quando você só precisa filtrar. Qual responde à pergunta de negócio?</li>
+<li><strong>Chave com nulo.</strong> Inclua uma venda com <code>produto = NULL</code> e uma categoria com <code>produto = NULL</code>. Em <code>=</code> elas não se casam (<code>NULL = NULL</code> não é verdadeiro); com <code>&lt;=&gt;</code> se casam. Decida qual comportamento você quer.</li>
+<li><strong>Tipos diferentes.</strong> Mude <code>produto</code> para <code>INT</code> de um lado e <code>'001'</code> do outro. Observe a conversão implícita e linhas que deixam de casar.</li>
+</ol>
+<h2 id="trilha-02-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
+<ul>
+<li><strong>Total maior que o esperado</strong> → join replicou. Compare <code>count(*)</code> e <code>count(DISTINCT chave_do_grao)</code> antes e depois.</li>
+<li><strong>Total menor que o esperado</strong> → <code>INNER JOIN</code> descartou linhas sem correspondência, ou houve nulos e tipos diferentes na chave. Teste com <code>LEFT ANTI JOIN</code> para listar o que se perdeu.</li>
+<li><strong><code>DISTINCT</code> no final para "consertar"</strong> → esconde o sintoma, pode somar errado e custa um shuffle. Corrija o lado não único.</li>
+<li><strong>SCD2 cruzada sem vigência</strong> → toda versão histórica casa com a venda. Filtre <code>data_venda</code> entre <code>inicio_vigencia</code> e <code>fim_vigencia</code>.</li>
+</ul>
+<h2 id="trilha-02-cheque-seu-entendimento">Cheque seu entendimento</h2>
+<ol>
+<li>Complete: "em <code>vendas</code>, uma linha representa ___". Qual é a chave?</li>
+<li>Por que <code>LEFT JOIN</code> não protege contra duplicação?</li>
+<li>Que consulta prova que uma tabela é única em uma chave?</li>
+<li>Quais duas contagens você compara para mostrar que um join manteve o grão?</li>
+<li>Quando <code>LEFT SEMI JOIN</code> é melhor que <code>JOIN</code> + <code>DISTINCT</code>?</li>
+</ol>
+<h2 id="trilha-02-proximos-passos">Próximos passos</h2>
+<ul>
+<li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-07-cardinalidade-e-exploding-join">Cardinalidade e exploding join</a> · <a href="cheatsheets.html#sql-07-quando-usar">Quando usar cada join</a> · <a href="cheatsheets.html#pyspark-07-semi-e-anti-join">Semi e anti join no PySpark</a></li>
+<li><strong>Prática:</strong> <a href="desafio.html?id=sql-07-cardinalidade">desafio de cardinalidade</a> · <a href="desafio.html?id=sql-07-tipos-de-join">desafio de tipos de join</a> · <a href="desafio.html?id=spk-07-semi-anti">desafio de semi e anti join</a></li>
+<li><strong>Aplicação real:</strong> escolha uma consulta autorizada que cruze fato e dimensão. Escreva o grão de cada tabela, prove as chaves e registre as contagens antes e depois do join, como pede o critério de avanço da semana 2 do plano.</li>
+</ul>
+</section>
+
+<section id="trilha-03" class="cheat-section">
+<h2><span class="sec-num trilha">Trilha 03</span> Window functions: calcular sem perder linhas</h2>
+<blockquote>
+<p><strong>Objetivo:</strong> escolher entre <code>GROUP BY</code> e janela, montar <code>PARTITION BY</code> / <code>ORDER BY</code> / frame com intenção e prever o efeito de empates. <strong>Tempo:</strong> 1–2 h. <strong>Pré-requisitos:</strong> <a href="#trilha-02">Grão e cardinalidade</a>.</p>
+</blockquote>
+<h2 id="trilha-03-o-problema">O problema</h2>
+<p>Você precisa da última compra de cada cliente, da variação contra o mês anterior ou de um acumulado. Com <code>GROUP BY</code> as linhas somem: você fica com uma por grupo e perde o detalhe. Com subconsultas correlacionadas o código fica lento e ilegível. Janelas resolvem, mas três detalhes geram resultados silenciosamente errados: empates, frame padrão e ordenação não determinística.</p>
+<h2 id="trilha-03-modelo-mental">Modelo mental</h2>
+<p>Uma window function responde: <strong>para esta linha, olhando para um grupo de linhas relacionadas, qual é o valor?</strong> O número de linhas não muda.</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">TEXT</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-text">func(...) OVER (
+  PARTITION BY loja          -- quem são meus vizinhos (o grupo)
+  ORDER BY dia               -- em que ordem eles estão
+  ROWS BETWEEN 2 PRECEDING   -- quais vizinhos entram no cálculo (frame)
+       AND CURRENT ROW
+)
+</code></pre></div>
+<ul>
+<li><strong>Sem <code>PARTITION BY</code></strong>, a tabela inteira é um grupo só — semântica global e, em volume, uma única partição de processamento.</li>
+<li><strong>Ranking</strong> (<code>row_number</code>, <code>rank</code>, <code>dense_rank</code>) só precisa de ordem; não usa frame.</li>
+<li><strong>Agregados com <code>ORDER BY</code> e sem frame explícito</strong> usam por padrão <code>RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code>, que <strong>inclui todos os empates</strong> da linha atual.</li>
+<li><strong>Ordem determinística:</strong> se o <code>ORDER BY</code> tiver empates, <code>row_number</code> e <code>lag</code> podem mudar entre execuções. Acrescente um desempate (<code>id</code>, timestamp).</li>
+</ul>
+<h2 id="trilha-03-exemplo-para-prever">Exemplo para prever</h2>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TEMP VIEW vendas AS
+SELECT * FROM VALUES
+  ('A', 1, 10), ('A', 2, 20), ('A', 3, 20), ('B', 1, 5)
+AS t(loja, dia, valor);
+
+SELECT loja, dia, valor,
+  row_number() OVER (PARTITION BY loja ORDER BY valor DESC) AS rn,
+  rank()       OVER (PARTITION BY loja ORDER BY valor DESC) AS rk,
+  dense_rank() OVER (PARTITION BY loja ORDER BY valor DESC) AS drk,
+  sum(valor)   OVER (PARTITION BY loja ORDER BY valor
+                     ROWS  BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS soma_rows,
+  sum(valor)   OVER (PARTITION BY loja ORDER BY valor) AS soma_padrao,
+  lag(valor)   OVER (PARTITION BY loja ORDER BY dia)   AS valor_anterior
+FROM vendas
+ORDER BY loja, dia;
+</code></pre></div>
+<p>Preencha a tabela antes de rodar. Resultado esperado:</p>
+<table>
+<thead>
+<tr>
+<th>loja</th>
+<th>dia</th>
+<th>valor</th>
+<th>rn</th>
+<th>rk</th>
+<th>drk</th>
+<th>soma_rows</th>
+<th>soma_padrao</th>
+<th>valor_anterior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>1</td>
+<td>10</td>
+<td>3</td>
+<td>3</td>
+<td>2</td>
+<td>10</td>
+<td>10</td>
+<td>null</td>
+</tr>
+<tr>
+<td>A</td>
+<td>2</td>
+<td>20</td>
+<td>1 ou 2</td>
+<td>1</td>
+<td>1</td>
+<td>30 ou 50</td>
+<td>50</td>
+<td>10</td>
+</tr>
+<tr>
+<td>A</td>
+<td>3</td>
+<td>20</td>
+<td>2 ou 1</td>
+<td>1</td>
+<td>1</td>
+<td>50 ou 30</td>
+<td>50</td>
+<td>20</td>
+</tr>
+<tr>
+<td>B</td>
+<td>1</td>
+<td>5</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>5</td>
+<td>5</td>
+<td>null</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>rank</code> pula posição depois do empate (1, 1, 3); <code>dense_rank</code> não (1, 1, 2).</li>
+<li>Nos dias 2 e 3, <code>rn</code> e <code>soma_rows</code> são <strong>não determinísticos</strong>: o empate em <code>valor</code> não diz quem vem primeiro.</li>
+<li><code>soma_padrao</code> usa <code>RANGE</code>: as duas linhas com 20 entram juntas e ambas mostram 50.</li>
+</ul>
+<h2 id="trilha-03-quebre-de-proposito">Quebre de propósito</h2>
+<ol>
+<li><strong>Desempate.</strong> Troque para <code>ORDER BY valor DESC, dia</code> e confirme que <code>rn</code> e <code>soma_rows</code> ficam estáveis.</li>
+<li><strong>Remova o <code>PARTITION BY</code></strong> do <code>rank</code>. O ranking passa a ser global (B entra na disputa). No plano, aparece um <code>Exchange SinglePartition</code>.</li>
+<li><strong>Nulos.</strong> Insira <code>('A', 4, NULL)</code>. Onde ele cai em <code>ORDER BY valor DESC</code>? Teste <code>NULLS FIRST</code> e <code>NULLS LAST</code>. <code>sum</code> ignora nulos; <code>lag</code> devolve o nulo como valor anterior.</li>
+<li><strong>Parâmetros do <code>lag</code>.</strong> Use <code>lag(valor, 2, 0)</code> e explique cada argumento.</li>
+<li><strong>Média móvel.</strong> Calcule <code>avg(valor) OVER (PARTITION BY loja ORDER BY dia ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)</code>. Nas primeiras linhas o frame tem menos de 3 linhas — a média usa só o que existe.</li>
+</ol>
+<h2 id="trilha-03-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
+<ul>
+<li><strong>Acumulado "pula" ou repete valores</strong> → frame padrão <code>RANGE</code> com empates. Declare <code>ROWS BETWEEN ...</code> explicitamente.</li>
+<li><strong>Deduplicação muda a cada execução</strong> → <code>row_number</code> sem desempate. Inclua uma coluna única no <code>ORDER BY</code>.</li>
+<li><strong>Filtrar pelo resultado da janela no <code>WHERE</code></strong> → não é permitido; o <code>WHERE</code> roda antes. Use <code>QUALIFY</code> (Databricks) ou uma CTE.</li>
+<li><strong>Job lento ou com spill em janela</strong> → partição lógica muito grande (ou ausente). Verifique a distribuição da chave do <code>PARTITION BY</code>.</li>
+</ul>
+<h2 id="trilha-03-cheque-seu-entendimento">Cheque seu entendimento</h2>
+<ol>
+<li>Quando usar janela em vez de <code>GROUP BY</code>?</li>
+<li>Qual é o frame padrão de <code>sum(...) OVER (ORDER BY x)</code> e por que ele surpreende com empates?</li>
+<li>Diferença entre <code>rank</code> e <code>dense_rank</code> em uma frase.</li>
+<li>Por que <code>row_number</code> precisa de desempate para deduplicar?</li>
+<li>Por que não dá para usar <code>row_number()</code> dentro de <code>WHERE</code>?</li>
+</ol>
+<h2 id="trilha-03-proximos-passos">Próximos passos</h2>
+<ul>
+<li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-08-exemplos">Exemplos em SQL</a> · <a href="cheatsheets.html#sql-08-rows-versus-range">Rows versus range</a> · <a href="cheatsheets.html#pyspark-08-deduplicacao-deterministica">Deduplicação determinística no PySpark</a> · <a href="cheatsheets.html#pyspark-08-frames-e-tempo">Frames e tempo no PySpark</a></li>
+<li><strong>Prática:</strong> <a href="desafio.html?id=sql-08-row-number-lag-acumulado">ranking, lag e acumulado</a> · <a href="desafio.html?id=sql-08-rows-range">ROWS vs RANGE</a> · <a href="desafio.html?id=spk-08-dedup-row-number">deduplicação no PySpark</a> · <a href="desafio.html?id=spk-08-frames-tempo">frames por tempo</a></li>
+<li><strong>Aplicação real:</strong> siga os estágios 4 e 5 do <a href="framework_dominio_tecnico.html">framework</a>: aplique em uma métrica autorizada (top-3 por categoria, variação MoM) e explique o frame escolhido para alguém do time.</li>
+</ul>
+</section>
+
+<footer>
+  <p>Data Engineering Playbook — <a href="https://github.com/thiagosousacruz/dep">GitHub</a></p>
+  <p>Conteúdo gerado automaticamente de 03_trilhas/.</p>
+</footer>
+
+</main>
+
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Voltar ao topo">↑</button>
+<script>
+// === Theme Toggle ===
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('playbook-theme', theme);
+  const icon = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+  if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  if (label) label.textContent = theme === 'dark' ? 'Light' : 'Dark';
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  setTheme(current === 'dark' ? 'light' : 'dark');
+}
+// Load saved theme
+(function() {
+  const saved = localStorage.getItem('playbook-theme') || 'dark';
+  setTheme(saved);
+})();
+
+// === Scroll Spy ===
+const sections = document.querySelectorAll("section[id]");
+const navItems = document.querySelectorAll(".nav-item");
+const spyObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navItems.forEach(item => item.classList.remove("active"));
+      const active = document.querySelector(`.nav-item[href="#${entry.target.id}"]`);
+      if (active) active.classList.add("active");
+    }
+  });
+}, { rootMargin: "-20% 0px -70% 0px" });
+sections.forEach(s => spyObserver.observe(s));
+
+// === Fade-in on Scroll ===
+const fadeObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      fadeObserver.unobserve(entry.target);
+    }
+  });
+}, { rootMargin: "0px 0px -60px 0px", threshold: 0.05 });
+document.querySelectorAll('.cheat-section').forEach(s => fadeObserver.observe(s));
+
+// === Progress Bar ===
+const progressBar = document.getElementById('progressBar');
+window.addEventListener('scroll', () => {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  progressBar.style.width = progress + '%';
+});
+
+// === Copy Code ===
+function copyCode(btn) {
+  const pre = btn.parentElement.querySelector("pre");
+  const text = pre.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = "✅ Copiado!";
+    btn.classList.add("copied");
+    setTimeout(() => {
+      btn.textContent = "📋 Copiar";
+      btn.classList.remove("copied");
+    }, 2000);
+  });
+}
+
+// === Back to Top ===
+const backTop = document.getElementById("backTop");
+window.addEventListener("scroll", () => {
+  backTop.classList.toggle("show", window.scrollY > 400);
+});
+
+// === Sidebar Toggle (mobile) ===
+function toggleSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+  sidebar.classList.toggle("open");
+  overlay.classList.toggle("show");
+}
+
+// === Search / Filter ===
+function filterNav() {
+  const q = document.getElementById("searchInput").value.toLowerCase();
+  const clearBtn = document.getElementById("clearSearchBtn");
+  if (clearBtn) clearBtn.style.display = q ? "block" : "none";
+  const items = document.querySelectorAll(".nav-item");
+  let visible = 0;
+  items.forEach(item => {
+    let sectionText = "";
+    try {
+      const sectionId = item.getAttribute("href");
+      if (sectionId && sectionId.startsWith("#")) {
+        const section = document.querySelector(sectionId);
+        if (section) {
+          sectionText = section.textContent.toLowerCase();
+        }
+      }
+    } catch(e) {}
+    
+    const text = item.textContent.toLowerCase() + " " + (item.dataset.search || "") + " " + sectionText;
+    const match = text.includes(q);
+    item.style.display = match ? "block" : "none";
+    if (match) visible++;
+  });
+  // update section titles visibility
+  document.querySelectorAll(".nav-section").forEach(section => {
+    const hasVisible = Array.from(section.querySelectorAll(".nav-item")).some(
+      item => item.style.display !== "none"
+    );
+    section.style.display = (hasVisible || !q) ? "block" : "none";
+  });
+  // remove any old empty message
+  const old = document.querySelector(".filter-empty");
+  if (old) old.remove();
+  if (visible === 0 && q) {
+    const msg = document.createElement("div");
+    msg.className = "filter-empty";
+    msg.textContent = "Nenhum tópico encontrado.";
+    document.querySelector(".nav-section:last-of-type").after(msg);
+  }
+}</script>
+
+</body>
+</html>

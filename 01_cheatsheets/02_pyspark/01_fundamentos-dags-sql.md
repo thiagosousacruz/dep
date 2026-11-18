@@ -1,5 +1,7 @@
 # Fundamentos: Lazy Evaluation, DAGs e Spark SQL (PySpark)
 
+> **Aprenda o conceito:** trilha [Como o Spark executa seu código](../../03_trilhas/01_como-o-spark-executa.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que é
 
 O Spark não executa cada linha de código imediatamente. Transformações montam um plano; ações disparam a execução distribuída desse plano. DataFrame API e SQL compartilham o mesmo otimizador (Catalyst), então você pode alternar entre os dois.

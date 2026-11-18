@@ -1,5 +1,7 @@
 # Joins em PySpark
 
+> **Aprenda o conceito:** trilha [Grão e cardinalidade](../../03_trilhas/02_grao-e-cardinalidade.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que são
 
 `DataFrame.join` combina DataFrames por nomes de colunas ou expressões. Em escala, avalie cardinalidade, volume de shuffle, distribuição das chaves e estratégia física.

@@ -1,5 +1,7 @@
 # SQL Joins (Databricks / Spark SQL)
 
+> **Aprenda o conceito:** trilha [Grão e cardinalidade](../../03_trilhas/02_grao-e-cardinalidade.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que é
 
 Joins combinam conjuntos de dados por uma condição. Em Spark, podem exigir shuffle; o custo depende do volume, da distribuição das chaves, da estratégia física e das colunas transportadas.

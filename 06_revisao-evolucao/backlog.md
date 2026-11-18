@@ -15,8 +15,18 @@ O núcleo ativo cobre SQL e PySpark. Modeling permanece complementar; streaming 
 - [x] Documentar dependências e comando de geração.
 - [x] Revisão técnica e editorial completa (2026-10): ver [revisao-editorial-2026-10.md](revisao-editorial-2026-10.md).
 - [x] Correções de SQL de 2026-10-28: `CACHE VIEW`, CTE × plano, `approx_count_distinct` 5%, ordem de execução, `IFF`.
+- [x] Camada de ensino (2026-11): `03_trilhas/` + `trilhas.html`, template de lição, 3 lições (execução do Spark, grão e cardinalidade, window functions), link "Aprenda o conceito" nos cheatsheets e `desafio.html?id=`.
+- [x] Plano de 12 meses ligado ao hub; navegação cruzada entre as páginas; [mapa de skills](mapa-de-skills.md).
 
 ## Próximas melhorias
+
+Roteiro para o hub cobrir o ciclo completo (aprender → consultar → praticar → aplicar). As lacunas por skill estão no [mapa de skills](mapa-de-skills.md).
+
+- [ ] **Trilhas:** Delta e MERGE idempotente · Cargas full/incremental/CDC · SCD2 e modelagem dimensional · Diagnóstico de performance.
+- [ ] **Modeling no build:** incluir `03_modeling-e-analytics` 01–03 no `build_docs.py`, com desafios de SCD2 e fato/dimensão.
+- [ ] **Novos cheatsheets:** testes de pipelines PySpark · orquestração e reprocessamento · Unity Catalog · Lakeflow/DLT · CI/CD com Asset Bundles.
+- [ ] **Prática integradora:** `projetos/` com 3–4 casos guiados (medallion com SCD2, ingestão incremental com reprocessamento, diagnóstico de performance, code review) e desafios dos tipos "diagnóstico" e "design".
+- [ ] **Progresso leve:** marcar "acertei / revisar" no Desafio do Dia (só `localStorage`); temas marcados voltam com mais frequência.
 
 - [ ] Revisão periódica por versão do runtime usando [o checklist](../04_templates/checklist-revisao-editorial.md).
 - [ ] Automatizar o build e o verificador de links em CI caso o projeto seja publicado.

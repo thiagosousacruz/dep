@@ -1,5 +1,7 @@
 # Performance, Arquitetura e Testes em PySpark
 
+> **Aprenda o conceito:** trilha [Como o Spark executa seu código](../../03_trilhas/01_como-o-spark-executa.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## Diagnóstico antes da otimização
 
 Use `explain("formatted")`, Spark UI e métricas do job para identificar leitura, exchanges, sorts, skew, spill e tarefas lentas. Compare resultado e custo antes e depois de cada mudança.

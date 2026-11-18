@@ -186,6 +186,12 @@
     extra: null,            // id sorteado fora do desafio do dia
   };
 
+  // ?id=<desafio> abre um desafio específico (links das trilhas), sem filtros.
+  const idPedido = new URLSearchParams(location.search).get("id");
+  if (idPedido && DESAFIOS.some(d => d.id === idPedido)) {
+    estado.extra = idPedido; estado.area = "todos"; estado.semana = "";
+  }
+
   function hoje() {
     const param = new URLSearchParams(location.search).get("data");   // ?data=AAAA-MM-DD para testes
     const d = param ? new Date(param + "T12:00:00") : new Date();

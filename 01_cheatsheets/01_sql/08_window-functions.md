@@ -1,5 +1,7 @@
 # Window Functions em Spark SQL
 
+> **Aprenda o conceito:** trilha [Window functions](../../03_trilhas/03_window-functions.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que são
 
 Funções de janela calculam valores relacionados sem reduzir o número de linhas como um `GROUP BY`. A especificação combina particionamento lógico, ordenação e, quando necessário, um frame.

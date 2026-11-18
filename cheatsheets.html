@@ -470,6 +470,7 @@
   </div>
   <div class="nav-section">
     <div class="nav-section-title">← <a href="index.html" style="color:inherit;text-decoration:none;">Voltar ao Hub</a></div>
+    <div class="nav-section-title">🧭 <a href="trilhas.html" style="color:inherit;text-decoration:none;">Trilhas: aprender o conceito</a></div>
   </div>
   <div class="nav-section">
     <div class="nav-section-title"><span>SQL</span> <span class="badge">12</span></div>
@@ -992,6 +993,9 @@ GROUP BY GROUPING SETS ((ano, regiao), (ano), ());
 
 <section id="sql-07" class="cheat-section">
 <h2><span class="sec-num sql">SQL 07</span> SQL Joins (Databricks / Spark SQL)</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-02">Grão e cardinalidade</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="sql-07-o-que-e">O que é</h2>
 <p>Joins combinam conjuntos de dados por uma condição. Em Spark, podem exigir shuffle; o custo depende do volume, da distribuição das chaves, da estratégia física e das colunas transportadas.</p>
 <h2 id="sql-07-quando-usar">Quando usar</h2>
@@ -1069,6 +1073,9 @@ LEFT JOIN dim_loja AS d ON f.loja_id = d.loja_id;
 
 <section id="sql-08" class="cheat-section">
 <h2><span class="sec-num sql">SQL 08</span> Window Functions em Spark SQL</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-03">Window functions</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="sql-08-o-que-sao">O que são</h2>
 <p>Funções de janela calculam valores relacionados sem reduzir o número de linhas como um <code>GROUP BY</code>. A especificação combina particionamento lógico, ordenação e, quando necessário, um frame.</p>
 <h2 id="sql-08-exemplos">Exemplos</h2>
@@ -1309,6 +1316,9 @@ ALTER TABLE silver.cadastro ALTER COLUMN id_cliente SET NOT NULL;
 
 <section id="sql-12" class="cheat-section">
 <h2><span class="sec-num sql">SQL 12</span> Performance Tuning e Leitura de Planos</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-01">Como o Spark executa seu código</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="sql-12-principio">Princípio</h2>
 <p>Otimização começa por evidência: plano físico, métricas da execução, volume lido, shuffle, skew e spill. Evite otimizar apenas pela aparência da consulta.</p>
 <h2 id="sql-12-reduzir-leitura-e-transferencia">Reduzir leitura e transferência</h2>
@@ -1356,6 +1366,9 @@ JOIN dim_produto AS d ON f.produto_id = d.produto_id;
 
 <section id="pyspark-01" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 01</span> Fundamentos: Lazy Evaluation, DAGs e Spark SQL (PySpark)</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-01">Como o Spark executa seu código</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="pyspark-01-o-que-e">O que é</h2>
 <p>O Spark não executa cada linha de código imediatamente. Transformações montam um plano; ações disparam a execução distribuída desse plano. DataFrame API e SQL compartilham o mesmo otimizador (Catalyst), então você pode alternar entre os dois.</p>
 <h2 id="pyspark-01-transformacoes-e-acoes">Transformações e ações</h2>
@@ -1781,6 +1794,9 @@ total = df_fatos.agg(F.sum("valor").alias("total")).first()["total"]
 
 <section id="pyspark-07" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 07</span> Joins em PySpark</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-02">Grão e cardinalidade</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="pyspark-07-o-que-sao">O que são</h2>
 <p><code>DataFrame.join</code> combina DataFrames por nomes de colunas ou expressões. Em escala, avalie cardinalidade, volume de shuffle, distribuição das chaves e estratégia física.</p>
 <h2 id="pyspark-07-chaves-com-o-mesmo-nome">Chaves com o mesmo nome</h2>
@@ -1843,6 +1859,9 @@ df_resultado.explain("formatted")
 
 <section id="pyspark-08" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 08</span> Window Functions em PySpark</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-03">Window functions</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="pyspark-08-o-que-sao">O que são</h2>
 <p>Uma <code>WindowSpec</code> define o grupo lógico, a ordenação e o frame usados por funções como <code>row_number</code>, <code>lag</code> e agregações acumuladas.</p>
 <h2 id="pyspark-08-deduplicacao-deterministica">Deduplicação determinística</h2>
@@ -2191,6 +2210,9 @@ if total and qtd_orfas / total &gt; 0.01:
 
 <section id="pyspark-13" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 13</span> Performance, Arquitetura e Testes em PySpark</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-01">Como o Spark executa seu código</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="pyspark-13-diagnostico-antes-da-otimizacao">Diagnóstico antes da otimização</h2>
 <p>Use <code>explain("formatted")</code>, Spark UI e métricas do job para identificar leitura, exchanges, sorts, skew, spill e tarefas lentas. Compare resultado e custo antes e depois de cada mudança.</p>
 <div class="code-wrap"><div class="code-lang pyspark-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">df_resultado.explain("formatted")

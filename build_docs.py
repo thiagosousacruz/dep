@@ -1,4 +1,4 @@
-"""Gera cheatsheets.html e desafio.html a partir dos Markdown e do banco de desafios.
+"""Gera cheatsheets.html, trilhas.html e desafio.html a partir dos Markdown e do banco de desafios.
 
 Os arquivos Markdown e 02_desafios/*.json sao a fonte de verdade. Nao edite os HTML gerados.
 """
@@ -22,6 +22,10 @@ TEMPLATE_PATH = ROOT / "template.html"
 OUTPUT_PATH = ROOT / "cheatsheets.html"
 PLACEHOLDERS = ("{{ SIDEBAR_SQL }}", "{{ SIDEBAR_PYSPARK }}", "{{ CONTENT_INJECT }}")
 
+TRAIL_TEMPLATE_PATH = ROOT / "trilhas_template.html"
+TRAIL_OUTPUT_PATH = ROOT / "trilhas.html"
+TRAIL_PLACEHOLDERS = ("{{ SIDEBAR_TRILHAS }}", "{{ HOME_TRILHAS }}", "{{ TOTAL_TRILHAS }}", "{{ CONTENT_INJECT }}")
+
 CHALLENGES_DIR = ROOT / "02_desafios"
 CHALLENGE_TEMPLATE_PATH = ROOT / "desafio_template.html"
 CHALLENGE_OUTPUT_PATH = ROOT / "desafio.html"
@@ -42,6 +46,10 @@ AREAS = (
     Area(ROOT / "01_cheatsheets" / "01_sql", "SQL", "sql"),
     Area(ROOT / "01_cheatsheets" / "02_pyspark", "PySpark", "pyspark"),
 )
+TRAIL_AREA = Area(ROOT / "03_trilhas", "Trilha", "trilha")
+
+# Mapa de links: arquivo Markdown -> (pagina HTML, id da secao).
+LinkMap = dict[Path, tuple[str, str]]
 
 
 def markdown_files(area: Area) -> list[Path]:
@@ -103,15 +111,30 @@ def build_id_map(files_by_area: dict[Area, list[Path]]) -> dict[Path, str]:
     return result
 
 
-def rewrite_local_link(href: str, source: Path, id_map: dict[Path, str]) -> str:
+def build_link_map() -> LinkMap:
+    """Mapa global de links entre paginas geradas (cheatsheets e trilhas)."""
+    cheats = build_id_map({area: markdown_files(area) for area in AREAS})
+    trails = build_id_map({TRAIL_AREA: markdown_files(TRAIL_AREA)})
+    result: LinkMap = {path: ("cheatsheets.html", anchor[1:]) for path, anchor in cheats.items()}
+    result.update({path: ("trilhas.html", anchor[1:]) for path, anchor in trails.items()})
+    return result
+
+
+def rewrite_local_link(href: str, source: Path, link_map: LinkMap, page: str) -> str:
     parsed = urlsplit(href)
     if parsed.scheme or parsed.netloc or not parsed.path:
         return href
 
     target = (source.parent / unquote(parsed.path)).resolve()
-    if target in id_map:
-        anchor = id_map[target]
-        return f"{anchor}-{parsed.fragment}" if parsed.fragment else anchor
+    if target in link_map:
+        target_page, anchor = link_map[target]
+        prefix = "" if target_page == page else target_page
+        return f"{prefix}#{anchor}-{parsed.fragment}" if parsed.fragment else f"{prefix}#{anchor}"
+    if target.parent == ROOT and target.suffix == ".html":
+        # Paginas da raiz (desafio.html, planos): os HTML gerados ficam todos na raiz.
+        query = f"?{parsed.query}" if parsed.query else ""
+        fragment = f"#{parsed.fragment}" if parsed.fragment else ""
+        return f"{target.name}{query}{fragment}"
     return href
 
 
@@ -119,7 +142,8 @@ def render_section(
     path: Path,
     index: int,
     area: Area,
-    id_map: dict[Path, str],
+    link_map: LinkMap,
+    page: str = "cheatsheets.html",
 ) -> tuple[str, str]:
     markdown_text = path.read_text(encoding="utf-8")
     title = title_from(markdown_text, path)
@@ -130,7 +154,7 @@ def render_section(
     )
     soup = BeautifulSoup(rendered, "html.parser")
 
-    section_id = id_map[path.resolve()].removeprefix("#")
+    section_id = link_map[path.resolve()][1]
     heading = soup.find(["h1", "h2"])
     for subheading in soup.find_all("h2"):
         if subheading is not heading:
@@ -143,7 +167,7 @@ def render_section(
         heading.extend((number, f" {title}"))
 
     for link in soup.find_all("a", href=True):
-        link["href"] = rewrite_local_link(link["href"], path, id_map)
+        link["href"] = rewrite_local_link(link["href"], path, link_map, page)
 
     # Preserva pre > code e apenas acrescenta a moldura visual.
     for pre in list(soup.find_all("pre")):
@@ -203,13 +227,13 @@ def build() -> str:
     template = TEMPLATE_PATH.read_text(encoding="utf-8")
     files_by_area = {area: markdown_files(area) for area in AREAS}
     validate_inputs(files_by_area, template)
-    id_map = build_id_map(files_by_area)
+    link_map = build_link_map()
 
     content: list[str] = []
     navigation: dict[str, list[str]] = {area.css_class: [] for area in AREAS}
     for area, files in files_by_area.items():
         for index, path in enumerate(files, 1):
-            section, nav = render_section(path, index, area, id_map)
+            section, nav = render_section(path, index, area, link_map)
             content.append(section)
             navigation[area.css_class].append(nav)
 
@@ -230,6 +254,69 @@ def build() -> str:
     validate_output(html, files_by_area)
     OUTPUT_PATH.write_text(html, encoding="utf-8", newline="\n")
     return f"Build concluido: {len(navigation['sql'])} SQL + {len(navigation['pyspark'])} PySpark."
+
+
+def build_trails() -> str:
+    template = TRAIL_TEMPLATE_PATH.read_text(encoding="utf-8")
+    files = markdown_files(TRAIL_AREA)
+    errors = [f"Placeholder {p!r}: esperado 1" for p in TRAIL_PLACEHOLDERS if template.count(p) != 1]
+    if not files:
+        errors.append(f"Nenhuma licao em {TRAIL_AREA.directory.relative_to(ROOT)}")
+    if errors:
+        raise RuntimeError("Falha na validacao das trilhas:\n- " + "\n- ".join(errors))
+
+    link_map = build_link_map()
+    content: list[str] = []
+    navigation: list[str] = []
+    home: list[str] = []
+    for index, path in enumerate(files, 1):
+        section, nav = render_section(path, index, TRAIL_AREA, link_map, page="trilhas.html")
+        content.append(section)
+        navigation.append(nav)
+        title = title_from(path.read_text(encoding="utf-8"), path)
+        home.append(f'<li><span class="num">{index:02d}</span> <a href="#trilha-{index:02d}">{title}</a></li>')
+
+    html = template
+    html = html.replace("{{ SIDEBAR_TRILHAS }}", "\n    ".join(navigation))
+    html = html.replace("{{ HOME_TRILHAS }}", "\n        ".join(home))
+    html = html.replace("{{ TOTAL_TRILHAS }}", f"{len(files)} lições")
+    html = html.replace("{{ CONTENT_INJECT }}", "\n\n".join(content))
+    html = re.sub(r'(<span>Trilhas</span> <span class="badge">)\d+(</span>)', rf"\g<1>{len(files)}\g<2>", html)
+
+    soup = BeautifulSoup(html, "html.parser")
+    ids = {tag["id"] for tag in soup.find_all(id=True)}
+    broken = sorted(
+        {a["href"] for a in soup.find_all("a", href=True) if a["href"].startswith("#") and a["href"][1:] not in ids}
+    )
+    if broken:
+        raise RuntimeError("Links internos quebrados em trilhas.html: " + ", ".join(broken))
+    TRAIL_OUTPUT_PATH.write_text(html, encoding="utf-8", newline="\n")
+    return f"Trilhas: {len(files)} licoes."
+
+
+def validate_cross_links(challenge_ids: set[str]) -> None:
+    """Confere links entre paginas geradas: ancoras de outra pagina, ids de desafio e .md nao resolvidos."""
+    soups = {
+        path.name: BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
+        for path in (OUTPUT_PATH, TRAIL_OUTPUT_PATH)
+    }
+    ids = {name: {tag["id"] for tag in soup.find_all(id=True)} for name, soup in soups.items()}
+    errors: set[str] = set()
+    for name, soup in soups.items():
+        for link in soup.find_all("a", href=True):
+            href = link["href"]
+            parsed = urlsplit(href)
+            if parsed.scheme or parsed.netloc:
+                continue
+            if parsed.path in ids and parsed.fragment and parsed.fragment not in ids[parsed.path]:
+                errors.add(f"{name}: ancora inexistente {href}")
+            elif parsed.path == "desafio.html" and parsed.query.startswith("id="):
+                if parsed.query[3:].split("&")[0] not in challenge_ids:
+                    errors.add(f"{name}: desafio inexistente {href}")
+            elif parsed.path.endswith(".md") and "03_modeling-e-analytics" not in parsed.path:
+                errors.add(f"{name}: link para Markdown fora do build {href}")
+    if errors:
+        raise RuntimeError("Falha na validacao de links entre paginas:\n- " + "\n- ".join(sorted(errors)))
 
 
 def trainable_sections(files_by_area: dict[Area, list[Path]], id_map: dict[Path, str]) -> dict[str, dict]:
@@ -337,6 +424,8 @@ def build_challenges(allow_incomplete: bool = False) -> str:
         raise RuntimeError(f"Placeholder {CHALLENGE_PLACEHOLDER!r}: esperado 1 em {CHALLENGE_TEMPLATE_PATH.name}")
     CHALLENGE_OUTPUT_PATH.write_text(template.replace(CHALLENGE_PLACEHOLDER, payload), encoding="utf-8", newline="\n")
 
+    validate_cross_links({item["id"] for item in catalog})
+
     trainable = len(sections) - len(skipped)
     coverage = 100 * (trainable - len(missing)) / trainable if trainable else 100
     message = f"Desafios: {len(catalog)} itens, cobertura {coverage:.0f}% de {trainable} secoes treinaveis."
@@ -347,4 +436,5 @@ def build_challenges(allow_incomplete: bool = False) -> str:
 
 if __name__ == "__main__":
     print(build())
+    print(build_trails())
     print(build_challenges(allow_incomplete="--allow-incomplete" in sys.argv[1:]))

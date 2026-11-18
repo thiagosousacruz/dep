@@ -1,6 +1,13 @@
 # Data Engineering Playbook
 
-Base pessoal de consulta rápida para SQL e PySpark em Databricks/Spark, orientada a problemas recorrentes de engenharia de dados.
+Base pessoal para aprender, consultar e praticar SQL e PySpark em Databricks/Spark, orientada a problemas recorrentes de engenharia de dados.
+
+| Camada | Para quê | Página |
+|---|---|---|
+| Trilhas | Aprender o conceito (modelo mental, exemplo para prever, erros comuns) | `trilhas.html` |
+| Cheatsheets | Consultar sintaxe e cuidados | `cheatsheets.html` |
+| Desafio do Dia | Praticar sem olhar | `desafio.html` |
+| Planos e framework | Saber o que estudar e como | `plano-12-semanas.html`, `plano_12_meses_engenheiro_dados.html`, `framework_dominio_tecnico.html` |
 
 ## Escopo atual
 
@@ -13,14 +20,17 @@ O núcleo mantido e publicado no HTML cobre:
 
 ## Como navegar
 
+- [Trilhas de aprendizado](03_trilhas/README.md)
+- [Mapa de skills](06_revisao-evolucao/mapa-de-skills.md): skill × trilha × cheatsheet × desafio × planos
 - [Visão geral de SQL](01_cheatsheets/01_sql/README.md)
 - [Visão geral de PySpark](01_cheatsheets/02_pyspark/README.md)
 - [Modeling e Analytics — complementar](01_cheatsheets/03_modeling-e-analytics/README.md)
 - [Backlog e evolução](06_revisao-evolucao/backlog.md)
 - [`cheatsheets.html`](cheatsheets.html), versão navegável gerada de SQL e PySpark
 - [`desafio.html`](desafio.html), Desafio do Dia gerado a partir de `02_desafios/`
+- [`trilhas.html`](trilhas.html), lições geradas a partir de `03_trilhas/`
 
-Os arquivos `.md` e `02_desafios/*.json` são a fonte de verdade. `cheatsheets.html` e `desafio.html` são gerados automaticamente e não devem ser editados manualmente.
+Os arquivos `.md` e `02_desafios/*.json` são a fonte de verdade. `cheatsheets.html`, `trilhas.html` e `desafio.html` são gerados automaticamente e não devem ser editados manualmente.
 
 ## Desafio do Dia
 
@@ -35,9 +45,10 @@ Todo dia a página sorteia uma seção dos cheatsheets e propõe uma atividade e
 
 - `01_cheatsheets/`: conteúdo técnico reutilizável;
 - `02_desafios/`: banco de desafios (um item por seção treinável) e configuração de semanas;
+- `03_trilhas/`: lições conceituais, ligadas aos cheatsheets e desafios;
 - `04_templates/`: padrão editorial e checklist de revisão técnica;
 - `06_revisao-evolucao/`: avaliações de cobertura, revisões editoriais e backlog;
-- `template.html` e `desafio_template.html`: layout das páginas geradas;
+- `template.html`, `trilhas_template.html` e `desafio_template.html`: layout das páginas geradas;
 - `build_docs.py`: gerador e validador dos HTML;
 - `verificar_desafios.py`: execução opcional das soluções em Spark local;
 - `index.html` e páginas de planos/framework: artefatos independentes, não gerados pelos cheatsheets.
@@ -51,7 +62,7 @@ python -m pip install -r requirements.txt
 python build_docs.py
 ```
 
-O comando pode ser executado de qualquer diretório. Antes de gravar a saída, o gerador valida arquivos de entrada, placeholders, quantidade de seções e links internos. Para os desafios, valida referências às seções, os três níveis, as tabelas de dados e a cobertura. Use `python build_docs.py --allow-incomplete` para gerar mesmo com seções novas ainda sem desafio.
+O comando pode ser executado de qualquer diretório. Antes de gravar a saída, o gerador valida arquivos de entrada, placeholders, quantidade de seções e links internos. Para os desafios, valida referências às seções, os três níveis, as tabelas de dados e a cobertura. Entre páginas, valida âncoras de outra página, links `desafio.html?id=` e links para Markdown fora do build. Use `python build_docs.py --allow-incomplete` para gerar mesmo com seções novas ainda sem desafio.
 
 ## Critério de qualidade
 

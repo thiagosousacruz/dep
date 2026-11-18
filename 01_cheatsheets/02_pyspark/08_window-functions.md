@@ -1,5 +1,7 @@
 # Window Functions em PySpark
 
+> **Aprenda o conceito:** trilha [Window functions](../../03_trilhas/03_window-functions.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que são
 
 Uma `WindowSpec` define o grupo lógico, a ordenação e o frame usados por funções como `row_number`, `lag` e agregações acumuladas.
