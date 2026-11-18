@@ -1,10 +1,11 @@
 # Data Engineering Playbook
 
-Base pessoal para aprender, consultar e praticar SQL e PySpark em Databricks/Spark, orientada a problemas recorrentes de engenharia de dados.
+Base pessoal de **consulta e revisão** de SQL e PySpark em Databricks/Spark. O caminho linear de estudo (módulos em sequência, executados no Databricks) fica no curso prático, em [`../engenharia_dados`](../engenharia_dados/README.md).
 
 | Camada | Para quê | Página |
 |---|---|---|
-| **Livro** (comece aqui) | Seguir capítulo a capítulo: conceito, exemplo para prever, erros comuns, checagem com respostas e a prática da semana | `trilhas.html` |
+| Curso prático (outro projeto) | Estudar em sequência, fazendo | [`../engenharia_dados`](../engenharia_dados/README.md) |
+| Trilhas (aprofundamento) | Modelo mental e armadilhas de um tema; acessadas pela linha "Aprenda o conceito" do cheatsheet | `trilhas.html` |
 | Cheatsheets | Consultar sintaxe e cuidados | `cheatsheets.html` |
 | Desafio do Dia | Praticar sem olhar | `desafio.html` |
 | Planos e framework | Saber o que estudar e como | `plano-12-semanas.html`, `plano_12_meses_engenheiro_dados.html`, `framework_dominio_tecnico.html` |
@@ -20,7 +21,7 @@ O núcleo mantido e publicado no HTML cobre:
 
 ## Como navegar
 
-- [Livro: capítulos e sumário](03_trilhas/README.md)
+- [Trilhas de aprendizado](03_trilhas/README.md)
 - [Mapa de skills](06_revisao-evolucao/mapa-de-skills.md): skill × trilha × cheatsheet × desafio × planos
 - [Visão geral de SQL](01_cheatsheets/01_sql/README.md)
 - [Visão geral de PySpark](01_cheatsheets/02_pyspark/README.md)
@@ -28,7 +29,7 @@ O núcleo mantido e publicado no HTML cobre:
 - [Backlog e evolução](06_revisao-evolucao/backlog.md)
 - [`cheatsheets.html`](cheatsheets.html), versão navegável gerada de SQL e PySpark
 - [`desafio.html`](desafio.html), Desafio do Dia gerado a partir de `02_desafios/`
-- [`trilhas.html`](trilhas.html), o livro gerado a partir de `03_trilhas/` (ordem e partes em `03_trilhas/_livro.json`)
+- [`trilhas.html`](trilhas.html), lições geradas a partir de `03_trilhas/`
 
 Os arquivos `.md` e `02_desafios/*.json` são a fonte de verdade. `cheatsheets.html`, `trilhas.html` e `desafio.html` são gerados automaticamente e não devem ser editados manualmente.
 

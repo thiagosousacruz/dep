@@ -18,13 +18,15 @@ O núcleo ativo cobre SQL e PySpark. Modeling permanece complementar; streaming 
 - [x] Camada de ensino (2026-11): `03_trilhas/` + `trilhas.html`, template de lição, 3 lições (execução do Spark, grão e cardinalidade, window functions), link "Aprenda o conceito" nos cheatsheets e `desafio.html?id=`.
 - [x] Plano de 12 meses ligado ao hub; navegação cruzada entre as páginas; [mapa de skills](mapa-de-skills.md).
 - [x] Núcleo das trilhas completo (2026-11): 9 lições, exemplo em SQL e PySpark, semanas do plano de 12 semanas ligadas às lições; build valida links das páginas escritas à mão.
-- [x] Formato livro (2026-11): `trilhas.html` vira livro com partes (`03_trilhas/_livro.json`), respostas da checagem, rodapé "Na prática" puxado do plano de 12 semanas e navegação anterior/próximo.
+- [x] Respostas da checagem nas 9 trilhas (2026-11).
+- [x] Papéis definidos (2026-11): o curso linear é o `../engenharia_dados` (Databricks); este hub é consulta e revisão. O formato "livro" foi testado e descartado por ficar confuso; as trilhas viram aprofundamento e, aos poucos, módulos do curso.
 
 ## Próximas melhorias
 
 Roteiro para o hub cobrir o ciclo completo (aprender → consultar → praticar → aplicar). As lacunas por skill estão no [mapa de skills](mapa-de-skills.md).
 
-- [ ] **Parte V do livro (Plataforma):** orquestração (Lakeflow Jobs e ADF) · ingestão (Auto Loader, COPY INTO, fontes externas) · testes de pipelines · Unity Catalog · Bundles e CI/CD. Depois: qualidade e expectations, observabilidade e custo. Validar em Databricks; afirmações sobre recursos vêm da documentação atual.
+- [ ] **Portar trilhas para o curso** (`../engenharia_dados`, módulos 9–12): PySpark, execução e performance (trilhas 05–06), cargas e CDC (08), SCD2 (09). Apagar cada trilha portada.
+- [ ] **Cheatsheets de plataforma** (consulta para os módulos 13–16 do curso): Auto Loader e COPY INTO · Lakeflow Jobs · Unity Catalog · Bundles e CI/CD.
 - [ ] **Validar no Databricks** os trechos das trilhas 07–09 que não rodam em Spark local (`MERGE`, `DESCRIBE HISTORY`, Auto Loader, `IDENTITY`).
 - [ ] **Modeling no build:** incluir `03_modeling-e-analytics` 01–03 no `build_docs.py`, com desafios de SCD2 e fato/dimensão.
 - [ ] **Novos cheatsheets:** testes de pipelines PySpark · orquestração e reprocessamento · Unity Catalog · Lakeflow/DLT · CI/CD com Asset Bundles.

@@ -1,10 +1,8 @@
-# Livro: engenharia de dados na prática
+# Trilhas (aprofundamento)
 
-Os capítulos daqui viram o **livro** (`trilhas.html`): abra e siga em ordem. Os cheatsheets continuam sendo a referência rápida, e o Desafio do Dia continua sendo a prática.
+Lições de **aprofundamento** de um tema: modelo mental, exemplo para prever, armadilhas e checagem com respostas. O estudo em sequência fica no curso prático ([`../../engenharia_dados`](../../engenharia_dados/README.md)); aqui se chega pela linha "Aprenda o conceito" de cada cheatsheet.
 
-- **Ordem e partes:** [`_livro.json`](_livro.json). Todo `.md` desta pasta precisa estar lá, uma vez só, ou o build falha.
-- **Fim de cada capítulo (gerado):** "Na prática", com a semana e o critério de avanço tirados do `plano-12-semanas.html`, mais os links anterior/próximo.
-- **Checagem:** sempre com respostas recolhidas (`<details>`).
+**Rumo:** cada trilha vira matéria-prima de um módulo do curso. Quando o módulo existir, a trilha é apagada, para o mesmo assunto não ficar em dois lugares.
 
 | Camada | Pergunta que responde | Onde |
 |---|---|---|
@@ -12,11 +10,11 @@ Os capítulos daqui viram o **livro** (`trilhas.html`): abra e siga em ordem. Os
 | Cheatsheet | Qual é a sintaxe e o cuidado? | `01_cheatsheets/` → `cheatsheets.html` |
 | Desafio | Consigo fazer sem olhar? | `02_desafios/` → `desafio.html` |
 
-Todo capítulo segue [o template](../04_templates/template-trilha.md), baseado nos estágios do framework: problema → modelo mental → exemplo para prever → quebre de propósito → erros comuns → checagem → próximos passos.
+Toda lição segue [o template](../04_templates/template-trilha.md), baseado nos estágios do framework: problema → modelo mental → exemplo para prever → quebre de propósito → erros comuns → checagem → próximos passos.
 
-## Capítulos prontos
+## Lições
 
-Partes I a IV. Cada capítulo traz o exemplo principal em SQL e em PySpark.
+Ordem sugerida, alinhada ao plano de 12 semanas. Cada lição traz o exemplo principal em SQL e em PySpark.
 
 | # | Lição | Semanas | Verificação |
 |---|---|---|---|
@@ -32,15 +30,14 @@ Partes I a IV. Cada capítulo traz o exemplo principal em SQL e em PySpark.
 
 Com essas 9 lições, o **núcleo** está completo: todas as skills de SQL, PySpark e Delta do plano de 12 semanas têm trilha. ADF, API/SFTP e orquestração (S9–S10) ficam para a próxima etapa.
 
-## Parte V · Plataforma (a escrever, depende de Databricks para validar)
+## Próximas (fora do núcleo, dependem de Databricks para validar)
 
-- Orquestração: Lakeflow Jobs e ADF.
-- Ingestão: Auto Loader, COPY INTO e fontes externas.
-- Testes de pipelines.
+- Orquestração e reprocessamento (Workflows, ADF).
+- Testes de pipelines PySpark.
+- Qualidade de dados e expectations (Lakeflow/DLT).
 - Unity Catalog e governança.
-- Bundles e CI/CD.
-
-Depois: qualidade e expectations (Declarative Pipelines), observabilidade e custo.
+- CI/CD com Asset Bundles.
+- Observabilidade e custo.
 
 ## Regras
 

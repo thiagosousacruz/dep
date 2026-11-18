@@ -419,7 +419,6 @@
   <nav style="font-family:'IBM Plex Mono',monospace;font-size:11px;margin-bottom:32px;display:flex;gap:18px;flex-wrap:wrap;">
     <a href="index.html" style="color:var(--text-dim);text-decoration:none;">← Hub</a>
     <a href="cheatsheets.html" style="color:var(--text-dim);text-decoration:none;">Cheatsheets</a>
-    <a href="trilhas.html" style="color:var(--text-dim);text-decoration:none;">Livro</a>
     <a href="desafio.html" style="color:var(--text-dim);text-decoration:none;">Desafio do Dia</a>
     <a href="framework_dominio_tecnico.html" style="color:var(--text-dim);text-decoration:none;">Framework técnico</a>
     <a href="plano_12_meses_engenheiro_dados.html" style="color:var(--text-dim);text-decoration:none;">Plano de 12 meses</a>
@@ -461,7 +460,7 @@
       <div class="phase-tagline">Você constrói uma base reutilizável para as tarefas recorrentes do time.</div>
     </div>
     <div class="weeks">
-      <div class="week-card card-p1" id="semana-01">
+      <div class="week-card card-p1">
         <div class="week-num">Semana 01</div>
         <div class="week-title">Leitura e filtros</div>
         <ul class="topics">
@@ -470,13 +469,13 @@
           <li>Lógica booleana: AND, OR, NOT</li>
           <li>Aliases com AS</li>
         </ul>
-        <p class="week-trilha">📖 Livro: <a href="trilhas.html#trilha-01">Ordem lógica do SQL</a></p>
+        <p class="week-trilha">📘 Curso prático: módulos 0 e 1, no <code>engenharia_dados</code></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Produzir uma consulta filtrada e ordenada, justificar os filtros e validar o resultado; documentação oficial pode ser consultada.</p>
         </div>
       </div>
-      <div class="week-card card-p1" id="semana-02">
+      <div class="week-card card-p1">
         <div class="week-num">Semana 02</div>
         <div class="week-title">Agregações e JOINs</div>
         <ul class="topics">
@@ -486,7 +485,7 @@
           <li>Grão, cardinalidade 1:1/1:N/N:N e exploding joins</li>
           <li>Tipos, nulos e múltiplas condições nas chaves</li>
         </ul>
-        <p class="week-trilha">📖 Livro: <a href="trilhas.html#trilha-03">Grão e cardinalidade</a></p>
+        <p class="week-trilha">📘 Curso prático: módulos 1 e 4, no <code>engenharia_dados</code></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Cruzar duas tabelas preservando o grão esperado e apresentar contagens antes/depois como evidência.</p>
@@ -510,7 +509,7 @@
       <div class="phase-tagline">Você começa a resolver problemas que seu gestor resolve hoje.</div>
     </div>
     <div class="weeks">
-      <div class="week-card card-p2" id="semana-03">
+      <div class="week-card card-p2">
         <div class="week-num">Semana 03</div>
         <div class="week-title">Subqueries e lógica condicional</div>
         <ul class="topics">
@@ -519,13 +518,13 @@
           <li>CASE WHEN para lógica condicional</li>
           <li>Tratamento de nulos: COALESCE, NULLIF, IS NULL</li>
         </ul>
-        <p class="week-trilha">📖 Livro: <a href="trilhas.html#trilha-02">NULL e lógica de três valores</a></p>
+        <p class="week-trilha">📘 Curso prático: módulos 2 e 5, no <code>engenharia_dados</code></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Escrever e explicar uma query com CTE, tipos, nulos e CASE; validar casos de borda com uma amostra controlada.</p>
         </div>
       </div>
-      <div class="week-card card-p2" id="semana-04">
+      <div class="week-card card-p2">
         <div class="week-num">Semana 04</div>
         <div class="week-title">Window functions</div>
         <ul class="topics">
@@ -535,7 +534,7 @@
           <li>PARTITION BY, ordenação determinística e frames</li>
           <li>ROWS versus RANGE; date_add, datediff e date_format no Spark SQL</li>
         </ul>
-        <p class="week-trilha">📖 Livro: <a href="trilhas.html#trilha-04">Window functions</a></p>
+        <p class="week-trilha">📘 Curso prático: módulo 6, no <code>engenharia_dados</code></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Calcular ranking e acumulado, explicar empates e frame, e validar o resultado contra uma agregação de controle.</p>
@@ -559,7 +558,7 @@
       <div class="phase-tagline">Você para de ter medo do ambiente e começa a se sentir em casa.</div>
     </div>
     <div class="weeks">
-      <div class="week-card card-p3" id="semana-05">
+      <div class="week-card card-p3">
         <div class="week-num">Semana 05</div>
         <div class="week-title">Orientação no ambiente</div>
         <ul class="topics">
@@ -568,13 +567,13 @@
           <li>Leitura de Delta Tables e diferenças entre tabela e caminho</li>
           <li>Bronze/Silver/Gold, histórico Delta e políticas de retenção</li>
         </ul>
-        <p class="week-trilha">📖 Livro: <a href="trilhas.html#trilha-07">Delta e MERGE idempotente</a></p>
+        <p class="week-trilha">📘 Curso prático: módulo 7, no <code>engenharia_dados</code></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Executar e explicar um notebook existente, identificar entradas/saídas e registrar riscos de ambiente ou dados.</p>
         </div>
       </div>
-      <div class="week-card card-p3" id="semana-06">
+      <div class="week-card card-p3">
         <div class="week-num">Semana 06</div>
         <div class="week-title">PySpark, planos e inspeção</div>
         <ul class="topics">
@@ -584,7 +583,7 @@
           <li>Escrita Delta consciente de modo, schema e idempotência</li>
           <li>Leitura de notebooks existentes: entender bloco por bloco</li>
         </ul>
-        <p class="week-trilha">📖 Livro: <a href="trilhas.html#trilha-05">Como o Spark executa</a> · <a href="trilhas.html#trilha-06">Diagnóstico de performance</a></p>
+        <p class="week-trilha">📘 Curso prático: módulos 9 e 10 (planejados), no <code>engenharia_dados</code></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Mapear o fluxo de um notebook desconhecido e explicar ao menos uma transformação e seu plano de execução.</p>
@@ -608,7 +607,7 @@
       <div class="phase-tagline">Você começa a entregar de ponta a ponta, não só executar.</div>
     </div>
     <div class="weeks">
-      <div class="week-card card-p4" id="semana-07">
+      <div class="week-card card-p4">
         <div class="week-num">Semana 07</div>
         <div class="week-title">Transformações e joins</div>
         <ul class="topics">
@@ -618,13 +617,13 @@
           <li>CSV, JSON, Parquet e Excel por conector/biblioteca homologada</li>
           <li>Checks de grão, chaves e reconciliação pós-join</li>
         </ul>
-        <p class="week-trilha">📖 Livro: <a href="trilhas.html#trilha-03">Grão e cardinalidade</a> · <a href="trilhas.html#trilha-07">Delta e MERGE idempotente</a></p>
+        <p class="week-trilha">📘 Curso prático: módulos 3 e 9 (9 planejado), no <code>engenharia_dados</code></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Cruzar duas tabelas Delta, validar cardinalidade e qualidade, e gravar uma saída idempotente em ambiente autorizado.</p>
         </div>
       </div>
-      <div class="week-card card-p4" id="semana-08">
+      <div class="week-card card-p4">
         <div class="week-num">Semana 08</div>
         <div class="week-title">Window functions no PySpark</div>
         <ul class="topics">
@@ -634,7 +633,7 @@
           <li>Combinando PySpark com Spark SQL no mesmo notebook</li>
           <li>Teste pequeno da regra e documentação da entrega</li>
         </ul>
-        <p class="week-trilha">📖 Livro: <a href="trilhas.html#trilha-04">Window functions</a></p>
+        <p class="week-trilha">📘 Curso prático: módulo 9 (planejado), no <code>engenharia_dados</code></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Entregar uma tabela validada com teste reproduzível e explicar as decisões, limites e evidências.</p>
@@ -658,7 +657,7 @@
       <div class="phase-tagline">Você entende como os dados chegam e consegue criar ou adaptar pipelines.</div>
     </div>
     <div class="weeks">
-      <div class="week-card card-p5" id="semana-09">
+      <div class="week-card card-p5">
         <div class="week-num">Semana 09</div>
         <div class="week-title">ADF — fundação e ingestões básicas</div>
         <ul class="topics">
@@ -667,13 +666,13 @@
           <li>Parâmetros, metadados e reutilização sem expor segredos</li>
           <li>Falhas, retries, timeout, idempotência e reprocessamento</li>
         </ul>
-        <p class="week-trilha">📖 Livro: <a href="trilhas.html#trilha-08">Cargas full, incremental e CDC</a></p>
+        <p class="week-trilha">📘 Curso prático: módulos 11 e 13 (planejados), no <code>engenharia_dados</code></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Mapear um pipeline autorizado, explicar dependências e demonstrar como reprocessá-lo com segurança após uma falha simulada.</p>
         </div>
       </div>
-      <div class="week-card card-p5" id="semana-10">
+      <div class="week-card card-p5">
         <div class="week-num">Semana 10</div>
         <div class="week-title">Ingestões via API e SFTP</div>
         <ul class="topics">
@@ -682,7 +681,7 @@
           <li>Segredos em Key Vault/serviço homologado; nunca em código ou parâmetros visíveis</li>
           <li>Monitoramento, alertas, logs, correlação e diagnóstico</li>
         </ul>
-        <p class="week-trilha">📖 Livro: <a href="trilhas.html#trilha-08">Cargas full, incremental e CDC</a></p>
+        <p class="week-trilha">📘 Curso prático: módulo 13 (planejado), no <code>engenharia_dados</code></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Implementar em ambiente seguro uma ingestão revisada, com paginação ou arquivo, reexecução idempotente e evidência de monitoramento.</p>
@@ -706,7 +705,7 @@
       <div class="phase-tagline">Você vira referência nos problemas que importam para a Renner.</div>
     </div>
     <div class="weeks">
-      <div class="week-card card-p6" id="semana-11">
+      <div class="week-card card-p6">
         <div class="week-num">Semana 11</div>
         <div class="week-title">Mapeamento dos problemas recorrentes</div>
         <ul class="topics">
@@ -720,7 +719,7 @@
           <p>Documentar três padrões de solução com problema, grão, validação, riscos e lições, respeitando as políticas internas.</p>
         </div>
       </div>
-      <div class="week-card card-p6" id="semana-12">
+      <div class="week-card card-p6">
         <div class="week-num">Semana 12</div>
         <div class="week-title">Entrega autônoma com revisão</div>
         <ul class="topics">
