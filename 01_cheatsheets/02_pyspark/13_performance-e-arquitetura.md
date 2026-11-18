@@ -1,6 +1,6 @@
 # Performance, Arquitetura e Testes em PySpark
 
-> **Aprenda o conceito:** trilha [Como o Spark executa seu código](../../03_trilhas/01_como-o-spark-executa.md) — modelo mental, exemplo para prever e erros comuns.
+> **Aprenda o conceito:** trilhas [Como o Spark executa seu código](../../03_trilhas/05_como-o-spark-executa.md) · [Diagnóstico de performance](../../03_trilhas/06_diagnostico-de-performance.md) — modelo mental, exemplo para prever e erros comuns.
 
 ## Diagnóstico antes da otimização
 

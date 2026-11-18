@@ -6,20 +6,21 @@ Legenda de status: ✅ ciclo completo (trilha + cheatsheet + desafio) · 🟡 te
 
 | Skill | Trilha | Cheatsheet | Desafios | 12 semanas | 12 meses | Status |
 |---|---|---|---|---|---|---|
-| Sintaxe, filtros e ordenação | — | SQL 01 | sim | S1 | — | 🟡 |
+| Sintaxe, filtros e ordem lógica | 01 | SQL 01 | sim | S1 | — | ✅ |
 | Agregações e pivots | — | SQL 06 · PySpark 06 | sim | S2, S6 | — | 🟡 |
-| Grão, cardinalidade e joins | 02 | SQL 07 · PySpark 07 | sim | S2, S7 | — | ✅ |
-| CTEs, tipos, nulos e condicionais | — | SQL 02–05 · PySpark 03, 05 | sim | S3, S6–7 | M1 | 🟡 |
-| Window functions | 03 | SQL 08 · PySpark 08 | sim | S4, S8 | M1 | ✅ |
-| Execução do Spark e leitura de plano | 01 | PySpark 01, 13 · SQL 12 | sim | S6 | M2 | ✅ |
-| Diagnóstico de performance (skew, spill, AQE) | pendente | SQL 12 · PySpark 13 | sim | S6 | M2, M5 | 🟡 |
+| Grão, cardinalidade e joins | 03 | SQL 07 · PySpark 07 | sim | S2, S7 | — | ✅ |
+| NULL e lógica de três valores | 02 | SQL 04 · PySpark 05 | sim | S1, S3 | — | ✅ |
+| CTEs, tipos e condicionais | — (CTEs na 01) | SQL 02–05 · PySpark 03 | sim | S3, S6–7 | M1 | 🟡 |
+| Window functions | 04 | SQL 08 · PySpark 08 | sim | S4, S8 | M1 | ✅ |
+| Execução do Spark e leitura de plano | 05 | PySpark 01, 13 · SQL 12 | sim | S6 | M2 | ✅ |
+| Diagnóstico de performance (skew, spill, AQE) | 06 | SQL 12 · PySpark 13 | sim | S6 | M2, M5 | ✅ |
 | JSON, structs e schemas | — | SQL 09 · PySpark 09 | sim | S7 | M1 (schema evolution) | 🟡 |
-| Delta, MERGE e idempotência | pendente | SQL 10 · PySpark 10 | sim | S5 | M2, M6 | 🟡 (lacunas A no backlog) |
+| Delta, MERGE e idempotência | 07 | SQL 10 · PySpark 10 | sim | S5, S7 | M2, M6 | ✅ (lacunas A no backlog) |
 | Leitura e escrita de arquivos | — | PySpark 02 | sim | S7 | — | 🟡 |
-| Cargas incrementais e CDC (Auto Loader, CDF) | pendente | — | — | S9 | M2 | ❌ |
+| Cargas incrementais e CDC (Auto Loader, CDF) | 08 | — (lacuna A: Auto Loader, CDF) | parcial | S9–S10 | M2 | 🟠 falta cheatsheet |
 | Qualidade de dados e profiling | — | SQL 11 · PySpark 12 | sim | S7 | M5, M7 | 🟡 |
 | Arquitetura medalhão | — | PySpark 14 | sim | S5 | M1–M2 | 🟡 |
-| Modelagem dimensional e SCD2 | pendente | Modeling 01–03 (fora do build) | — | — | M9 | 🟠 |
+| Modelagem dimensional e SCD2 | 09 | Modeling 01–03 (fora do build) | parcial | — | M9 | 🟠 falta desafio próprio |
 | Workspace e `dbutils` | — | PySpark 11 | sim | S10 | — | 🟡 |
 | Orquestração e reprocessamento (Workflows, ADF) | — | — | — | S9–S10 | M3, M10 | ❌ |
 | Ingestão por API/SFTP e segredos | — | — | — | S10 | — | ❌ |
@@ -33,6 +34,6 @@ Legenda de status: ✅ ciclo completo (trilha + cheatsheet + desafio) · 🟡 te
 
 ## Leitura rápida
 
-- **Base de SQL e PySpark:** coberta com referência e prática. Falta transformar em trilha os temas que mais travam (Delta/MERGE, performance).
-- **Ponto cego principal:** do plano de 12 semanas a partir da S9 e do plano de 12 meses a partir do M3, quase nada tem material no hub (orquestração, CDC, testes, governança, CI/CD).
-- **Próximas trilhas sugeridas:** Delta e MERGE idempotente → Cargas incrementais e CDC → SCD2 → Diagnóstico de performance.
+- **Núcleo completo:** as 9 trilhas cobrem SQL, PySpark, Delta, cargas incrementais e SCD2. Todas as skills de SQL, PySpark e Delta do plano de 12 semanas têm trilha; ADF, API/SFTP e orquestração (S9–S10) ainda não.
+- **Lacunas de referência e prática:** cargas incrementais/CDC não têm cheatsheet (Auto Loader e CDF estão no backlog como prioridade A); SCD2 não tem desafio próprio porque Modeling está fora do build.
+- **Ponto cego principal:** orquestração, testes, governança, CI/CD e observabilidade (mês 3 em diante do plano de 12 meses) só aparecem nos planos.

@@ -39,9 +39,19 @@ resumo.show()                 # ação: agora sim roda
 Resultado esperado:
 
 - Só o `show()` processa dados; as três atribuições e o `explain` são instantâneos.
-- Um `Exchange hashpartitioning(loja, ...)`: o `groupBy` precisa juntar a mesma loja.
+- Um `Exchange` (nos detalhes do nó: `hashpartitioning(loja, ...)`): o `groupBy` precisa juntar a mesma loja.
 - **Dois** `HashAggregate`: um parcial antes do shuffle (cada partição conta localmente) e um final depois. Isso reduz o volume que trafega.
 - O `Filter` aparece antes do `Exchange`: filtrar cedo diminui o shuffle.
+
+Em SQL o plano é o mesmo, porque SQL e DataFrame passam pelo mesmo otimizador:
+
+```sql
+CREATE OR REPLACE TEMP VIEW vendas AS
+SELECT id, id % 10 AS loja FROM range(1000000);
+
+EXPLAIN FORMATTED
+SELECT loja, count(*) AS qtd FROM vendas WHERE loja = 3 GROUP BY loja;
+```
 
 Com AQE ligado (padrão no Databricks), o plano final pode mostrar `AdaptiveSparkPlan` e ajustes feitos em tempo de execução; o número de `Exchange` continua sendo o ponto de partida.
 

@@ -1,5 +1,7 @@
 # Delta Lake API em PySpark
 
+> **Aprenda o conceito:** trilhas [Delta e MERGE idempotente](../../03_trilhas/07_delta-e-merge-idempotente.md) · [Cargas full, incremental e CDC](../../03_trilhas/08_cargas-incrementais-e-cdc.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que é
 
 `DeltaTable` expõe operações transacionais em Python. SQL continua sendo uma alternativa válida; escolha a interface que deixa a transformação mais clara e testável.

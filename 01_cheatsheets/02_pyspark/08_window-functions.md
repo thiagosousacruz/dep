@@ -1,6 +1,6 @@
 # Window Functions em PySpark
 
-> **Aprenda o conceito:** trilha [Window functions](../../03_trilhas/03_window-functions.md) — modelo mental, exemplo para prever e erros comuns.
+> **Aprenda o conceito:** trilha [Window functions](../../03_trilhas/04_window-functions.md) — modelo mental, exemplo para prever e erros comuns.
 
 ## O que são
 

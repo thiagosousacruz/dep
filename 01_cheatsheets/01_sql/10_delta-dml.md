@@ -1,5 +1,7 @@
 # Delta Lake: DML e Manutenção
 
+> **Aprenda o conceito:** trilhas [Delta e MERGE idempotente](../../03_trilhas/07_delta-e-merge-idempotente.md) · [Cargas full, incremental e CDC](../../03_trilhas/08_cargas-incrementais-e-cdc.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que é
 
 Delta Lake adiciona log transacional e controle de concorrência a arquivos de dados. Operações, sintaxe e recursos de otimização podem variar por versão do Delta Lake e pelo Databricks Runtime.

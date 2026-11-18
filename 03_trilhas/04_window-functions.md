@@ -1,6 +1,6 @@
 # Window functions: calcular sem perder linhas
 
-> **Objetivo:** escolher entre `GROUP BY` e janela, montar `PARTITION BY` / `ORDER BY` / frame com intenção e prever o efeito de empates. **Tempo:** 1–2 h. **Pré-requisitos:** [Grão e cardinalidade](02_grao-e-cardinalidade.md).
+> **Objetivo:** escolher entre `GROUP BY` e janela, montar `PARTITION BY` / `ORDER BY` / frame com intenção e prever o efeito de empates. **Tempo:** 1–2 h. **Pré-requisitos:** [Grão e cardinalidade](03_grao-e-cardinalidade.md).
 
 ## O problema
 
@@ -56,6 +56,27 @@ Preencha a tabela antes de rodar. Resultado esperado:
 - `rank` pula posição depois do empate (1, 1, 3); `dense_rank` não (1, 1, 2).
 - Nos dias 2 e 3, `rn` e `soma_rows` são **não determinísticos**: o empate em `valor` não diz quem vem primeiro.
 - `soma_padrao` usa `RANGE`: as duas linhas com 20 entram juntas e ambas mostram 50.
+
+O mesmo em PySpark. Repare que o frame padrão também é `RANGE` quando há `orderBy`:
+
+```python
+from pyspark.sql import Window, functions as F
+
+por_valor_desc = Window.partitionBy("loja").orderBy(F.desc("valor"))
+por_valor = Window.partitionBy("loja").orderBy("valor")
+por_dia = Window.partitionBy("loja").orderBy("dia")
+
+(spark.table("vendas")
+    .withColumn("rn", F.row_number().over(por_valor_desc))
+    .withColumn("rk", F.rank().over(por_valor_desc))
+    .withColumn("drk", F.dense_rank().over(por_valor_desc))
+    .withColumn("soma_rows", F.sum("valor").over(
+        por_valor.rowsBetween(Window.unboundedPreceding, Window.currentRow)))
+    .withColumn("soma_padrao", F.sum("valor").over(por_valor))
+    .withColumn("valor_anterior", F.lag("valor").over(por_dia))
+    .orderBy("loja", "dia")
+    .show())
+```
 
 ## Quebre de propósito
 

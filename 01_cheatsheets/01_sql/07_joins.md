@@ -1,6 +1,6 @@
 # SQL Joins (Databricks / Spark SQL)
 
-> **Aprenda o conceito:** trilha [Grão e cardinalidade](../../03_trilhas/02_grao-e-cardinalidade.md) — modelo mental, exemplo para prever e erros comuns.
+> **Aprenda o conceito:** trilha [Grão e cardinalidade](../../03_trilhas/03_grao-e-cardinalidade.md) — modelo mental, exemplo para prever e erros comuns.
 
 ## O que é
 

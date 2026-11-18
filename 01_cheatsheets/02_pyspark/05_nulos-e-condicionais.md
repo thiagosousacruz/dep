@@ -1,5 +1,7 @@
 # Nulos e Condicionais (PySpark)
 
+> **Aprenda o conceito:** trilha [NULL e lógica de três valores](../../03_trilhas/02_null-e-logica-de-tres-valores.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que é
 
 Como no SQL, `null` é ausência de valor. Comparações com `null` resultam em `null`, então filtros e joins descartam essas linhas sem aviso. Regras de preenchimento e classificação precisam ser explícitas.

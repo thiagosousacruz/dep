@@ -26,6 +26,13 @@ TRAIL_TEMPLATE_PATH = ROOT / "trilhas_template.html"
 TRAIL_OUTPUT_PATH = ROOT / "trilhas.html"
 TRAIL_PLACEHOLDERS = ("{{ SIDEBAR_TRILHAS }}", "{{ HOME_TRILHAS }}", "{{ TOTAL_TRILHAS }}", "{{ CONTENT_INJECT }}")
 
+HAND_WRITTEN_PAGES = (
+    "index.html",
+    "plano-12-semanas.html",
+    "plano_12_meses_engenheiro_dados.html",
+    "framework_dominio_tecnico.html",
+)
+
 CHALLENGES_DIR = ROOT / "02_desafios"
 CHALLENGE_TEMPLATE_PATH = ROOT / "desafio_template.html"
 CHALLENGE_OUTPUT_PATH = ROOT / "desafio.html"
@@ -135,6 +142,10 @@ def rewrite_local_link(href: str, source: Path, link_map: LinkMap, page: str) ->
         query = f"?{parsed.query}" if parsed.query else ""
         fragment = f"#{parsed.fragment}" if parsed.fragment else ""
         return f"{target.name}{query}{fragment}"
+    if target.is_file() and target.is_relative_to(ROOT):
+        # Arquivo do repositorio fora do build (ex.: Modeling): caminho relativo a raiz, onde ficam os HTML.
+        fragment = f"#{parsed.fragment}" if parsed.fragment else ""
+        return target.relative_to(ROOT).as_posix() + fragment
     return href
 
 
@@ -301,6 +312,9 @@ def validate_cross_links(challenge_ids: set[str]) -> None:
         for path in (OUTPUT_PATH, TRAIL_OUTPUT_PATH)
     }
     ids = {name: {tag["id"] for tag in soup.find_all(id=True)} for name, soup in soups.items()}
+    # Paginas escritas a mao tambem linkam para ancoras das geradas: valide-as como origem.
+    for name in HAND_WRITTEN_PAGES:
+        soups[name] = BeautifulSoup((ROOT / name).read_text(encoding="utf-8"), "html.parser")
     errors: set[str] = set()
     for name, soup in soups.items():
         for link in soup.find_all("a", href=True):
@@ -313,8 +327,11 @@ def validate_cross_links(challenge_ids: set[str]) -> None:
             elif parsed.path == "desafio.html" and parsed.query.startswith("id="):
                 if parsed.query[3:].split("&")[0] not in challenge_ids:
                     errors.add(f"{name}: desafio inexistente {href}")
-            elif parsed.path.endswith(".md") and "03_modeling-e-analytics" not in parsed.path:
-                errors.add(f"{name}: link para Markdown fora do build {href}")
+            elif parsed.path.endswith(".md"):
+                if not parsed.path.startswith("01_cheatsheets/03_modeling-e-analytics/"):
+                    errors.add(f"{name}: link para Markdown fora do build {href}")
+                elif not (ROOT / unquote(parsed.path)).is_file():
+                    errors.add(f"{name}: Markdown inexistente {href}")
     if errors:
         raise RuntimeError("Falha na validacao de links entre paginas:\n- " + "\n- ".join(sorted(errors)))
 

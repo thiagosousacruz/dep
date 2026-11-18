@@ -12,16 +12,30 @@ Toda lição segue [o template](../04_templates/template-trilha.md), baseado nos
 
 ## Lições
 
-1. [Como o Spark executa seu código](01_como-o-spark-executa.md)
-2. [Grão e cardinalidade](02_grao-e-cardinalidade.md)
-3. [Window functions](03_window-functions.md)
+Ordem sugerida, alinhada ao plano de 12 semanas. Cada lição traz o exemplo principal em SQL e em PySpark.
 
-## Próximas (por prioridade)
+| # | Lição | Semanas | Verificação |
+|---|---|---|---|
+| 01 | [Ordem lógica do SQL](01_ordem-logica-do-sql.md) | S1 | Spark local |
+| 02 | [NULL e lógica de três valores](02_null-e-logica-de-tres-valores.md) | S1, S3 | Spark local |
+| 03 | [Grão e cardinalidade](03_grao-e-cardinalidade.md) | S2, S7 | Spark local |
+| 04 | [Window functions](04_window-functions.md) | S4, S8 | Spark local |
+| 05 | [Como o Spark executa seu código](05_como-o-spark-executa.md) | S6 | Spark local |
+| 06 | [Diagnóstico de performance](06_diagnostico-de-performance.md) | S6 | Spark local |
+| 07 | [Delta e MERGE idempotente](07_delta-e-merge-idempotente.md) | S5, S7 | lógica em Spark local; `MERGE` e `DESCRIBE HISTORY` a validar no Databricks |
+| 08 | [Cargas full, incremental e CDC](08_cargas-incrementais-e-cdc.md) | S9, S10 | lógica em Spark local; `MERGE` e Auto Loader a validar no Databricks |
+| 09 | [SCD2 e modelagem dimensional](09_scd2-e-modelagem-dimensional.md) | M9 (12 meses) | staging e join por vigência em Spark local; `MERGE` com `IDENTITY` a validar no Databricks |
 
-- Delta e MERGE idempotente (transação, reexecução, histórico).
-- Cargas full, incremental e CDC (watermark, reprocessamento).
-- SCD2 e modelagem dimensional.
-- Diagnóstico de performance (skew, spill, partições, AQE).
+Com essas 9 lições, o **núcleo** está completo: todas as skills de SQL, PySpark e Delta do plano de 12 semanas têm trilha. ADF, API/SFTP e orquestração (S9–S10) ficam para a próxima etapa.
+
+## Próximas (fora do núcleo, dependem de Databricks para validar)
+
+- Orquestração e reprocessamento (Workflows, ADF).
+- Testes de pipelines PySpark.
+- Qualidade de dados e expectations (Lakeflow/DLT).
+- Unity Catalog e governança.
+- CI/CD com Asset Bundles.
+- Observabilidade e custo.
 
 ## Regras
 

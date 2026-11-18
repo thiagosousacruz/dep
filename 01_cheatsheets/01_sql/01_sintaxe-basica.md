@@ -1,5 +1,7 @@
 # Sintaxe Básica (SQL / Databricks)
 
+> **Aprenda o conceito:** trilha [Ordem lógica do SQL](../../03_trilhas/01_ordem-logica-do-sql.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que é
 
 A estrutura de uma consulta `SELECT` e a ordem lógica em que suas cláusulas são avaliadas. Entender essa ordem explica por que um alias do `SELECT` não pode ser usado no `WHERE`, por que agregados são filtrados no `HAVING` e onde entra o `QUALIFY`.

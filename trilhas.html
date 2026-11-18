@@ -474,10 +474,16 @@
     <div class="nav-section-title">← <a href="index.html" style="color:inherit;text-decoration:none;">Voltar ao Hub</a></div>
   </div>
   <div class="nav-section">
-    <div class="nav-section-title"><span>Trilhas</span> <span class="badge">3</span></div>
-    <a class="nav-item trilha-item" href="#trilha-01" data-search="como o spark executa seu código"><span class="num">01</span>Como o Spark executa seu código</a>
-    <a class="nav-item trilha-item" href="#trilha-02" data-search="grão e cardinalidade  por que joins multiplicam linhas"><span class="num">02</span>Grão e cardinalidade: por que joins multiplicam linhas</a>
-    <a class="nav-item trilha-item" href="#trilha-03" data-search="window functions  calcular sem perder linhas"><span class="num">03</span>Window functions: calcular sem perder linhas</a>
+    <div class="nav-section-title"><span>Trilhas</span> <span class="badge">9</span></div>
+    <a class="nav-item trilha-item" href="#trilha-01" data-search="ordem lógica do sql  o que a consulta enxerga em cada cláusula"><span class="num">01</span>Ordem lógica do SQL: o que a consulta enxerga em cada cláusula</a>
+    <a class="nav-item trilha-item" href="#trilha-02" data-search="null e lógica de três valores"><span class="num">02</span>NULL e lógica de três valores</a>
+    <a class="nav-item trilha-item" href="#trilha-03" data-search="grão e cardinalidade  por que joins multiplicam linhas"><span class="num">03</span>Grão e cardinalidade: por que joins multiplicam linhas</a>
+    <a class="nav-item trilha-item" href="#trilha-04" data-search="window functions  calcular sem perder linhas"><span class="num">04</span>Window functions: calcular sem perder linhas</a>
+    <a class="nav-item trilha-item" href="#trilha-05" data-search="como o spark executa seu código"><span class="num">05</span>Como o Spark executa seu código</a>
+    <a class="nav-item trilha-item" href="#trilha-06" data-search="diagnóstico de performance  medir antes de mexer"><span class="num">06</span>Diagnóstico de performance: medir antes de mexer</a>
+    <a class="nav-item trilha-item" href="#trilha-07" data-search="delta e merge idempotente  rodar duas vezes  mesmo resultado"><span class="num">07</span>Delta e MERGE idempotente: rodar duas vezes, mesmo resultado</a>
+    <a class="nav-item trilha-item" href="#trilha-08" data-search="cargas full  incremental e cdc"><span class="num">08</span>Cargas full, incremental e CDC</a>
+    <a class="nav-item trilha-item" href="#trilha-09" data-search="scd2 e modelagem dimensional  o passado não pode mudar sozinho"><span class="num">09</span>SCD2 e modelagem dimensional: o passado não pode mudar sozinho</a>
   </div>
   <div class="sidebar-footer">
     <a href="#home" style="color:var(--text-muted);font-size:.72rem;">↑ Voltar ao topo</a>
@@ -507,94 +513,215 @@
       </ul>
     </div>
     <div class="home-card">
-      <h3><span class="icon">📚</span> Lições <span class="tag sql-tag">3 lições</span></h3>
+      <h3><span class="icon">📚</span> Lições <span class="tag sql-tag">9 lições</span></h3>
       <ul>
-        <li><span class="num">01</span> <a href="#trilha-01">Como o Spark executa seu código</a></li>
-        <li><span class="num">02</span> <a href="#trilha-02">Grão e cardinalidade: por que joins multiplicam linhas</a></li>
-        <li><span class="num">03</span> <a href="#trilha-03">Window functions: calcular sem perder linhas</a></li>
+        <li><span class="num">01</span> <a href="#trilha-01">Ordem lógica do SQL: o que a consulta enxerga em cada cláusula</a></li>
+        <li><span class="num">02</span> <a href="#trilha-02">NULL e lógica de três valores</a></li>
+        <li><span class="num">03</span> <a href="#trilha-03">Grão e cardinalidade: por que joins multiplicam linhas</a></li>
+        <li><span class="num">04</span> <a href="#trilha-04">Window functions: calcular sem perder linhas</a></li>
+        <li><span class="num">05</span> <a href="#trilha-05">Como o Spark executa seu código</a></li>
+        <li><span class="num">06</span> <a href="#trilha-06">Diagnóstico de performance: medir antes de mexer</a></li>
+        <li><span class="num">07</span> <a href="#trilha-07">Delta e MERGE idempotente: rodar duas vezes, mesmo resultado</a></li>
+        <li><span class="num">08</span> <a href="#trilha-08">Cargas full, incremental e CDC</a></li>
+        <li><span class="num">09</span> <a href="#trilha-09">SCD2 e modelagem dimensional: o passado não pode mudar sozinho</a></li>
       </ul>
     </div>
   </div>
 </section>
 
   <section id="trilha-01" class="cheat-section">
-<h2><span class="sec-num trilha">Trilha 01</span> Como o Spark executa seu código</h2>
+<h2><span class="sec-num trilha">Trilha 01</span> Ordem lógica do SQL: o que a consulta enxerga em cada cláusula</h2>
 <blockquote>
-<p><strong>Objetivo:</strong> prever quando o Spark realmente processa dados, onde há shuffle e ler o essencial de um <code>explain</code>. <strong>Tempo:</strong> 1–2 h. <strong>Pré-requisitos:</strong> saber criar um DataFrame e usar <code>select</code>/<code>filter</code>/<code>groupBy</code>.</p>
+<p><strong>Objetivo:</strong> prever em que momento cada cláusula é avaliada e, com isso, saber onde filtrar, onde um alias existe e por que alguns erros acontecem. <strong>Tempo:</strong> 1 h. <strong>Pré-requisitos:</strong> <code>SELECT</code>, <code>WHERE</code>, <code>GROUP BY</code>.</p>
 </blockquote>
 <h2 id="trilha-01-o-problema">O problema</h2>
-<p>Uma célula com dez transformações termina em milissegundos; depois um <code>count()</code> leva dez minutos. Outra pessoa "otimiza" trocando a ordem dos filtros e nada muda. Sem um modelo de execução, performance vira tentativa e erro e a depuração engana: o erro aparece na ação, não na linha que o causou.</p>
-<h2 id="trilha-01-modelo-mental">Modelo mental</h2>
+<p>Três erros clássicos de quem está começando têm a mesma causa:</p>
 <ul>
-<li><strong>DataFrame é uma receita, não um resultado.</strong> Transformações (<code>select</code>, <code>filter</code>, <code>join</code>, <code>groupBy</code>) só descrevem o plano. Nada é lido até uma <strong>ação</strong> (<code>count</code>, <code>show</code>, <code>collect</code>, <code>write</code>, <code>display</code>).</li>
-<li><strong>O Catalyst reescreve a receita.</strong> Antes de executar, o otimizador empurra filtros para perto da leitura, poda colunas e escolhe estratégias de join. Por isso reordenar filtros à mão raramente muda algo.</li>
-<li><strong>Ação → job → stages → tasks.</strong> Cada ação gera um ou mais jobs. Um job é cortado em <strong>stages</strong> nas fronteiras de <strong>shuffle</strong>; cada stage roda uma <strong>task por partição</strong>.</li>
-<li><strong>Shuffle é redistribuir linhas pela rede</strong> para que linhas com a mesma chave fiquem juntas. Transformações <em>narrow</em> (<code>select</code>, <code>filter</code>, <code>withColumn</code>) não precisam disso; <em>wide</em> (<code>groupBy</code>, <code>join</code> sem broadcast, <code>distinct</code>, <code>orderBy</code>, <code>repartition</code>) precisam.</li>
+<li><code>WHERE liquido &gt; 100</code> falha, mesmo com <code>liquido</code> definido no <code>SELECT</code>;</li>
+<li><code>WHERE row_number() OVER (...) = 1</code> não é aceito;</li>
+<li>um filtro colocado no <code>HAVING</code> em vez do <code>WHERE</code> muda o número, sem dar erro.</li>
 </ul>
-<div class="code-wrap"><div class="code-lang trilha-lang">TEXT</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-text">read → filter → withColumn ║ shuffle ║ groupBy/agg ║ shuffle ║ orderBy → write
-└──────── stage 1 ────────┘           └── stage 2 ──┘          └─ stage 3 ─┘
-         (narrow)          Exchange         (wide)    Exchange
+<p>A consulta é <strong>escrita</strong> numa ordem e <strong>avaliada</strong> em outra. Quem conhece a ordem de avaliação para de tentar na sorte.</p>
+<h2 id="trilha-01-modelo-mental">Modelo mental</h2>
+<p>Pense numa linha de montagem. Cada etapa só enxerga o que as anteriores produziram:</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">TEXT</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-text">1 FROM / JOIN    monta as linhas de origem
+2 WHERE          filtra linhas            (ainda não há agregados nem aliases)
+3 GROUP BY       forma grupos
+4 HAVING         filtra grupos            (agregados já existem)
+5 OVER (janela)  calcula janelas sobre o resultado agrupado
+6 QUALIFY        filtra pelo resultado da janela (Databricks)
+7 SELECT         projeta colunas; aliases nascem aqui
+8 DISTINCT       remove duplicatas do que foi projetado
+9 ORDER BY       ordena (enxerga aliases)
+10 LIMIT         corta
 </code></pre></div>
-<p>No plano físico, cada shuffle aparece como um nó <strong><code>Exchange</code></strong>. Contar <code>Exchange</code> é a primeira leitura útil de um <code>explain</code>.</p>
+<ul>
+<li><strong>É uma ordem lógica, não física.</strong> O otimizador pode empurrar filtros para a leitura, mas o <em>resultado</em> sempre respeita essa sequência.</li>
+<li><strong>Janelas rodam depois do <code>GROUP BY</code>.</strong> Por isso <code>SUM(SUM(valor)) OVER ()</code> é válido: a janela soma os totais por grupo.</li>
+<li><strong>No PySpark não há ordem de cláusulas:</strong> cada método é uma etapa explícita (<code>filter</code> → <code>groupBy().agg()</code> → <code>filter</code> → <code>orderBy</code>). Você escreve a sequência na ordem em que ela acontece.</li>
+</ul>
 <h2 id="trilha-01-exemplo-para-prever">Exemplo para prever</h2>
-<p>Antes de rodar, responda: (1) qual linha dispara processamento? (2) quantos <code>Exchange</code> o plano terá? (3) quantas etapas de agregação?</p>
-<div class="code-wrap"><div class="code-lang trilha-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TEMP VIEW vendas AS
+SELECT * FROM VALUES
+  (1, 'A', 100, 'OK'), (2, 'A', 300, 'OK'), (3, 'B', 50, 'CANCELADO'),
+  (4, 'B', 700, 'OK'), (5, 'C', 80, 'OK')
+AS t(id, loja, valor, status);
 
-vendas = spark.range(1_000_000).withColumn("loja", F.col("id") % 10)
-da_loja_3 = vendas.filter(F.col("loja") == 3)
-resumo = da_loja_3.groupBy("loja").agg(F.count("*").alias("qtd"))
+-- Consulta 1
+SELECT loja, SUM(valor) AS receita
+FROM vendas
+WHERE status = 'OK'
+GROUP BY loja
+HAVING SUM(valor) &gt; 200
+ORDER BY receita DESC;
 
-resumo.explain("formatted")   # não processa dados, só mostra o plano
-resumo.show()                 # ação: agora sim roda
+-- Consulta 2: mesma coisa, sem o WHERE
+SELECT loja, SUM(valor) AS receita
+FROM vendas
+GROUP BY loja
+HAVING SUM(valor) &gt; 200
+ORDER BY receita DESC;
 </code></pre></div>
+<p>Anote as linhas de cada uma antes de rodar.</p>
 <p>Resultado esperado:</p>
 <ul>
-<li>Só o <code>show()</code> processa dados; as três atribuições e o <code>explain</code> são instantâneos.</li>
-<li>Um <code>Exchange hashpartitioning(loja, ...)</code>: o <code>groupBy</code> precisa juntar a mesma loja.</li>
-<li><strong>Dois</strong> <code>HashAggregate</code>: um parcial antes do shuffle (cada partição conta localmente) e um final depois. Isso reduz o volume que trafega.</li>
-<li>O <code>Filter</code> aparece antes do <code>Exchange</code>: filtrar cedo diminui o shuffle.</li>
+<li><strong>Consulta 1:</strong> <code>B 700</code>, <code>A 400</code>. A venda cancelada sai no <code>WHERE</code> (etapa 2), antes de somar; <code>C</code> (80) sai no <code>HAVING</code> (etapa 4).</li>
+<li><strong>Consulta 2:</strong> <code>B 750</code>, <code>A 400</code>. Sem o <code>WHERE</code>, os 50 cancelados entram na soma de <code>B</code>. Nenhum erro: só um número diferente.</li>
 </ul>
-<p>Com AQE ligado (padrão no Databricks), o plano final pode mostrar <code>AdaptiveSparkPlan</code> e ajustes feitos em tempo de execução; o número de <code>Exchange</code> continua sendo o ponto de partida.</p>
+<p>Equivalente em PySpark, já na ordem de avaliação:</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
+
+(spark.table("vendas")
+    .filter(F.col("status") == "OK")              # WHERE
+    .groupBy("loja").agg(F.sum("valor").alias("receita"))
+    .filter(F.col("receita") &gt; 200)               # HAVING
+    .orderBy(F.desc("receita")))
+</code></pre></div>
 <h2 id="trilha-01-quebre-de-proposito">Quebre de propósito</h2>
 <ol>
-<li><strong>Duas ações, dois jobs.</strong> Rode <code>resumo.count()</code> duas vezes e observe na Spark UI: o trabalho é refeito. Sem cache, cada ação recalcula a receita inteira.</li>
-<li><strong>Acrescente ordenação.</strong> <code>resumo.orderBy("qtd").explain()</code> — surge um segundo <code>Exchange</code>, agora <code>rangepartitioning</code>. Ordenação global também é shuffle.</li>
-<li><strong>Broadcast × sort-merge.</strong> Crie <code>lojas = spark.createDataFrame([(3, "Centro")], "loja INT, nome STRING")</code> e compare os planos de <code>vendas.join(F.broadcast(lojas), "loja")</code> e <code>vendas.join(lojas.hint("merge"), "loja")</code>. O primeiro vira <code>BroadcastHashJoin</code>, sem <code>Exchange hashpartitioning</code>: a tabela pequena é copiada para cada executor. O segundo vira <code>SortMergeJoin</code>, com <code>Exchange</code> dos dois lados. Sem o hint, o Spark só escolhe broadcast sozinho quando conhece o tamanho da tabela, o que é comum em tabelas Delta e menos garantido em DataFrames criados no notebook.</li>
-<li><strong>UDF Python bloqueia otimização.</strong> Aplique <code>F.udf(lambda x: x * 2, "long")</code> em <code>id</code> e filtre pelo resultado. O plano ganha <code>BatchEvalPython</code>/<code>ArrowEvalPython</code> e o filtro não pode mais ser empurrado para a leitura.</li>
-<li><strong>O erro aparece longe da causa.</strong> Faça <code>withColumn("x", F.col("id").cast("int") / F.lit(0))</code> com ANSI ligado: a célula da transformação passa; o erro só surge no <code>show()</code>.</li>
+<li><strong>Alias no <code>WHERE</code>.</strong> <code>SELECT loja, valor * 0.9 AS liquido FROM vendas WHERE liquido &gt; 100</code> → erro <code>UNRESOLVED_COLUMN</code>: na etapa 2 o alias ainda não existe. Repita a expressão no <code>WHERE</code> ou use uma CTE.</li>
+<li><strong>Janela no <code>WHERE</code>.</strong> <code>WHERE row_number() OVER (PARTITION BY loja ORDER BY valor DESC) = 1</code> → erro: janelas são a etapa 5. No Databricks use <code>QUALIFY</code>; no Spark open source, calcule a janela numa CTE e filtre fora dela.</li>
+<li><strong><code>DISTINCT</code> + <code>ORDER BY</code> em coluna não projetada.</strong> <code>SELECT DISTINCT loja FROM vendas ORDER BY valor</code> → erro: depois do <code>DISTINCT</code> não existe mais um <code>valor</code> por linha.</li>
+<li><strong><code>LIMIT</code> sem <code>ORDER BY</code>.</strong> <code>SELECT id FROM vendas LIMIT 2</code> costuma devolver as primeiras linhas lidas, mas <strong>não há garantia de ordem</strong>. Em dados distribuídos o resultado pode mudar entre execuções.</li>
+<li><strong>Janela sobre agregado.</strong> <code>SELECT loja, SUM(valor) AS receita, SUM(SUM(valor)) OVER () AS total FROM vendas GROUP BY loja</code>. Preveja <code>total</code> (1230) e explique por que a janela enxerga as somas, não as linhas originais.</li>
 </ol>
 <h2 id="trilha-01-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
 <ul>
-<li><strong>"A célula rodou rápido, então está certo."</strong> → transformações não executam. Confirme com uma ação controlada (<code>count</code> em amostra, <code>limit</code> + <code>show</code>).</li>
-<li><strong><code>count()</code> espalhado para depurar</strong> → cada um é um job completo. Use em pontos de checagem deliberados e remova depois.</li>
-<li><strong><code>collect()</code>/<code>toPandas()</code> em tabela grande</strong> → traz tudo para o driver e pode derrubá-lo. Agregue ou limite antes.</li>
-<li><strong>Otimizar sem olhar o plano</strong> → leia <code>explain("formatted")</code> e a Spark UI/Query Profile antes: conte <code>Exchange</code>, procure estratégia de join e UDFs.</li>
-<li><strong>Achar que <code>show()</code> mede o custo total</strong> → ele pode processar só o necessário para exibir as primeiras linhas. Para medir, use a ação real (ex.: <code>write</code>).</li>
+<li><strong>Filtro de linha no <code>HAVING</code></strong> → funciona, mas filtra depois de agregar: é mais caro e às vezes muda o resultado. Regra: condição sem agregado vai no <code>WHERE</code>.</li>
+<li><strong>"Funciona no Databricks e falha no Spark local"</strong> → <code>QUALIFY</code> e alguns atalhos são do Databricks. Confira a documentação do runtime.</li>
+<li><strong>Alias que funciona numa cláusula e não em outra</strong> → aliases existem a partir do <code>SELECT</code>. No Spark também valem no <code>GROUP BY</code>, no <code>HAVING</code>, no <code>ORDER BY</code> e dentro do próprio <code>SELECT</code> (<em>lateral alias</em>), mas nunca no <code>WHERE</code>.</li>
+<li><strong>Top-N com <code>LIMIT</code> dando resultado diferente a cada execução</strong> → falta <code>ORDER BY</code> com desempate.</li>
 </ul>
 <h2 id="trilha-01-cheque-seu-entendimento">Cheque seu entendimento</h2>
 <ol>
-<li>Por que três transformações seguidas não geram nenhum job?</li>
-<li>O que é um <code>Exchange</code> e por que ele separa stages?</li>
-<li>Dê dois exemplos de transformação narrow e dois de wide.</li>
-<li>Por que há dois <code>HashAggregate</code> em um <code>groupBy</code> simples?</li>
-<li>Em que situação um join não precisa embaralhar a tabela grande?</li>
+<li>Por que o alias do <code>SELECT</code> não existe no <code>WHERE</code>?</li>
+<li>Em que etapa entram as janelas? E o que isso permite fazer com agregados?</li>
+<li>Dê uma condição que deve ir no <code>WHERE</code> e outra que só pode ir no <code>HAVING</code>.</li>
+<li>Por que <code>LIMIT</code> sem <code>ORDER BY</code> não serve para "pegar os maiores"?</li>
+<li>Como filtrar pelo resultado de <code>row_number()</code> sem <code>QUALIFY</code>?</li>
 </ol>
 <h2 id="trilha-01-proximos-passos">Próximos passos</h2>
 <ul>
-<li><strong>Consulta:</strong> <a href="cheatsheets.html#pyspark-01-transformacoes-e-acoes">Transformações e ações</a> · <a href="cheatsheets.html#pyspark-13-diagnostico-antes-da-otimizacao">Diagnóstico antes da otimização</a> · <a href="cheatsheets.html#sql-12-shuffle-skew-e-spill">Shuffle, skew e spill</a></li>
-<li><strong>Prática:</strong> <a href="desafio.html?id=spk-01-transformacoes-acoes">desafio de transformações e ações</a> · <a href="desafio.html?id=spk-13-diagnostico">desafio de diagnóstico</a> · <a href="desafio.html?id=sql-12-shuffle-skew-spill">desafio de shuffle, skew e spill</a></li>
-<li><strong>Aplicação real:</strong> abra um notebook autorizado que você já usa, rode <code>explain("formatted")</code> na consulta principal e anote: quantos <code>Exchange</code>, que estratégia de join e se há UDF Python. Explique o plano para alguém do time.</li>
+<li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-01-ordem-logica-de-avaliacao">Ordem lógica de avaliação</a> · <a href="cheatsheets.html#sql-05-ctes-para-organizar-a-logica">CTEs para organizar a lógica</a> · <a href="cheatsheets.html#sql-06-agregacoes-e-filtros-por-agregacao">Agregações e filtros por agregação</a></li>
+<li><strong>Prática:</strong> <a href="desafio.html?id=sql-01-ordem-logica">desafio de ordem lógica</a> · <a href="desafio.html?id=sql-06-agregacoes-filter">desafio de agregações e HAVING</a> · <a href="desafio.html?id=sql-05-ctes-organizar">desafio de CTEs</a></li>
+<li><strong>Aplicação real:</strong> pegue uma consulta longa autorizada e numere cada cláusula pela ordem de avaliação. Verifique se há filtro de linha no <code>HAVING</code> ou <code>LIMIT</code> sem <code>ORDER BY</code>.</li>
 </ul>
 </section>
 
 <section id="trilha-02" class="cheat-section">
-<h2><span class="sec-num trilha">Trilha 02</span> Grão e cardinalidade: por que joins multiplicam linhas</h2>
+<h2><span class="sec-num trilha">Trilha 02</span> NULL e lógica de três valores</h2>
+<blockquote>
+<p><strong>Objetivo:</strong> prever o efeito de <code>NULL</code> em comparações, filtros, agregações, joins e <code>NOT IN</code>, e escolher explicitamente o tratamento certo. <strong>Tempo:</strong> 1 h. <strong>Pré-requisitos:</strong> <a href="#trilha-01">Ordem lógica do SQL</a>.</p>
+</blockquote>
+<h2 id="trilha-02-o-problema">O problema</h2>
+<p>A lista de "clientes não bloqueados" volta vazia. O filtro "telefone diferente de 11" some com os clientes sem telefone. A média de nota sobe depois de uma carga com muitas notas faltando. Nenhuma dessas consultas dá erro. Em todas, alguém tratou <code>NULL</code> como se fosse um valor; na verdade ele significa <strong>"desconhecido"</strong>.</p>
+<h2 id="trilha-02-modelo-mental">Modelo mental</h2>
+<ul>
+<li><strong>Comparar com desconhecido dá desconhecido.</strong> <code>NULL = 1</code>, <code>NULL &lt;&gt; 1</code> e até <code>NULL = NULL</code> resultam em <code>NULL</code>, não em <code>false</code>.</li>
+<li><strong>Existem três valores lógicos: verdadeiro, falso e desconhecido.</strong></li>
+</ul>
+<div class="code-wrap"><div class="code-lang trilha-lang">TEXT</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-text">AND      | true   false  NULL         OR       | true   false  NULL
+true     | true   false  NULL         true     | true   true   true
+false    | false  false  false        false    | true   false  NULL
+NULL     | NULL   false  NULL         NULL     | true   NULL   NULL
+                                       NOT NULL → NULL
+</code></pre></div>
+<ul>
+<li><strong><code>WHERE</code>, <code>HAVING</code>, <code>ON</code> e <code>CASE WHEN</code> só aceitam verdadeiro.</strong> Desconhecido é tratado como "não passa", por isso a linha some em silêncio.</li>
+<li><strong>Agregações ignoram <code>NULL</code></strong> (exceto <code>COUNT(*)</code>). <code>AVG</code> tira o nulo do numerador <em>e</em> do denominador.</li>
+<li><strong>Para tratar <code>NULL</code> como valor comparável</strong>, use <code>IS NULL</code>, <code>&lt;=&gt;</code> (ou <code>IS NOT DISTINCT FROM</code>) e <code>coalesce</code>, sempre de propósito.</li>
+</ul>
+<h2 id="trilha-02-exemplo-para-prever">Exemplo para prever</h2>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TEMP VIEW clientes AS
+SELECT * FROM VALUES (1, 'Ana', '11'), (2, 'Bia', NULL), (3, 'Caio', '21'), (NULL, 'Sem id', '31')
+AS t(id, nome, telefone);
+
+CREATE OR REPLACE TEMP VIEW bloqueados AS
+SELECT * FROM VALUES (2), (CAST(NULL AS INT)) AS t(id);
+
+-- A
+SELECT nome FROM clientes WHERE telefone &lt;&gt; '11';
+-- B
+SELECT COUNT(*), COUNT(telefone), COUNT(DISTINCT id) FROM clientes;
+-- C
+SELECT nome FROM clientes WHERE id NOT IN (SELECT id FROM bloqueados);
+-- D
+SELECT nome FROM clientes c
+WHERE NOT EXISTS (SELECT 1 FROM bloqueados b WHERE b.id = c.id);
+</code></pre></div>
+<p>Resultado esperado:</p>
+<ul>
+<li><strong>A:</strong> <code>Caio</code>, <code>Sem id</code>. Bia some: <code>NULL &lt;&gt; '11'</code> é desconhecido.</li>
+<li><strong>B:</strong> <code>4, 3, 3</code>. <code>COUNT(coluna)</code> e <code>COUNT(DISTINCT)</code> ignoram nulos.</li>
+<li><strong>C:</strong> <strong>nenhuma linha.</strong> <code>id NOT IN (2, NULL)</code> vira <code>id &lt;&gt; 2 AND id &lt;&gt; NULL</code>, e o segundo termo é sempre desconhecido.</li>
+<li><strong>D:</strong> <code>Ana</code>, <code>Caio</code>, <code>Sem id</code>. <code>NOT EXISTS</code> só pergunta se existe um par igual; como <code>NULL</code> não é igual a nada, até o cliente sem id passa. Decida se isso é o que você quer.</li>
+</ul>
+<p>Em PySpark a semântica é a mesma: <code>F.col("telefone") != "11"</code> descarta os nulos, e <code>eqNullSafe</code> corresponde a <code>&lt;=&gt;</code>.</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
+
+clientes.filter((F.col("telefone") != "11") | F.col("telefone").isNull())   # inclui quem não tem telefone
+clientes.join(bloqueados, "id", "left_anti")                                 # equivalente seguro ao NOT IN
+</code></pre></div>
+<h2 id="trilha-02-quebre-de-proposito">Quebre de propósito</h2>
+<ol>
+<li><strong>Tabela verdade.</strong> Rode <code>SELECT NULL = NULL, NULL &lt;=&gt; NULL, NULL AND false, NULL OR true, NOT NULL</code>. Confira: <code>NULL, true, false, true, NULL</code>.</li>
+<li><strong><code>CASE</code> com <code>= NULL</code>.</strong> <code>CASE WHEN telefone = NULL THEN 'sem' ELSE 'com' END</code> classifica <em>todos</em> como <code>com</code>. Troque por <code>IS NULL</code>.</li>
+<li><strong>Média enganosa.</strong> <code>SELECT AVG(x), AVG(coalesce(x, 0)) FROM VALUES (10), (NULL), (20) AS t(x)</code> → <code>15</code> e <code>10</code>. Qual responde à pergunta de negócio: "nota média de quem respondeu" ou "nota média por envio"?</li>
+<li><strong>Soma de nada.</strong> <code>SUM</code> de uma coluna só com nulos devolve <code>NULL</code>, não <code>0</code>, enquanto <code>COUNT</code> devolve <code>0</code>. Veja como isso afeta um painel.</li>
+<li><strong>Concatenação.</strong> <code>concat('a', NULL)</code> é <code>NULL</code>; <code>concat_ws('-', 'a', NULL, 'b')</code> é <code>a-b</code>. <code>1 + NULL</code> é <code>NULL</code>.</li>
+<li><strong>Agrupamento e ordenação.</strong> No <code>GROUP BY</code>, os nulos formam <strong>um grupo só</strong>. Em <code>ORDER BY x</code> (crescente) eles vêm primeiro, e em <code>ORDER BY x DESC</code> vêm por último. Use <code>NULLS FIRST/LAST</code> para deixar explícito.</li>
+</ol>
+<h2 id="trilha-02-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
+<ul>
+<li><strong><code>NOT IN</code> com subconsulta voltando vazio</strong> → algum valor nulo na subconsulta. Troque por <code>NOT EXISTS</code> ou <code>LEFT ANTI JOIN</code>.</li>
+<li><strong>Filtro <code>&lt;&gt;</code> "perdendo" linhas</strong> → os nulos foram descartados. Decida e escreva: <code>OR col IS NULL</code>, ou <code>NOT (col &lt;=&gt; valor)</code>.</li>
+<li><strong>Join perdendo linhas</strong> → chaves nulas não se casam com <code>=</code>. Conte as chaves nulas de cada lado antes de cruzar.</li>
+<li><strong><code>fillna</code>/<code>coalesce</code> aplicado sem critério</strong> → troca "desconhecido" por um valor falso (0, <code>'N/A'</code>) e distorce médias e contagens. Documente a regra.</li>
+</ul>
+<h2 id="trilha-02-cheque-seu-entendimento">Cheque seu entendimento</h2>
+<ol>
+<li>Por que <code>NULL = NULL</code> não é verdadeiro?</li>
+<li>O que o <code>WHERE</code> faz com uma condição desconhecida?</li>
+<li>Por que um único nulo na subconsulta zera o <code>NOT IN</code>?</li>
+<li>Qual a diferença entre <code>COUNT(*)</code> e <code>COUNT(coluna)</code>?</li>
+<li>Quando <code>coalesce(nota, 0)</code> é correto e quando distorce o resultado?</li>
+</ol>
+<h2 id="trilha-02-proximos-passos">Próximos passos</h2>
+<ul>
+<li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-04-null-em-agregacoes-e-comparacoes">NULL em agregações e comparações</a> · <a href="cheatsheets.html#sql-01-filtros-in-between-e-like">Filtros: IN, BETWEEN e LIKE</a> · <a href="cheatsheets.html#pyspark-05-when-otherwise-e-coalesce">when / otherwise e coalesce no PySpark</a></li>
+<li><strong>Prática:</strong> <a href="desafio.html?id=sql-04-null-agregacoes">desafio de NULL em agregações</a> · <a href="desafio.html?id=sql-04-coalesce-case">desafio de COALESCE e CASE</a> · <a href="desafio.html?id=spk-12-nulos-coluna">desafio de percentual de nulos</a></li>
+<li><strong>Aplicação real:</strong> em uma tabela autorizada, meça o percentual de nulos das colunas usadas em filtros e chaves de join. Revise uma consulta que use <code>NOT IN</code> ou <code>&lt;&gt;</code> sobre essas colunas.</li>
+</ul>
+</section>
+
+<section id="trilha-03" class="cheat-section">
+<h2><span class="sec-num trilha">Trilha 03</span> Grão e cardinalidade: por que joins multiplicam linhas</h2>
 <blockquote>
 <p><strong>Objetivo:</strong> declarar o grão de cada tabela antes de cruzar, prever a cardinalidade de um join e provar com contagens que o resultado não duplicou nem perdeu linhas. <strong>Tempo:</strong> 1–2 h. <strong>Pré-requisitos:</strong> <code>JOIN</code>, <code>GROUP BY</code> e <code>COUNT</code>.</p>
 </blockquote>
-<h2 id="trilha-02-o-problema">O problema</h2>
+<h2 id="trilha-03-o-problema">O problema</h2>
 <p>A receita do mês sai 37% maior que a do relatório oficial. A consulta "parece certa": um <code>JOIN</code> entre vendas e promoções e um <code>SUM(receita)</code>. A causa é quase sempre a mesma: uma das tabelas tinha mais de uma linha por chave e o join <strong>replicou</strong> as vendas. Nenhum erro é lançado; só o número fica errado.</p>
-<h2 id="trilha-02-modelo-mental">Modelo mental</h2>
+<h2 id="trilha-03-modelo-mental">Modelo mental</h2>
 <ul>
 <li><strong>Grão</strong> é a frase "uma linha representa ___". Ex.: <em>uma linha por venda</em>, <em>uma linha por produto por dia</em>. Se você não consegue completar a frase, não está pronto para cruzar.</li>
 <li><strong>A chave do grão</strong> é o conjunto de colunas que identifica a linha de forma única. Isso se prova com dados, não se supõe:</li>
@@ -616,7 +743,7 @@ HAVING count(*) &gt; 1;   -- vazio = a chave é única
 <ul>
 <li><strong>Regra prática:</strong> o lado "de enriquecimento" (dimensão, cadastro, de-para) precisa ser único na chave do join. Se não for, resolva antes: deduplique, filtre a vigência ou agregue.</li>
 </ul>
-<h2 id="trilha-02-exemplo-para-prever">Exemplo para prever</h2>
+<h2 id="trilha-03-exemplo-para-prever">Exemplo para prever</h2>
 <div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TEMP VIEW vendas AS
 SELECT * FROM VALUES (1, 'P1', 100), (2, 'P1', 50), (3, 'P2', 80) AS t(id_venda, produto, receita);
 
@@ -629,7 +756,18 @@ JOIN categorias c USING (produto);
 </code></pre></div>
 <p>Antes de rodar: quantas linhas e qual a receita? A receita real é 230.</p>
 <p>Resultado: <strong>5 linhas e receita 380</strong>. <code>P1</code> tem duas categorias, então as vendas 1 e 2 aparecem duas vezes cada (+150). A tabela <code>categorias</code> não é única em <code>produto</code>: o join é N:M para <code>P1</code>.</p>
-<h2 id="trilha-02-quebre-de-proposito">Quebre de propósito</h2>
+<p>O mesmo diagnóstico em PySpark: prove a chave e compare as contagens antes e depois do join.</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
+
+vendas, categorias = spark.table("vendas"), spark.table("categorias")
+
+categorias.groupBy("produto").count().filter("count &gt; 1").show()   # P1 aparece: não é única
+
+cruzado = vendas.join(categorias, "produto")
+print(vendas.count(), cruzado.count())                                    # 3 → 5: o grão mudou
+cruzado.agg(F.countDistinct("id_venda"), F.sum("receita")).show()         # 3 vendas, receita 380
+</code></pre></div>
+<h2 id="trilha-03-quebre-de-proposito">Quebre de propósito</h2>
 <ol>
 <li><strong>Prove a chave.</strong> Rode o teste de unicidade em <code>categorias</code> por <code>produto</code> e veja <code>P1</code> com <code>n = 2</code>. Esse teste deveria vir <em>antes</em> do join.</li>
 <li><strong>Troque para <code>LEFT JOIN</code> e acrescente <code>P3</code> em vendas</strong> sem categoria. Linhas continuam multiplicadas e agora aparece um <code>NULL</code>: left join preserva a esquerda, mas <strong>não</strong> impede duplicação.</li>
@@ -637,14 +775,14 @@ JOIN categorias c USING (produto);
 <li><strong>Chave com nulo.</strong> Inclua uma venda com <code>produto = NULL</code> e uma categoria com <code>produto = NULL</code>. Em <code>=</code> elas não se casam (<code>NULL = NULL</code> não é verdadeiro); com <code>&lt;=&gt;</code> se casam. Decida qual comportamento você quer.</li>
 <li><strong>Tipos diferentes.</strong> Mude <code>produto</code> para <code>INT</code> de um lado e <code>'001'</code> do outro. Observe a conversão implícita e linhas que deixam de casar.</li>
 </ol>
-<h2 id="trilha-02-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
+<h2 id="trilha-03-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
 <ul>
 <li><strong>Total maior que o esperado</strong> → join replicou. Compare <code>count(*)</code> e <code>count(DISTINCT chave_do_grao)</code> antes e depois.</li>
 <li><strong>Total menor que o esperado</strong> → <code>INNER JOIN</code> descartou linhas sem correspondência, ou houve nulos e tipos diferentes na chave. Teste com <code>LEFT ANTI JOIN</code> para listar o que se perdeu.</li>
 <li><strong><code>DISTINCT</code> no final para "consertar"</strong> → esconde o sintoma, pode somar errado e custa um shuffle. Corrija o lado não único.</li>
 <li><strong>SCD2 cruzada sem vigência</strong> → toda versão histórica casa com a venda. Filtre <code>data_venda</code> entre <code>inicio_vigencia</code> e <code>fim_vigencia</code>.</li>
 </ul>
-<h2 id="trilha-02-cheque-seu-entendimento">Cheque seu entendimento</h2>
+<h2 id="trilha-03-cheque-seu-entendimento">Cheque seu entendimento</h2>
 <ol>
 <li>Complete: "em <code>vendas</code>, uma linha representa ___". Qual é a chave?</li>
 <li>Por que <code>LEFT JOIN</code> não protege contra duplicação?</li>
@@ -652,7 +790,7 @@ JOIN categorias c USING (produto);
 <li>Quais duas contagens você compara para mostrar que um join manteve o grão?</li>
 <li>Quando <code>LEFT SEMI JOIN</code> é melhor que <code>JOIN</code> + <code>DISTINCT</code>?</li>
 </ol>
-<h2 id="trilha-02-proximos-passos">Próximos passos</h2>
+<h2 id="trilha-03-proximos-passos">Próximos passos</h2>
 <ul>
 <li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-07-cardinalidade-e-exploding-join">Cardinalidade e exploding join</a> · <a href="cheatsheets.html#sql-07-quando-usar">Quando usar cada join</a> · <a href="cheatsheets.html#pyspark-07-semi-e-anti-join">Semi e anti join no PySpark</a></li>
 <li><strong>Prática:</strong> <a href="desafio.html?id=sql-07-cardinalidade">desafio de cardinalidade</a> · <a href="desafio.html?id=sql-07-tipos-de-join">desafio de tipos de join</a> · <a href="desafio.html?id=spk-07-semi-anti">desafio de semi e anti join</a></li>
@@ -660,14 +798,14 @@ JOIN categorias c USING (produto);
 </ul>
 </section>
 
-<section id="trilha-03" class="cheat-section">
-<h2><span class="sec-num trilha">Trilha 03</span> Window functions: calcular sem perder linhas</h2>
+<section id="trilha-04" class="cheat-section">
+<h2><span class="sec-num trilha">Trilha 04</span> Window functions: calcular sem perder linhas</h2>
 <blockquote>
-<p><strong>Objetivo:</strong> escolher entre <code>GROUP BY</code> e janela, montar <code>PARTITION BY</code> / <code>ORDER BY</code> / frame com intenção e prever o efeito de empates. <strong>Tempo:</strong> 1–2 h. <strong>Pré-requisitos:</strong> <a href="#trilha-02">Grão e cardinalidade</a>.</p>
+<p><strong>Objetivo:</strong> escolher entre <code>GROUP BY</code> e janela, montar <code>PARTITION BY</code> / <code>ORDER BY</code> / frame com intenção e prever o efeito de empates. <strong>Tempo:</strong> 1–2 h. <strong>Pré-requisitos:</strong> <a href="#trilha-03">Grão e cardinalidade</a>.</p>
 </blockquote>
-<h2 id="trilha-03-o-problema">O problema</h2>
+<h2 id="trilha-04-o-problema">O problema</h2>
 <p>Você precisa da última compra de cada cliente, da variação contra o mês anterior ou de um acumulado. Com <code>GROUP BY</code> as linhas somem: você fica com uma por grupo e perde o detalhe. Com subconsultas correlacionadas o código fica lento e ilegível. Janelas resolvem, mas três detalhes geram resultados silenciosamente errados: empates, frame padrão e ordenação não determinística.</p>
-<h2 id="trilha-03-modelo-mental">Modelo mental</h2>
+<h2 id="trilha-04-modelo-mental">Modelo mental</h2>
 <p>Uma window function responde: <strong>para esta linha, olhando para um grupo de linhas relacionadas, qual é o valor?</strong> O número de linhas não muda.</p>
 <div class="code-wrap"><div class="code-lang trilha-lang">TEXT</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-text">func(...) OVER (
   PARTITION BY loja          -- quem são meus vizinhos (o grupo)
@@ -682,7 +820,7 @@ JOIN categorias c USING (produto);
 <li><strong>Agregados com <code>ORDER BY</code> e sem frame explícito</strong> usam por padrão <code>RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code>, que <strong>inclui todos os empates</strong> da linha atual.</li>
 <li><strong>Ordem determinística:</strong> se o <code>ORDER BY</code> tiver empates, <code>row_number</code> e <code>lag</code> podem mudar entre execuções. Acrescente um desempate (<code>id</code>, timestamp).</li>
 </ul>
-<h2 id="trilha-03-exemplo-para-prever">Exemplo para prever</h2>
+<h2 id="trilha-04-exemplo-para-prever">Exemplo para prever</h2>
 <div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TEMP VIEW vendas AS
 SELECT * FROM VALUES
   ('A', 1, 10), ('A', 2, 20), ('A', 3, 20), ('B', 1, 5)
@@ -766,7 +904,25 @@ ORDER BY loja, dia;
 <li>Nos dias 2 e 3, <code>rn</code> e <code>soma_rows</code> são <strong>não determinísticos</strong>: o empate em <code>valor</code> não diz quem vem primeiro.</li>
 <li><code>soma_padrao</code> usa <code>RANGE</code>: as duas linhas com 20 entram juntas e ambas mostram 50.</li>
 </ul>
-<h2 id="trilha-03-quebre-de-proposito">Quebre de propósito</h2>
+<p>O mesmo em PySpark. Repare que o frame padrão também é <code>RANGE</code> quando há <code>orderBy</code>:</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import Window, functions as F
+
+por_valor_desc = Window.partitionBy("loja").orderBy(F.desc("valor"))
+por_valor = Window.partitionBy("loja").orderBy("valor")
+por_dia = Window.partitionBy("loja").orderBy("dia")
+
+(spark.table("vendas")
+    .withColumn("rn", F.row_number().over(por_valor_desc))
+    .withColumn("rk", F.rank().over(por_valor_desc))
+    .withColumn("drk", F.dense_rank().over(por_valor_desc))
+    .withColumn("soma_rows", F.sum("valor").over(
+        por_valor.rowsBetween(Window.unboundedPreceding, Window.currentRow)))
+    .withColumn("soma_padrao", F.sum("valor").over(por_valor))
+    .withColumn("valor_anterior", F.lag("valor").over(por_dia))
+    .orderBy("loja", "dia")
+    .show())
+</code></pre></div>
+<h2 id="trilha-04-quebre-de-proposito">Quebre de propósito</h2>
 <ol>
 <li><strong>Desempate.</strong> Troque para <code>ORDER BY valor DESC, dia</code> e confirme que <code>rn</code> e <code>soma_rows</code> ficam estáveis.</li>
 <li><strong>Remova o <code>PARTITION BY</code></strong> do <code>rank</code>. O ranking passa a ser global (B entra na disputa). No plano, aparece um <code>Exchange SinglePartition</code>.</li>
@@ -774,14 +930,14 @@ ORDER BY loja, dia;
 <li><strong>Parâmetros do <code>lag</code>.</strong> Use <code>lag(valor, 2, 0)</code> e explique cada argumento.</li>
 <li><strong>Média móvel.</strong> Calcule <code>avg(valor) OVER (PARTITION BY loja ORDER BY dia ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)</code>. Nas primeiras linhas o frame tem menos de 3 linhas — a média usa só o que existe.</li>
 </ol>
-<h2 id="trilha-03-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
+<h2 id="trilha-04-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
 <ul>
 <li><strong>Acumulado "pula" ou repete valores</strong> → frame padrão <code>RANGE</code> com empates. Declare <code>ROWS BETWEEN ...</code> explicitamente.</li>
 <li><strong>Deduplicação muda a cada execução</strong> → <code>row_number</code> sem desempate. Inclua uma coluna única no <code>ORDER BY</code>.</li>
 <li><strong>Filtrar pelo resultado da janela no <code>WHERE</code></strong> → não é permitido; o <code>WHERE</code> roda antes. Use <code>QUALIFY</code> (Databricks) ou uma CTE.</li>
 <li><strong>Job lento ou com spill em janela</strong> → partição lógica muito grande (ou ausente). Verifique a distribuição da chave do <code>PARTITION BY</code>.</li>
 </ul>
-<h2 id="trilha-03-cheque-seu-entendimento">Cheque seu entendimento</h2>
+<h2 id="trilha-04-cheque-seu-entendimento">Cheque seu entendimento</h2>
 <ol>
 <li>Quando usar janela em vez de <code>GROUP BY</code>?</li>
 <li>Qual é o frame padrão de <code>sum(...) OVER (ORDER BY x)</code> e por que ele surpreende com empates?</li>
@@ -789,11 +945,544 @@ ORDER BY loja, dia;
 <li>Por que <code>row_number</code> precisa de desempate para deduplicar?</li>
 <li>Por que não dá para usar <code>row_number()</code> dentro de <code>WHERE</code>?</li>
 </ol>
-<h2 id="trilha-03-proximos-passos">Próximos passos</h2>
+<h2 id="trilha-04-proximos-passos">Próximos passos</h2>
 <ul>
 <li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-08-exemplos">Exemplos em SQL</a> · <a href="cheatsheets.html#sql-08-rows-versus-range">Rows versus range</a> · <a href="cheatsheets.html#pyspark-08-deduplicacao-deterministica">Deduplicação determinística no PySpark</a> · <a href="cheatsheets.html#pyspark-08-frames-e-tempo">Frames e tempo no PySpark</a></li>
 <li><strong>Prática:</strong> <a href="desafio.html?id=sql-08-row-number-lag-acumulado">ranking, lag e acumulado</a> · <a href="desafio.html?id=sql-08-rows-range">ROWS vs RANGE</a> · <a href="desafio.html?id=spk-08-dedup-row-number">deduplicação no PySpark</a> · <a href="desafio.html?id=spk-08-frames-tempo">frames por tempo</a></li>
 <li><strong>Aplicação real:</strong> siga os estágios 4 e 5 do <a href="framework_dominio_tecnico.html">framework</a>: aplique em uma métrica autorizada (top-3 por categoria, variação MoM) e explique o frame escolhido para alguém do time.</li>
+</ul>
+</section>
+
+<section id="trilha-05" class="cheat-section">
+<h2><span class="sec-num trilha">Trilha 05</span> Como o Spark executa seu código</h2>
+<blockquote>
+<p><strong>Objetivo:</strong> prever quando o Spark realmente processa dados, onde há shuffle e ler o essencial de um <code>explain</code>. <strong>Tempo:</strong> 1–2 h. <strong>Pré-requisitos:</strong> saber criar um DataFrame e usar <code>select</code>/<code>filter</code>/<code>groupBy</code>.</p>
+</blockquote>
+<h2 id="trilha-05-o-problema">O problema</h2>
+<p>Uma célula com dez transformações termina em milissegundos; depois um <code>count()</code> leva dez minutos. Outra pessoa "otimiza" trocando a ordem dos filtros e nada muda. Sem um modelo de execução, performance vira tentativa e erro e a depuração engana: o erro aparece na ação, não na linha que o causou.</p>
+<h2 id="trilha-05-modelo-mental">Modelo mental</h2>
+<ul>
+<li><strong>DataFrame é uma receita, não um resultado.</strong> Transformações (<code>select</code>, <code>filter</code>, <code>join</code>, <code>groupBy</code>) só descrevem o plano. Nada é lido até uma <strong>ação</strong> (<code>count</code>, <code>show</code>, <code>collect</code>, <code>write</code>, <code>display</code>).</li>
+<li><strong>O Catalyst reescreve a receita.</strong> Antes de executar, o otimizador empurra filtros para perto da leitura, poda colunas e escolhe estratégias de join. Por isso reordenar filtros à mão raramente muda algo.</li>
+<li><strong>Ação → job → stages → tasks.</strong> Cada ação gera um ou mais jobs. Um job é cortado em <strong>stages</strong> nas fronteiras de <strong>shuffle</strong>; cada stage roda uma <strong>task por partição</strong>.</li>
+<li><strong>Shuffle é redistribuir linhas pela rede</strong> para que linhas com a mesma chave fiquem juntas. Transformações <em>narrow</em> (<code>select</code>, <code>filter</code>, <code>withColumn</code>) não precisam disso; <em>wide</em> (<code>groupBy</code>, <code>join</code> sem broadcast, <code>distinct</code>, <code>orderBy</code>, <code>repartition</code>) precisam.</li>
+</ul>
+<div class="code-wrap"><div class="code-lang trilha-lang">TEXT</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-text">read → filter → withColumn ║ shuffle ║ groupBy/agg ║ shuffle ║ orderBy → write
+└──────── stage 1 ────────┘           └── stage 2 ──┘          └─ stage 3 ─┘
+         (narrow)          Exchange         (wide)    Exchange
+</code></pre></div>
+<p>No plano físico, cada shuffle aparece como um nó <strong><code>Exchange</code></strong>. Contar <code>Exchange</code> é a primeira leitura útil de um <code>explain</code>.</p>
+<h2 id="trilha-05-exemplo-para-prever">Exemplo para prever</h2>
+<p>Antes de rodar, responda: (1) qual linha dispara processamento? (2) quantos <code>Exchange</code> o plano terá? (3) quantas etapas de agregação?</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
+
+vendas = spark.range(1_000_000).withColumn("loja", F.col("id") % 10)
+da_loja_3 = vendas.filter(F.col("loja") == 3)
+resumo = da_loja_3.groupBy("loja").agg(F.count("*").alias("qtd"))
+
+resumo.explain("formatted")   # não processa dados, só mostra o plano
+resumo.show()                 # ação: agora sim roda
+</code></pre></div>
+<p>Resultado esperado:</p>
+<ul>
+<li>Só o <code>show()</code> processa dados; as três atribuições e o <code>explain</code> são instantâneos.</li>
+<li>Um <code>Exchange</code> (nos detalhes do nó: <code>hashpartitioning(loja, ...)</code>): o <code>groupBy</code> precisa juntar a mesma loja.</li>
+<li><strong>Dois</strong> <code>HashAggregate</code>: um parcial antes do shuffle (cada partição conta localmente) e um final depois. Isso reduz o volume que trafega.</li>
+<li>O <code>Filter</code> aparece antes do <code>Exchange</code>: filtrar cedo diminui o shuffle.</li>
+</ul>
+<p>Em SQL o plano é o mesmo, porque SQL e DataFrame passam pelo mesmo otimizador:</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TEMP VIEW vendas AS
+SELECT id, id % 10 AS loja FROM range(1000000);
+
+EXPLAIN FORMATTED
+SELECT loja, count(*) AS qtd FROM vendas WHERE loja = 3 GROUP BY loja;
+</code></pre></div>
+<p>Com AQE ligado (padrão no Databricks), o plano final pode mostrar <code>AdaptiveSparkPlan</code> e ajustes feitos em tempo de execução; o número de <code>Exchange</code> continua sendo o ponto de partida.</p>
+<h2 id="trilha-05-quebre-de-proposito">Quebre de propósito</h2>
+<ol>
+<li><strong>Duas ações, dois jobs.</strong> Rode <code>resumo.count()</code> duas vezes e observe na Spark UI: o trabalho é refeito. Sem cache, cada ação recalcula a receita inteira.</li>
+<li><strong>Acrescente ordenação.</strong> <code>resumo.orderBy("qtd").explain()</code> — surge um segundo <code>Exchange</code>, agora <code>rangepartitioning</code>. Ordenação global também é shuffle.</li>
+<li><strong>Broadcast × sort-merge.</strong> Crie <code>lojas = spark.createDataFrame([(3, "Centro")], "loja INT, nome STRING")</code> e compare os planos de <code>vendas.join(F.broadcast(lojas), "loja")</code> e <code>vendas.join(lojas.hint("merge"), "loja")</code>. O primeiro vira <code>BroadcastHashJoin</code>, sem <code>Exchange hashpartitioning</code>: a tabela pequena é copiada para cada executor. O segundo vira <code>SortMergeJoin</code>, com <code>Exchange</code> dos dois lados. Sem o hint, o Spark só escolhe broadcast sozinho quando conhece o tamanho da tabela, o que é comum em tabelas Delta e menos garantido em DataFrames criados no notebook.</li>
+<li><strong>UDF Python bloqueia otimização.</strong> Aplique <code>F.udf(lambda x: x * 2, "long")</code> em <code>id</code> e filtre pelo resultado. O plano ganha <code>BatchEvalPython</code>/<code>ArrowEvalPython</code> e o filtro não pode mais ser empurrado para a leitura.</li>
+<li><strong>O erro aparece longe da causa.</strong> Faça <code>withColumn("x", F.col("id").cast("int") / F.lit(0))</code> com ANSI ligado: a célula da transformação passa; o erro só surge no <code>show()</code>.</li>
+</ol>
+<h2 id="trilha-05-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
+<ul>
+<li><strong>"A célula rodou rápido, então está certo."</strong> → transformações não executam. Confirme com uma ação controlada (<code>count</code> em amostra, <code>limit</code> + <code>show</code>).</li>
+<li><strong><code>count()</code> espalhado para depurar</strong> → cada um é um job completo. Use em pontos de checagem deliberados e remova depois.</li>
+<li><strong><code>collect()</code>/<code>toPandas()</code> em tabela grande</strong> → traz tudo para o driver e pode derrubá-lo. Agregue ou limite antes.</li>
+<li><strong>Otimizar sem olhar o plano</strong> → leia <code>explain("formatted")</code> e a Spark UI/Query Profile antes: conte <code>Exchange</code>, procure estratégia de join e UDFs.</li>
+<li><strong>Achar que <code>show()</code> mede o custo total</strong> → ele pode processar só o necessário para exibir as primeiras linhas. Para medir, use a ação real (ex.: <code>write</code>).</li>
+</ul>
+<h2 id="trilha-05-cheque-seu-entendimento">Cheque seu entendimento</h2>
+<ol>
+<li>Por que três transformações seguidas não geram nenhum job?</li>
+<li>O que é um <code>Exchange</code> e por que ele separa stages?</li>
+<li>Dê dois exemplos de transformação narrow e dois de wide.</li>
+<li>Por que há dois <code>HashAggregate</code> em um <code>groupBy</code> simples?</li>
+<li>Em que situação um join não precisa embaralhar a tabela grande?</li>
+</ol>
+<h2 id="trilha-05-proximos-passos">Próximos passos</h2>
+<ul>
+<li><strong>Consulta:</strong> <a href="cheatsheets.html#pyspark-01-transformacoes-e-acoes">Transformações e ações</a> · <a href="cheatsheets.html#pyspark-13-diagnostico-antes-da-otimizacao">Diagnóstico antes da otimização</a> · <a href="cheatsheets.html#sql-12-shuffle-skew-e-spill">Shuffle, skew e spill</a></li>
+<li><strong>Prática:</strong> <a href="desafio.html?id=spk-01-transformacoes-acoes">desafio de transformações e ações</a> · <a href="desafio.html?id=spk-13-diagnostico">desafio de diagnóstico</a> · <a href="desafio.html?id=sql-12-shuffle-skew-spill">desafio de shuffle, skew e spill</a></li>
+<li><strong>Aplicação real:</strong> abra um notebook autorizado que você já usa, rode <code>explain("formatted")</code> na consulta principal e anote: quantos <code>Exchange</code>, que estratégia de join e se há UDF Python. Explique o plano para alguém do time.</li>
+</ul>
+</section>
+
+<section id="trilha-06" class="cheat-section">
+<h2><span class="sec-num trilha">Trilha 06</span> Diagnóstico de performance: medir antes de mexer</h2>
+<blockquote>
+<p><strong>Objetivo:</strong> seguir uma sequência de diagnóstico, reconhecer skew, spill e excesso de shuffle nas evidências e escolher uma intervenção proporcional. <strong>Tempo:</strong> 2 h. <strong>Pré-requisitos:</strong> <a href="#trilha-05">Como o Spark executa seu código</a>.</p>
+</blockquote>
+<h2 id="trilha-06-o-problema">O problema</h2>
+<p>O job que levava 10 minutos agora leva 50. A reação comum é aumentar o cluster, trocar <code>repartition</code> por <code>coalesce</code> ou copiar uma configuração de um fórum. Às vezes melhora, às vezes piora, e ninguém sabe por quê. Performance se resolve com evidência: <strong>onde</strong> o tempo está sendo gasto e <strong>qual</strong> é a causa.</p>
+<h2 id="trilha-06-modelo-mental">Modelo mental</h2>
+<p>Quase todo problema de performance em Spark cai em quatro causas:</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">TEXT</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-text">Causa                 Evidência típica                             Primeira intervenção
+Ler demais            muitos bytes/arquivos lidos; sem pruning     filtro na partição/cluster, projeção, layout
+Embaralhar demais     muitos Exchange; shuffle grande              broadcast do lado pequeno, agregar antes
+Skew                  poucas tasks muito mais lentas que a mediana tratar chave quente, AQE skew join, salting
+Spill / memória       "spill (disk)" nas métricas; tasks pesadas   partições menores, menos dados por task
+</code></pre></div>
+<ul>
+<li><strong>Spark UI / Query Profile:</strong> compare duração <strong>máxima</strong> e <strong>mediana</strong> das tasks de um stage. Se a máxima for muito maior, há skew; se todas forem lentas, o problema é volume ou leitura.</li>
+<li><strong>AQE</strong> (ligado por padrão no Databricks) ajusta o plano em tempo de execução: junta partições pequenas depois do shuffle, divide partições com skew em joins e pode trocar a estratégia do join.</li>
+<li><strong>Agregação parcial protege <code>groupBy</code>.</strong> <code>count</code> e <code>sum</code> calculam um parcial antes do shuffle, então a chave quente vira uma linha por partição. O skew dói de verdade em <strong>joins</strong>, <strong>janelas</strong> e agregações que guardam linhas (<code>collect_list</code>).</li>
+<li><strong>Uma mudança por vez</strong>, sempre conferindo se o resultado continua o mesmo.</li>
+</ul>
+<h2 id="trilha-06-exemplo-para-prever">Exemplo para prever</h2>
+<div class="code-wrap"><div class="code-lang trilha-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from pyspark.sql import functions as F
+
+# 90% das vendas na loja L0
+vendas = spark.range(1_000_000).withColumn(
+    "loja",
+    F.when(F.col("id") &lt; 900_000, F.lit("L0"))
+     .otherwise(F.concat(F.lit("L"), (F.col("id") % 9 + 1).cast("string"))),
+)
+
+# 1. Frequência das chaves
+vendas.groupBy("loja").count().orderBy(F.desc("count")).show(3)
+
+# 2. Linhas por partição quando distribuímos pela chave
+(vendas.repartition(8, "loja")
+    .groupBy(F.spark_partition_id().alias("particao")).count()
+    .orderBy(F.desc("count")).show())
+</code></pre></div>
+<p>Antes de rodar: qual é a maior partição no passo 2? Quantas partições ficam vazias?</p>
+<p>Resultado esperado (Spark local):</p>
+<ul>
+<li>Passo 1: <code>L0</code> com 900.000 e as demais com cerca de 11.000.</li>
+<li>Passo 2: <strong>uma partição com 900.000 linhas</strong> e as outras com no máximo algumas dezenas de milhares. Com 10 chaves e 8 partições, algumas partições ficam vazias. É assim que um stage fica preso numa única task.</li>
+</ul>
+<p>Em SQL, o primeiro passo é o mesmo:</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">SELECT loja, count(*) AS n FROM vendas GROUP BY loja ORDER BY n DESC LIMIT 20;
+</code></pre></div>
+<h2 id="trilha-06-quebre-de-proposito">Quebre de propósito</h2>
+<ol>
+<li><strong>Salting.</strong> Acrescente <code>sal = id % 8</code> e distribua por <code>("loja", "sal")</code>. A maior partição cai de 900 mil para algo como 240 mil, mas <strong>não fica perfeitamente equilibrada</strong>: o hash de poucas combinações em poucas partições colide. Salting ajuda, não faz milagre.</li>
+<li><strong>Agregação em duas etapas.</strong> Some por <code>(loja, sal)</code> e depois por <code>loja</code>. O resultado tem de ser idêntico ao <code>groupBy("loja")</code> direto. Se não for, o salting quebrou a lógica.</li>
+<li><strong>Veja o AQE agir.</strong> Rode <code>vendas.groupBy("loja").count().collect()</code> e depois <code>explain()</code>. O plano final mostra <code>AdaptiveSparkPlan isFinalPlan=true</code> e <code>AQEShuffleRead coalesced</code>: das 200 partições de shuffle configuradas, o AQE juntou as quase vazias.</li>
+<li><strong>Broadcast como alternativa ao salting.</strong> Se o join com skew é contra uma tabela pequena (<code>dim_loja</code>), compare o plano com <code>F.broadcast(dim_loja)</code>. Sem shuffle do lado grande, o skew deixa de importar para esse join.</li>
+<li><strong><code>coalesce(1)</code> antes de escrever.</strong> Compare o número de tasks do stage de escrita com e sem ele. Tudo passa a rodar numa task só, e partições "ajeitadas" no fim podem desfazer o paralelismo do pipeline inteiro.</li>
+</ol>
+<h2 id="trilha-06-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
+<ul>
+<li><strong>Aumentar o cluster contra skew</strong> → a task da chave quente continua sozinha, só que com mais máquinas ociosas. Confira máxima × mediana das tasks antes.</li>
+<li><strong>Salting como primeira opção</strong> → aumenta a complexidade e o volume (o lado replicado é multiplicado). Antes, tente filtrar a chave quente (nulos, <code>'N/A'</code>, cliente genérico), usar broadcast e o skew join do AQE.</li>
+<li><strong>Chave quente = valor "lixo"</strong> → muitas vezes o skew é <code>NULL</code> ou um código padrão. Trate isso antes de qualquer tuning.</li>
+<li><strong>Mexer em <code>spark.sql.shuffle.partitions</code> sem medir</strong> → com AQE, partições pequenas já são juntadas. No serverless, várias configurações nem podem ser alteradas.</li>
+<li><strong>Comparar tempos com cache quente ou cluster diferente</strong> → meça nas mesmas condições e registre bytes lidos, shuffle e spill, não só o tempo.</li>
+</ul>
+<h2 id="trilha-06-cheque-seu-entendimento">Cheque seu entendimento</h2>
+<ol>
+<li>Quais quatro causas você investiga primeiro, e qual evidência aponta para cada uma?</li>
+<li>Por que um <code>groupBy().count()</code> sofre pouco com skew e um join sofre muito?</li>
+<li>O que o AQE faz com as partições depois de um shuffle?</li>
+<li>Por que salting não garante partições equilibradas?</li>
+<li>Que métrica da Spark UI mostra skew?</li>
+</ol>
+<h2 id="trilha-06-proximos-passos">Próximos passos</h2>
+<ul>
+<li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-12-sequencia-de-diagnostico">Sequência de diagnóstico</a> · <a href="cheatsheets.html#sql-12-shuffle-skew-e-spill">Shuffle, skew e spill</a> · <a href="cheatsheets.html#pyspark-13-aqe-e-particoes">AQE e partições</a> · <a href="cheatsheets.html#pyspark-13-skew-e-salting">Skew e salting</a></li>
+<li><strong>Prática:</strong> <a href="desafio.html?id=sql-12-sequencia-diagnostico">sequência de diagnóstico</a> · <a href="desafio.html?id=spk-13-aqe-particoes">AQE e partições</a> · <a href="desafio.html?id=spk-13-skew-salting">skew e salting</a> · <a href="desafio.html?id=sql-12-pruning-pushdown">pruning e pushdown</a></li>
+<li><strong>Aplicação real:</strong> escolha o job autorizado mais lento que você acompanha. Registre os bytes lidos, o maior stage, máxima × mediana das tasks e o spill. Proponha <strong>uma</strong> mudança e meça antes e depois.</li>
+</ul>
+</section>
+
+<section id="trilha-07" class="cheat-section">
+<h2><span class="sec-num trilha">Trilha 07</span> Delta e MERGE idempotente: rodar duas vezes, mesmo resultado</h2>
+<blockquote>
+<p><strong>Objetivo:</strong> entender o que o log transacional do Delta garante, escolher entre <code>append</code>, <code>overwrite</code>, <code>replaceWhere</code> e <code>MERGE</code>, e escrever um <code>MERGE</code> que pode ser reexecutado sem estragar a tabela. <strong>Tempo:</strong> 2 h. <strong>Pré-requisitos:</strong> <a href="#trilha-03">Grão e cardinalidade</a>, <a href="#trilha-04">Window functions</a>.</p>
+</blockquote>
+<h2 id="trilha-07-o-problema">O problema</h2>
+<p>O job da madrugada falhou no meio e alguém clicou em "repair run". No dia seguinte, a receita de ontem aparece em dobro. Em outro pipeline, o <code>MERGE</code> falha toda vez que a origem traz a mesma venda duas vezes. Pipelines <strong>sempre</strong> serão reexecutados: por falha, por reprocessamento ou por correção. A pergunta não é <em>se</em>, mas <strong>o que acontece quando isso ocorre</strong>.</p>
+<h2 id="trilha-07-modelo-mental">Modelo mental</h2>
+<ul>
+<li><strong>Delta = arquivos Parquet + log transacional (<code>_delta_log</code>).</strong> Cada escrita bem-sucedida gera uma <strong>versão</strong> nova de forma atômica: quem lê vê a versão anterior inteira ou a nova inteira, nunca metade. Se o job falhar antes do commit, a tabela continua como estava.</li>
+<li><strong>Atomicidade não é idempotência.</strong> O Delta garante que <em>uma</em> escrita é tudo ou nada. Ele <strong>não</strong> impede que você grave o mesmo lote duas vezes.</li>
+<li><strong>Idempotente</strong> = rodar o mesmo lote N vezes deixa a tabela igual a rodar uma vez.</li>
+</ul>
+<div class="code-wrap"><div class="code-lang trilha-lang">TEXT</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-text">Modo de escrita              Reexecutar o mesmo lote   Quando usar
+append                       duplica                   eventos imutáveis com controle de lote já processado
+overwrite (tabela inteira)   idempotente, caro         tabelas pequenas ou recálculo total
+replaceWhere (faixa)         idempotente               reprocessar uma data/partição inteira
+MERGE por chave              idempotente se...         upsert por chave de negócio
+</code></pre></div>
+<ul>
+<li><strong>O <code>MERGE</code> é idempotente se</strong> (1) a origem tem <strong>no máximo uma linha por chave</strong>, (2) a atualização é <strong>condicional</strong> (só quando algo mudou) e (3) os valores gravados vêm <strong>do dado</strong>, não do relógio. Com <code>current_timestamp()</code>, cada reexecução grava um valor diferente.</li>
+</ul>
+<h2 id="trilha-07-exemplo-para-prever">Exemplo para prever</h2>
+<p>Rode no Databricks (ou com Delta configurado). Os passos sem <code>MERGE</code> também rodam em Spark local.</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TABLE alvo (venda_id INT, preco INT, atualizado_em TIMESTAMP);
+INSERT INTO alvo VALUES
+  (1, 100, TIMESTAMP'2026-11-01 08:00:00'),
+  (2, 200, TIMESTAMP'2026-11-01 08:00:00'),
+  (3, 300, TIMESTAMP'2026-11-01 08:00:00');
+
+CREATE OR REPLACE TEMP VIEW lote AS
+SELECT * FROM VALUES
+  (2, 250, TIMESTAMP'2026-11-02 10:00:00'),
+  (2, 260, TIMESTAMP'2026-11-02 11:00:00'),   -- mesma venda, extração mais recente
+  (3, 300, TIMESTAMP'2026-11-02 10:00:00'),   -- sem mudança
+  (4, 400, TIMESTAMP'2026-11-02 10:00:00')    -- venda nova
+AS t(venda_id, preco, extraido_em);
+</code></pre></div>
+<p><strong>Passo 1.</strong> O que acontece com um <code>MERGE ... ON t.venda_id = s.venda_id</code> usando <code>lote</code> diretamente?</p>
+<p><strong>Passo 2.</strong> Deduplique e faça o <code>MERGE</code> condicional:</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TEMP VIEW lote_unico AS
+SELECT venda_id, preco, extraido_em
+FROM (
+  SELECT *, row_number() OVER (PARTITION BY venda_id ORDER BY extraido_em DESC) AS rn
+  FROM lote
+)
+WHERE rn = 1;
+
+MERGE INTO alvo AS t
+USING lote_unico AS s
+ON t.venda_id = s.venda_id
+WHEN MATCHED AND NOT (t.preco &lt;=&gt; s.preco) THEN
+  UPDATE SET t.preco = s.preco, t.atualizado_em = s.extraido_em
+WHEN NOT MATCHED THEN
+  INSERT (venda_id, preco, atualizado_em) VALUES (s.venda_id, s.preco, s.extraido_em);
+
+DESCRIBE HISTORY alvo;   -- veja operationMetrics da última versão
+</code></pre></div>
+<p>Quantas linhas são atualizadas e quantas inseridas? E se você rodar o <code>MERGE</code> de novo?</p>
+<p>Resultado esperado:</p>
+<ul>
+<li><strong>Passo 1:</strong> erro (<code>DELTA_MULTIPLE_SOURCE_ROW_MATCHING_TARGET_ROW_IN_MERGE</code>). Duas linhas de origem disputam a venda 2 e o Delta se recusa a escolher por você.</li>
+<li><strong>Passo 2:</strong> <code>lote_unico</code> fica com <code>(2, 260)</code>, <code>(3, 300)</code> e <code>(4, 400)</code>. O <code>MERGE</code> <strong>atualiza 1</strong> (venda 2 → 260), <strong>insere 1</strong> (venda 4), não toca a venda 3 nem a 1. Na tabela final, a venda 1 fica com 100, a 2 com 260, a 3 com 300 e a 4 com 400.</li>
+<li><strong>Reexecução:</strong> <strong>0 atualizadas e 0 inseridas.</strong> A tabela não muda. Isso é idempotência.</li>
+</ul>
+<p>O mesmo em PySpark, com o padrão do cheatsheet:</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">from delta.tables import DeltaTable
+from pyspark.sql import Window, functions as F
+
+w = Window.partitionBy("venda_id").orderBy(F.desc("extraido_em"))
+lote_unico = lote.withColumn("rn", F.row_number().over(w)).filter("rn = 1").drop("rn")
+
+(DeltaTable.forName(spark, "alvo").alias("t")
+    .merge(lote_unico.alias("s"), "t.venda_id = s.venda_id")
+    .whenMatchedUpdate(condition="NOT (t.preco &lt;=&gt; s.preco)",
+                       set={"preco": "s.preco", "atualizado_em": "s.extraido_em"})
+    .whenNotMatchedInsert(values={"venda_id": "s.venda_id", "preco": "s.preco",
+                                  "atualizado_em": "s.extraido_em"})
+    .execute())
+</code></pre></div>
+<h2 id="trilha-07-quebre-de-proposito">Quebre de propósito</h2>
+<ol>
+<li><strong><code>append</code> duas vezes.</strong> <code>INSERT INTO alvo SELECT venda_id, preco, extraido_em FROM lote_unico</code> duas vezes e conte por <code>venda_id</code>. A duplicação é silenciosa.</li>
+<li><strong>Update incondicional.</strong> Tire o <code>AND NOT (t.preco &lt;=&gt; s.preco)</code> e rode duas vezes. <code>DESCRIBE HISTORY</code> mostra linhas atualizadas <em>toda vez</em>: a tabela ganha versões sem mudança real e reescreve arquivos à toa.</li>
+<li><strong>Relógio em vez de dado.</strong> Use <code>t.atualizado_em = current_timestamp()</code> no update incondicional. Cada reexecução muda a coluna: não é idempotente.</li>
+<li><strong>Lote fora de ordem.</strong> Rode o <code>MERGE</code> com um lote <em>antigo</em> (<code>extraido_em</code> de 01/11) depois do novo. Sem a condição <code>s.extraido_em &gt; t.atualizado_em</code>, o dado velho sobrescreve o novo.</li>
+<li><strong>Volte no tempo.</strong> <code>SELECT * FROM alvo VERSION AS OF &lt;versão anterior&gt;</code> e compare. Depois rode <code>RESTORE TABLE alvo TO VERSION AS OF &lt;versão&gt;</code> e observe que o restore também vira uma versão nova.</li>
+</ol>
+<h2 id="trilha-07-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
+<ul>
+<li><strong><code>MERGE</code> falha com "multiple source rows"</strong> → a origem não é única na chave. Prove com <code>GROUP BY chave HAVING count(*) &gt; 1</code> e defina o desempate (mais recente, maior sequência).</li>
+<li><strong>Valores dobrados depois de reprocessar</strong> → escrita em <code>append</code> sem controle de lote. Troque por <code>MERGE</code> por chave ou <code>replaceWhere</code> na faixa reprocessada.</li>
+<li><strong>Histórico com versões demais e <code>MERGE</code> lento</strong> → update incondicional reescrevendo arquivos. Atualize só quando houver diferença.</li>
+<li><strong>Dado mais novo sobrescrito por dado mais antigo</strong> → falta a condição de ordem (<code>s.versao &gt; t.versao</code>).</li>
+<li><strong><code>VACUUM</code> "para limpar" e time travel parando de funcionar</strong> → o vacuum remove arquivos de versões antigas. Respeite a retenção.</li>
+</ul>
+<h2 id="trilha-07-cheque-seu-entendimento">Cheque seu entendimento</h2>
+<ol>
+<li>O que o log do Delta garante e o que ele <strong>não</strong> garante?</li>
+<li>Quais três condições tornam um <code>MERGE</code> idempotente?</li>
+<li>Por que o Delta recusa duas linhas de origem para a mesma linha de destino?</li>
+<li>Quando <code>replaceWhere</code> é melhor que <code>MERGE</code>?</li>
+<li>Como provar, com <code>DESCRIBE HISTORY</code>, que uma reexecução não mudou nada?</li>
+</ol>
+<h2 id="trilha-07-proximos-passos">Próximos passos</h2>
+<ul>
+<li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-10-merge">Merge em SQL</a> · <a href="cheatsheets.html#sql-10-time-travel-e-restore">Time travel e restore</a> · <a href="cheatsheets.html#pyspark-10-merge">Merge no PySpark</a> · <a href="cheatsheets.html#pyspark-08-deduplicacao-deterministica">Deduplicação determinística</a></li>
+<li><strong>Prática:</strong> <a href="desafio.html?id=sql-10-merge">desafio de MERGE em SQL</a> · <a href="desafio.html?id=spk-10-merge">desafio de MERGE no PySpark</a> · <a href="desafio.html?id=sql-10-time-travel">time travel</a> · <a href="desafio.html?id=spk-08-dedup-row-number">deduplicação</a></li>
+<li><strong>Aplicação real:</strong> em um pipeline autorizado, simule em ambiente de desenvolvimento a reexecução do mesmo lote. Prove com <code>DESCRIBE HISTORY</code> e contagens por chave que nada duplicou. Esse é o critério de avanço da semana 7 do plano.</li>
+</ul>
+</section>
+
+<section id="trilha-08" class="cheat-section">
+<h2><span class="sec-num trilha">Trilha 08</span> Cargas full, incremental e CDC</h2>
+<blockquote>
+<p><strong>Objetivo:</strong> escolher entre carga full, incremental por watermark e CDC, prever o que cada uma perde ou duplica e montar uma janela de segurança que torne o reprocessamento inofensivo. <strong>Tempo:</strong> 2 h. <strong>Pré-requisitos:</strong> <a href="#trilha-07">Delta e MERGE idempotente</a>.</p>
+</blockquote>
+<h2 id="trilha-08-o-problema">O problema</h2>
+<p>A carga full da tabela de pedidos levava 5 minutos; um ano depois leva 2 horas. Alguém troca por "pegar só o que mudou desde a última execução". Semanas depois, aparecem pedidos faltando: eram registros que chegaram atrasados. Também há pedidos cancelados que continuam ativos, porque exclusões na origem nunca chegam. Carga incremental é mais barata, mas tem mais jeitos de errar.</p>
+<h2 id="trilha-08-modelo-mental">Modelo mental</h2>
+<table>
+<thead>
+<tr>
+<th>Estratégia</th>
+<th>Lê da origem</th>
+<th>Captura deletes?</th>
+<th>Risco principal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Full</td>
+<td>tudo, sempre</td>
+<td>sim, por ausência</td>
+<td>custo cresce com o volume</td>
+</tr>
+<tr>
+<td>Incremental (watermark)</td>
+<td>linhas com coluna de controle acima do último valor</td>
+<td>não</td>
+<td>atrasados, empate na borda, coluna de controle não confiável</td>
+</tr>
+<tr>
+<td>CDC</td>
+<td>eventos de mudança (I/U/D + sequência)</td>
+<td>sim, evento <code>D</code></td>
+<td>ordem dos eventos, duplicidade</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Watermark</strong> é o maior valor da coluna de controle (<code>atualizado_em</code>, <code>id</code> crescente) já processado. Fica gravado numa tabela de controle ou num checkpoint.</li>
+<li><strong>Dados atrasados existem.</strong> Um registro pode ser gravado na origem com <code>atualizado_em</code> <em>anterior</em> ao último watermark (transação longa, relógio diferente, réplica atrasada).</li>
+<li><strong>Janela de segurança + MERGE idempotente:</strong> releia um pouco antes do watermark (ex.: 15 min, 1 dia) e aplique com <code>MERGE</code>. Reler o que já foi carregado não faz mal; perder um registro, sim.</li>
+<li><strong>CDC</strong> traz <em>o que aconteceu</em> com cada chave. Aplique só o <strong>último evento por chave</strong> (pela sequência) e trate <code>D</code> como delete ou soft delete.</li>
+<li><strong>No Databricks:</strong> <em>Auto Loader</em> (<code>cloudFiles</code>) controla sozinho quais <strong>arquivos</strong> já foram lidos. <em>Change Data Feed</em> expõe as mudanças de uma tabela Delta para as camadas seguintes.</li>
+</ul>
+<h2 id="trilha-08-exemplo-para-prever">Exemplo para prever</h2>
+<p><strong>Parte 1: watermark.</strong> A última execução carregou até <code>10:00</code>. Depois dela, a origem recebeu o registro 4, gravado com horário <code>09:58</code> (atrasado).</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TEMP VIEW origem AS
+SELECT * FROM VALUES
+  (1, TIMESTAMP'2026-11-18 09:50:00'),
+  (2, TIMESTAMP'2026-11-18 10:00:00'),   -- já carregado na execução anterior
+  (3, TIMESTAMP'2026-11-18 10:05:00'),   -- novo
+  (4, TIMESTAMP'2026-11-18 09:58:00')    -- novo, mas atrasado
+AS t(id, atualizado_em);
+
+-- A
+SELECT id FROM origem WHERE atualizado_em &gt;  TIMESTAMP'2026-11-18 10:00:00';
+-- B
+SELECT id FROM origem WHERE atualizado_em &gt;= TIMESTAMP'2026-11-18 10:00:00';
+-- C: janela de segurança de 15 minutos
+SELECT id FROM origem WHERE atualizado_em &gt;  TIMESTAMP'2026-11-18 10:00:00' - INTERVAL 15 MINUTES;
+</code></pre></div>
+<p>Resultado esperado:</p>
+<ul>
+<li><strong>A:</strong> <code>3</code>. <strong>Perde o 4</strong> (atrasado). Também perderia um registro gravado exatamente às 10:00 depois da execução anterior.</li>
+<li><strong>B:</strong> <code>2, 3</code>. Relê o 2 (precisa de <code>MERGE</code> para não duplicar) e <strong>continua perdendo o 4</strong>.</li>
+<li><strong>C:</strong> <code>1, 2, 3, 4</code>. Relê 1 e 2, mas pega o 4. Com <code>MERGE</code> idempotente, as releituras não mudam nada.</li>
+</ul>
+<p><strong>Parte 2: CDC.</strong> Os eventos chegam com operação e sequência:</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TEMP VIEW eventos AS
+SELECT * FROM VALUES
+  (10, 'I', 1, 100), (10, 'U', 2, 120),
+  (11, 'I', 3, 50),  (11, 'D', 4, CAST(NULL AS INT)),
+  (12, 'I', 5, 70)
+AS t(id, op, seq, valor);
+
+CREATE OR REPLACE TEMP VIEW ultimos AS
+SELECT id, op, seq, valor
+FROM (SELECT *, row_number() OVER (PARTITION BY id ORDER BY seq DESC) AS rn FROM eventos)
+WHERE rn = 1;
+</code></pre></div>
+<p>Com o destino vazio, que linhas ficam no final? Resposta: <code>10 → 120</code> e <code>12 → 70</code>. O 11 foi inserido e excluído no mesmo lote, então não entra. Aplicação no Delta:</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">MERGE INTO alvo AS t
+USING ultimos AS s
+ON t.id = s.id
+WHEN MATCHED AND s.op = 'D' THEN DELETE
+WHEN MATCHED AND s.seq &gt; t.seq THEN UPDATE SET t.valor = s.valor, t.seq = s.seq
+WHEN NOT MATCHED AND s.op &lt;&gt; 'D' THEN INSERT (id, valor, seq) VALUES (s.id, s.valor, s.seq);
+</code></pre></div>
+<p><strong>Parte 3: arquivos com Auto Loader</strong> (só no Databricks). O checkpoint guarda quais arquivos já foram processados. <code>availableNow</code> processa o que há de novo e encerra, como um job batch:</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">PYTHON</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-python">(spark.readStream.format("cloudFiles")
+    .option("cloudFiles.format", "json")
+    .option("cloudFiles.schemaLocation", caminho_checkpoint)
+    .load(caminho_origem)
+  .writeStream
+    .option("checkpointLocation", caminho_checkpoint)
+    .trigger(availableNow=True)
+    .toTable("bronze.eventos"))
+</code></pre></div>
+<h2 id="trilha-08-quebre-de-proposito">Quebre de propósito</h2>
+<ol>
+<li><strong>Empate na borda.</strong> Acrescente um registro <code>5</code> com horário <code>10:00:00</code>, gravado <em>depois</em> da execução anterior. Com <code>&gt;</code>, ele é perdido para sempre. Por isso a janela de segurança é mais robusta que escolher entre <code>&gt;</code> e <code>&gt;=</code>.</li>
+<li><strong>Delete invisível.</strong> Remova o registro 1 da origem e rode a consulta C. Nada indica a exclusão. Sem CDC, deletes só são detectados por comparação full (anti join entre origem e destino) de tempos em tempos.</li>
+<li><strong>Eventos fora de ordem.</strong> No <code>MERGE</code> de CDC, tire a condição <code>s.seq &gt; t.seq</code> e aplique primeiro um lote novo e depois um lote antigo. O valor antigo volta.</li>
+<li><strong>Coluna de controle não confiável.</strong> Imagine um sistema que atualiza registros sem mudar <code>atualizado_em</code>. Qual estratégia ainda funciona? (Só full ou CDC.)</li>
+<li><strong>Checkpoint apagado.</strong> No Auto Loader, apagar o checkpoint faz todos os arquivos serem lidos de novo. Com <code>append</code> no bronze, isso duplica tudo. O que precisa estar idempotente a jusante?</li>
+</ol>
+<h2 id="trilha-08-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
+<ul>
+<li><strong>Registros faltando "aleatoriamente"</strong> → dados atrasados ou empate na borda do watermark. Compare contagens por dia entre origem e destino e use janela de segurança.</li>
+<li><strong>Cancelamentos que não aparecem</strong> → incremental por watermark não captura deletes. Use CDC, soft delete na origem ou reconciliação full periódica.</li>
+<li><strong>Watermark avançado com a carga falhando</strong> → atualize o watermark <strong>só depois</strong> do commit da escrita.</li>
+<li><strong>Watermark calculado pelo relógio do job</strong> → use o <strong>maior valor lido da origem</strong>, não <code>current_timestamp()</code>. Relógios diferem.</li>
+<li><strong>CDC aplicado evento a evento num loop</strong> → lento e sujeito a ordem errada. Reduza para o último evento por chave e aplique um <code>MERGE</code> por lote.</li>
+</ul>
+<h2 id="trilha-08-cheque-seu-entendimento">Cheque seu entendimento</h2>
+<ol>
+<li>Por que <code>&gt;</code> e <code>&gt;=</code> no watermark não resolvem os dados atrasados?</li>
+<li>Por que reler dados com janela de segurança é seguro, e qual a pré-condição?</li>
+<li>O que a carga incremental por watermark não consegue capturar?</li>
+<li>Por que aplicar só o último evento por chave em CDC?</li>
+<li>Quando atualizar o watermark: antes ou depois da escrita? Por quê?</li>
+</ol>
+<h2 id="trilha-08-proximos-passos">Próximos passos</h2>
+<ul>
+<li><strong>Consulta:</strong> <a href="cheatsheets.html#sql-10-merge">Merge em SQL</a> · <a href="cheatsheets.html#pyspark-02-arquivos-com-schema-explicito">Leitura de arquivos com schema explícito</a> · <a href="cheatsheets.html#pyspark-14-4-colunas-tecnicas-uteis">Colunas técnicas úteis no medalhão</a></li>
+<li><strong>Prática:</strong> <a href="desafio.html?id=sql-10-merge">MERGE em SQL</a> · <a href="desafio.html?id=spk-14-colunas-tecnicas">colunas técnicas</a> · <a href="desafio.html?id=spk-12-perda-join">perda de linhas em joins (reconciliação)</a></li>
+<li><strong>Aplicação real:</strong> para uma ingestão autorizada, escreva qual é a estratégia (full, watermark ou CDC), a coluna de controle, onde o watermark fica gravado, a janela de segurança e como deletes são tratados. É a base do critério de avanço das semanas 9–10 do plano.</li>
+</ul>
+</section>
+
+<section id="trilha-09" class="cheat-section">
+<h2><span class="sec-num trilha">Trilha 09</span> SCD2 e modelagem dimensional: o passado não pode mudar sozinho</h2>
+<blockquote>
+<p><strong>Objetivo:</strong> separar fato e dimensão pelo grão, decidir quando um atributo precisa de histórico, implementar SCD tipo 2 com <code>MERGE</code> e cruzar a fato com a versão vigente na data do evento. <strong>Tempo:</strong> 2–3 h. <strong>Pré-requisitos:</strong> <a href="#trilha-03">Grão e cardinalidade</a>, <a href="#trilha-07">Delta e MERGE idempotente</a>.</p>
+</blockquote>
+<h2 id="trilha-09-o-problema">O problema</h2>
+<p>Em junho, o cliente C1 passou do segmento Bronze para Ouro. No relatório de receita por segmento, a venda de março de C1 agora aparece como Ouro, e o número de Bronze do primeiro trimestre caiu, sem ninguém ter mexido nas vendas. A dimensão foi sobrescrita (SCD tipo 1) e o passado mudou de significado. Em outro relatório, alguém guardou o histórico, mas cruzou sem filtro de vigência, e a receita <strong>dobrou</strong>.</p>
+<h2 id="trilha-09-modelo-mental">Modelo mental</h2>
+<ul>
+<li><strong>Fato</strong> = eventos e medidas, com grão claro (uma linha por venda, por item, por dia/loja). <strong>Dimensão</strong> = contexto descritivo (cliente, produto, loja, calendário).</li>
+<li><strong>SCD é a decisão de como uma dimensão muda:</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>O que faz</th>
+<th>Use quando</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>sobrescreve</td>
+<td>correção ou atributo sem valor histórico</td>
+</tr>
+<tr>
+<td>2</td>
+<td>fecha a versão antiga e cria uma nova</td>
+<td>o atributo muda a interpretação do passado (segmento, região, categoria)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>guarda "valor anterior" numa coluna</td>
+<td>histórico curto e controlado</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>SCD2 em uma linha:</strong> cada versão tem <code>inicio_vigencia</code>, <code>fim_vigencia</code> (exclusivo, nulo na versão atual), a flag <code>atual</code> e uma <strong>surrogate key</strong> (<code>sk</code>) própria. A chave de negócio (<code>cliente_id</code>) se repete; a <code>sk</code> não.</li>
+<li><strong>Invariantes que você deve testar:</strong> no máximo uma versão atual por chave de negócio; vigências sem sobreposição; nenhuma lacuna entre versões.</li>
+<li><strong>A fato encontra a versão certa</strong> de duas formas: (a) grava a <code>sk</code> vigente no momento da carga, ou (b) faz um join por intervalo: <code>data_evento &gt;= inicio AND data_evento &lt; fim</code>.</li>
+</ul>
+<h2 id="trilha-09-exemplo-para-prever">Exemplo para prever</h2>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">-- Dimensão atual (antes da carga de 01/06)
+CREATE OR REPLACE TABLE dim_cliente (
+  sk BIGINT GENERATED ALWAYS AS IDENTITY,
+  cliente_id STRING, segmento STRING,
+  inicio_vigencia DATE, fim_vigencia DATE, atual BOOLEAN
+);
+INSERT INTO dim_cliente (cliente_id, segmento, inicio_vigencia, fim_vigencia, atual) VALUES
+  ('C1', 'Bronze', DATE'2026-01-01', NULL, true),
+  ('C2', 'Prata',  DATE'2026-01-01', NULL, true);
+
+-- Snapshot da origem em 01/06
+CREATE OR REPLACE TEMP VIEW stage AS
+SELECT * FROM VALUES
+  ('C1', 'Ouro',   DATE'2026-06-01'),   -- mudou
+  ('C2', 'Prata',  DATE'2026-06-01'),   -- igual
+  ('C3', 'Bronze', DATE'2026-06-01')    -- novo
+AS t(cliente_id, segmento, data_ref);
+</code></pre></div>
+<p>O <code>MERGE</code> do SCD2 precisa fazer duas coisas com C1: <strong>fechar</strong> a versão Bronze e <strong>inserir</strong> a versão Ouro. Um <code>MERGE</code> só toca cada linha de destino uma vez, então a origem é montada com cada mudança <strong>duas vezes</strong>: uma com a chave (para casar e fechar) e outra com <code>merge_key</code> nulo (para nunca casar e ser inserida).</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">MERGE INTO dim_cliente AS t
+USING (
+  SELECT s.cliente_id AS merge_key, s.* FROM stage s
+  UNION ALL
+  SELECT CAST(NULL AS STRING) AS merge_key, s.* FROM stage s
+  JOIN dim_cliente d ON s.cliente_id = d.cliente_id AND d.atual
+  WHERE NOT (s.segmento &lt;=&gt; d.segmento)
+) AS s
+ON t.cliente_id = s.merge_key AND t.atual
+WHEN MATCHED AND NOT (t.segmento &lt;=&gt; s.segmento) THEN
+  UPDATE SET t.atual = false, t.fim_vigencia = s.data_ref
+WHEN NOT MATCHED THEN
+  INSERT (cliente_id, segmento, inicio_vigencia, fim_vigencia, atual)
+  VALUES (s.cliente_id, s.segmento, s.data_ref, NULL, true);
+</code></pre></div>
+<p>Antes de rodar: quantas linhas a origem do <code>MERGE</code> tem? Quantas versões são fechadas e quantas inseridas? Quantas linhas tem a dimensão no final?</p>
+<p>Resultado esperado:</p>
+<ul>
+<li><strong>Origem:</strong> 4 linhas: C1 com chave, C1 com <code>merge_key</code> nulo, C2 e C3.</li>
+<li><strong>Fechada:</strong> 1 (C1 Bronze, <code>fim_vigencia = 2026-06-01</code>). <strong>Inseridas:</strong> 2 (C1 Ouro e C3 Bronze). C2 não muda.</li>
+<li><strong>Dimensão final:</strong> 4 linhas, uma atual por cliente.</li>
+<li><strong>Reexecução com o mesmo <code>stage</code>:</strong> nada muda. C1 atual já é Ouro e C3 já existe.</li>
+</ul>
+<p>Agora a fato:</p>
+<div class="code-wrap"><div class="code-lang trilha-lang">SQL</div><button class="copy-btn" onclick="copyCode(this)" type="button">Copiar</button><pre><code class="language-sql">CREATE OR REPLACE TEMP VIEW vendas AS
+SELECT * FROM VALUES
+  ('C1', DATE'2026-03-10', 100), ('C1', DATE'2026-07-02', 200), ('C2', DATE'2026-07-02', 50)
+AS t(cliente_id, data_venda, valor);
+
+SELECT d.segmento, sum(v.valor) AS receita
+FROM vendas v
+JOIN dim_cliente d
+  ON  v.cliente_id = d.cliente_id
+  AND v.data_venda &gt;= d.inicio_vigencia
+  AND v.data_venda &lt;  coalesce(d.fim_vigencia, DATE'9999-12-31')
+GROUP BY d.segmento;
+</code></pre></div>
+<p>Resultado: <strong>Bronze 100, Ouro 200, Prata 50.</strong> A venda de março continua Bronze.</p>
+<h2 id="trilha-09-quebre-de-proposito">Quebre de propósito</h2>
+<ol>
+<li><strong>Só a versão atual.</strong> Troque a condição de vigência por <code>AND d.atual</code>. Resultado: Ouro 300, Prata 50. A história foi reescrita (é o mesmo efeito de um SCD1).</li>
+<li><strong>Sem filtro nenhum.</strong> Cruze só por <code>cliente_id</code>. São 5 linhas e receita 650, contra 350 reais: um exploding join causado pelas duas versões de C1.</li>
+<li><strong>Fim inclusivo.</strong> Use <code>&lt;=</code> no fim da vigência e crie uma venda de C1 em <code>2026-06-01</code>. Ela casa com as duas versões. Por isso o fim é <strong>exclusivo</strong>.</li>
+<li><strong>Teste as invariantes.</strong> <code>SELECT cliente_id FROM dim_cliente WHERE atual GROUP BY cliente_id HAVING count(*) &gt; 1</code> precisa voltar vazio. Depois, rode o <code>MERGE</code> com duas linhas de C1 no <code>stage</code> e veja o que acontece.</li>
+<li><strong>Atributo que muda demais.</strong> Imagine "saldo de pontos" como SCD2: uma versão por dia por cliente. Quando esse atributo deveria ir para a fato (ou para um snapshot) em vez da dimensão?</li>
+</ol>
+<h2 id="trilha-09-erros-comuns-e-como-diagnosticar">Erros comuns e como diagnosticar</h2>
+<ul>
+<li><strong>Relatório do passado muda depois de uma carga</strong> → dimensão em SCD1 para um atributo histórico, ou join usando <code>atual</code>. Revise a decisão por atributo.</li>
+<li><strong>Receita dobrada ao cruzar com dimensão histórica</strong> → join sem vigência. Compare <code>count(*)</code> antes e depois do join (lição de grão).</li>
+<li><strong>Duas versões atuais para o mesmo cliente</strong> → origem duplicada no <code>stage</code> ou <code>MERGE</code> interrompido sem transação. Teste a invariante depois de cada carga.</li>
+<li><strong>Vigências sobrepostas ou com buracos</strong> → <code>fim_vigencia</code> calculado com regra diferente de <code>inicio_vigencia</code>. Use a mesma data de referência para fechar uma versão e abrir a seguinte.</li>
+<li><strong>Fato com <code>sk</code> errada em reprocessamentos</strong> → se a fato grava a <code>sk</code>, o reprocessamento precisa buscar a versão vigente <strong>na data do evento</strong>, não a atual.</li>
+</ul>
+<h2 id="trilha-09-cheque-seu-entendimento">Cheque seu entendimento</h2>
+<ol>
+<li>Qual a diferença entre chave de negócio e surrogate key, e por que o SCD2 precisa da segunda?</li>
+<li>Por que o <code>MERGE</code> do SCD2 recebe cada mudança duas vezes?</li>
+<li>Quais três invariantes uma dimensão SCD2 deve respeitar?</li>
+<li>Por que o fim da vigência deve ser exclusivo?</li>
+<li>Quando um atributo deveria ser tipo 1 e não tipo 2?</li>
+</ol>
+<h2 id="trilha-09-proximos-passos">Próximos passos</h2>
+<ul>
+<li><strong>Consulta:</strong> <a href="01_cheatsheets/03_modeling-e-analytics/03_slowly-changing-dimensions.md">SCDs (complementar)</a> · <a href="01_cheatsheets/03_modeling-e-analytics/01_modelagem-dimensional.md">Modelagem dimensional (complementar)</a> · <a href="01_cheatsheets/03_modeling-e-analytics/02_tipos-tabelas-fato.md">Tipos de fato (complementar)</a> · <a href="cheatsheets.html#sql-10-merge">Merge em SQL</a></li>
+<li><strong>Prática:</strong> <a href="desafio.html?id=sql-10-merge">MERGE em SQL</a> · <a href="desafio.html?id=sql-11-grao-unicidade">unicidade do grão</a> · <a href="desafio.html?id=sql-07-cardinalidade">cardinalidade</a> · <a href="desafio.html?id=spk-14-granularidade">granularidade no medalhão</a></li>
+<li><strong>Aplicação real:</strong> em uma dimensão autorizada, liste os atributos e classifique cada um como tipo 1 ou 2, com justificativa. Escreva o teste de "uma versão atual por chave". É o "SCD Type 2 do zero" do mês 9 do plano de 12 meses.</li>
 </ul>
 </section>
 

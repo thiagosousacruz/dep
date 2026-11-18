@@ -1,5 +1,7 @@
 # Modelagem Dimensional e Abordagens Estruturais
 
+> **Aprenda o conceito:** trilha [SCD2 e modelagem dimensional](../../03_trilhas/09_scd2-e-modelagem-dimensional.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que e
 A modelagem dimensional e a base classica do data warehousing orientado a consumo analitico. Diferente da modelagem transacional, que prioriza integridade operacional e escrita, aqui o foco e facilitar leitura, agregacao, filtros e entendimento para BI e analise.
 

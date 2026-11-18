@@ -409,6 +409,8 @@
     border-top: 1px solid var(--border);
     letter-spacing: 0.08em;
   }
+  .week-trilha { font-size: 13px; margin: 10px 0 12px; color: var(--text-dim); }
+  .week-trilha a { color: var(--accent); text-decoration: none; }
 </style>
 </head>
 <body>
@@ -468,6 +470,7 @@
           <li>Lógica booleana: AND, OR, NOT</li>
           <li>Aliases com AS</li>
         </ul>
+        <p class="week-trilha">🧭 Trilha: <a href="trilhas.html#trilha-01">Ordem lógica do SQL</a></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Produzir uma consulta filtrada e ordenada, justificar os filtros e validar o resultado; documentação oficial pode ser consultada.</p>
@@ -483,6 +486,7 @@
           <li>Grão, cardinalidade 1:1/1:N/N:N e exploding joins</li>
           <li>Tipos, nulos e múltiplas condições nas chaves</li>
         </ul>
+        <p class="week-trilha">🧭 Trilha: <a href="trilhas.html#trilha-03">Grão e cardinalidade</a></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Cruzar duas tabelas preservando o grão esperado e apresentar contagens antes/depois como evidência.</p>
@@ -515,6 +519,7 @@
           <li>CASE WHEN para lógica condicional</li>
           <li>Tratamento de nulos: COALESCE, NULLIF, IS NULL</li>
         </ul>
+        <p class="week-trilha">🧭 Trilha: <a href="trilhas.html#trilha-02">NULL e lógica de três valores</a></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Escrever e explicar uma query com CTE, tipos, nulos e CASE; validar casos de borda com uma amostra controlada.</p>
@@ -530,6 +535,7 @@
           <li>PARTITION BY, ordenação determinística e frames</li>
           <li>ROWS versus RANGE; date_add, datediff e date_format no Spark SQL</li>
         </ul>
+        <p class="week-trilha">🧭 Trilha: <a href="trilhas.html#trilha-04">Window functions</a></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Calcular ranking e acumulado, explicar empates e frame, e validar o resultado contra uma agregação de controle.</p>
@@ -562,6 +568,7 @@
           <li>Leitura de Delta Tables e diferenças entre tabela e caminho</li>
           <li>Bronze/Silver/Gold, histórico Delta e políticas de retenção</li>
         </ul>
+        <p class="week-trilha">🧭 Trilha: <a href="trilhas.html#trilha-07">Delta e MERGE idempotente</a></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Executar e explicar um notebook existente, identificar entradas/saídas e registrar riscos de ambiente ou dados.</p>
@@ -577,6 +584,7 @@
           <li>Escrita Delta consciente de modo, schema e idempotência</li>
           <li>Leitura de notebooks existentes: entender bloco por bloco</li>
         </ul>
+        <p class="week-trilha">🧭 Trilha: <a href="trilhas.html#trilha-05">Como o Spark executa</a> · <a href="trilhas.html#trilha-06">Diagnóstico de performance</a></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Mapear o fluxo de um notebook desconhecido e explicar ao menos uma transformação e seu plano de execução.</p>
@@ -610,6 +618,7 @@
           <li>CSV, JSON, Parquet e Excel por conector/biblioteca homologada</li>
           <li>Checks de grão, chaves e reconciliação pós-join</li>
         </ul>
+        <p class="week-trilha">🧭 Trilha: <a href="trilhas.html#trilha-03">Grão e cardinalidade</a> · <a href="trilhas.html#trilha-07">Delta e MERGE idempotente</a></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Cruzar duas tabelas Delta, validar cardinalidade e qualidade, e gravar uma saída idempotente em ambiente autorizado.</p>
@@ -625,6 +634,7 @@
           <li>Combinando PySpark com Spark SQL no mesmo notebook</li>
           <li>Teste pequeno da regra e documentação da entrega</li>
         </ul>
+        <p class="week-trilha">🧭 Trilha: <a href="trilhas.html#trilha-04">Window functions</a></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Entregar uma tabela validada com teste reproduzível e explicar as decisões, limites e evidências.</p>
@@ -657,6 +667,7 @@
           <li>Parâmetros, metadados e reutilização sem expor segredos</li>
           <li>Falhas, retries, timeout, idempotência e reprocessamento</li>
         </ul>
+        <p class="week-trilha">🧭 Trilha: <a href="trilhas.html#trilha-08">Cargas full, incremental e CDC</a></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Mapear um pipeline autorizado, explicar dependências e demonstrar como reprocessá-lo com segurança após uma falha simulada.</p>
@@ -671,6 +682,7 @@
           <li>Segredos em Key Vault/serviço homologado; nunca em código ou parâmetros visíveis</li>
           <li>Monitoramento, alertas, logs, correlação e diagnóstico</li>
         </ul>
+        <p class="week-trilha">🧭 Trilha: <a href="trilhas.html#trilha-08">Cargas full, incremental e CDC</a></p>
         <div class="criteria">
           <div class="criteria-label">Critério de avanço</div>
           <p>Implementar em ambiente seguro uma ingestão revisada, com paginação ou arquivo, reexecução idempotente e evidência de monitoramento.</p>

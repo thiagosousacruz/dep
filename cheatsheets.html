@@ -566,6 +566,9 @@
 
   <section id="sql-01" class="cheat-section">
 <h2><span class="sec-num sql">SQL 01</span> Sintaxe Básica (SQL / Databricks)</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-01">Ordem lógica do SQL</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="sql-01-o-que-e">O que é</h2>
 <p>A estrutura de uma consulta <code>SELECT</code> e a ordem lógica em que suas cláusulas são avaliadas. Entender essa ordem explica por que um alias do <code>SELECT</code> não pode ser usado no <code>WHERE</code>, por que agregados são filtrados no <code>HAVING</code> e onde entra o <code>QUALIFY</code>.</p>
 <h2 id="sql-01-ordem-logica-de-avaliacao">Ordem lógica de avaliação</h2>
@@ -780,6 +783,9 @@ ALTER TABLE silver.vendas RENAME COLUMN id_prod TO id_produto;
 
 <section id="sql-04" class="cheat-section">
 <h2><span class="sec-num sql">SQL 04</span> Nulos e Condicionais (SQL)</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-02">NULL e lógica de três valores</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="sql-04-o-que-e">O que é</h2>
 <p><code>NULL</code> representa ausência de valor: não é string vazia (<code>''</code>) nem zero. Comparações com <code>NULL</code> resultam em <code>NULL</code> (desconhecido), o que afeta filtros, joins e agregações de forma silenciosa.</p>
 <h2 id="sql-04-coalesce-e-case-when">COALESCE e CASE WHEN</h2>
@@ -994,7 +1000,7 @@ GROUP BY GROUPING SETS ((ano, regiao), (ano), ());
 <section id="sql-07" class="cheat-section">
 <h2><span class="sec-num sql">SQL 07</span> SQL Joins (Databricks / Spark SQL)</h2>
 <blockquote>
-<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-02">Grão e cardinalidade</a> — modelo mental, exemplo para prever e erros comuns.</p>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-03">Grão e cardinalidade</a> — modelo mental, exemplo para prever e erros comuns.</p>
 </blockquote>
 <h2 id="sql-07-o-que-e">O que é</h2>
 <p>Joins combinam conjuntos de dados por uma condição. Em Spark, podem exigir shuffle; o custo depende do volume, da distribuição das chaves, da estratégia física e das colunas transportadas.</p>
@@ -1074,7 +1080,7 @@ LEFT JOIN dim_loja AS d ON f.loja_id = d.loja_id;
 <section id="sql-08" class="cheat-section">
 <h2><span class="sec-num sql">SQL 08</span> Window Functions em Spark SQL</h2>
 <blockquote>
-<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-03">Window functions</a> — modelo mental, exemplo para prever e erros comuns.</p>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-04">Window functions</a> — modelo mental, exemplo para prever e erros comuns.</p>
 </blockquote>
 <h2 id="sql-08-o-que-sao">O que são</h2>
 <p>Funções de janela calculam valores relacionados sem reduzir o número de linhas como um <code>GROUP BY</code>. A especificação combina particionamento lógico, ordenação e, quando necessário, um frame.</p>
@@ -1202,6 +1208,9 @@ FROM bronze.eventos_variant;
 
 <section id="sql-10" class="cheat-section">
 <h2><span class="sec-num sql">SQL 10</span> Delta Lake: DML e Manutenção</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilhas <a href="trilhas.html#trilha-07">Delta e MERGE idempotente</a> · <a href="trilhas.html#trilha-08">Cargas full, incremental e CDC</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="sql-10-o-que-e">O que é</h2>
 <p>Delta Lake adiciona log transacional e controle de concorrência a arquivos de dados. Operações, sintaxe e recursos de otimização podem variar por versão do Delta Lake e pelo Databricks Runtime.</p>
 <h2 id="sql-10-merge">Merge</h2>
@@ -1317,7 +1326,7 @@ ALTER TABLE silver.cadastro ALTER COLUMN id_cliente SET NOT NULL;
 <section id="sql-12" class="cheat-section">
 <h2><span class="sec-num sql">SQL 12</span> Performance Tuning e Leitura de Planos</h2>
 <blockquote>
-<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-01">Como o Spark executa seu código</a> — modelo mental, exemplo para prever e erros comuns.</p>
+<p><strong>Aprenda o conceito:</strong> trilhas <a href="trilhas.html#trilha-05">Como o Spark executa seu código</a> · <a href="trilhas.html#trilha-06">Diagnóstico de performance</a> — modelo mental, exemplo para prever e erros comuns.</p>
 </blockquote>
 <h2 id="sql-12-principio">Princípio</h2>
 <p>Otimização começa por evidência: plano físico, métricas da execução, volume lido, shuffle, skew e spill. Evite otimizar apenas pela aparência da consulta.</p>
@@ -1367,7 +1376,7 @@ JOIN dim_produto AS d ON f.produto_id = d.produto_id;
 <section id="pyspark-01" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 01</span> Fundamentos: Lazy Evaluation, DAGs e Spark SQL (PySpark)</h2>
 <blockquote>
-<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-01">Como o Spark executa seu código</a> — modelo mental, exemplo para prever e erros comuns.</p>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-05">Como o Spark executa seu código</a> — modelo mental, exemplo para prever e erros comuns.</p>
 </blockquote>
 <h2 id="pyspark-01-o-que-e">O que é</h2>
 <p>O Spark não executa cada linha de código imediatamente. Transformações montam um plano; ações disparam a execução distribuída desse plano. DataFrame API e SQL compartilham o mesmo otimizador (Catalyst), então você pode alternar entre os dois.</p>
@@ -1438,6 +1447,9 @@ from pyspark.sql.window import Window
 
 <section id="pyspark-02" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 02</span> Leitura e Escrita de Dados (PySpark I/O)</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-08">Cargas full, incremental e CDC</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="pyspark-02-o-que-e">O que é</h2>
 <p><code>spark.read</code> e <code>DataFrame.write</code> conectam o pipeline a arquivos, tabelas e bancos externos. As opções escolhidas definem custo de leitura, paralelismo, tratamento de registros inválidos e layout físico do resultado.</p>
 <h2 id="pyspark-02-arquivos-com-schema-explicito">Arquivos com schema explícito</h2>
@@ -1668,6 +1680,9 @@ df_amostra = df_historico.sample(withReplacement=False, fraction=0.01, seed=42)
 
 <section id="pyspark-05" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 05</span> Nulos e Condicionais (PySpark)</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-02">NULL e lógica de três valores</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="pyspark-05-o-que-e">O que é</h2>
 <p>Como no SQL, <code>null</code> é ausência de valor. Comparações com <code>null</code> resultam em <code>null</code>, então filtros e joins descartam essas linhas sem aviso. Regras de preenchimento e classificação precisam ser explícitas.</p>
 <h2 id="pyspark-05-when-otherwise-e-coalesce">when / otherwise e coalesce</h2>
@@ -1795,7 +1810,7 @@ total = df_fatos.agg(F.sum("valor").alias("total")).first()["total"]
 <section id="pyspark-07" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 07</span> Joins em PySpark</h2>
 <blockquote>
-<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-02">Grão e cardinalidade</a> — modelo mental, exemplo para prever e erros comuns.</p>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-03">Grão e cardinalidade</a> — modelo mental, exemplo para prever e erros comuns.</p>
 </blockquote>
 <h2 id="pyspark-07-o-que-sao">O que são</h2>
 <p><code>DataFrame.join</code> combina DataFrames por nomes de colunas ou expressões. Em escala, avalie cardinalidade, volume de shuffle, distribuição das chaves e estratégia física.</p>
@@ -1860,7 +1875,7 @@ df_resultado.explain("formatted")
 <section id="pyspark-08" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 08</span> Window Functions em PySpark</h2>
 <blockquote>
-<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-03">Window functions</a> — modelo mental, exemplo para prever e erros comuns.</p>
+<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-04">Window functions</a> — modelo mental, exemplo para prever e erros comuns.</p>
 </blockquote>
 <h2 id="pyspark-08-o-que-sao">O que são</h2>
 <p>Uma <code>WindowSpec</code> define o grupo lógico, a ordenação e o frame usados por funções como <code>row_number</code>, <code>lag</code> e agregações acumuladas.</p>
@@ -2017,6 +2032,9 @@ df_estavel = df_evento.withColumns({
 
 <section id="pyspark-10" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 10</span> Delta Lake API em PySpark</h2>
+<blockquote>
+<p><strong>Aprenda o conceito:</strong> trilhas <a href="trilhas.html#trilha-07">Delta e MERGE idempotente</a> · <a href="trilhas.html#trilha-08">Cargas full, incremental e CDC</a> — modelo mental, exemplo para prever e erros comuns.</p>
+</blockquote>
 <h2 id="pyspark-10-o-que-e">O que é</h2>
 <p><code>DeltaTable</code> expõe operações transacionais em Python. SQL continua sendo uma alternativa válida; escolha a interface que deixa a transformação mais clara e testável.</p>
 <h2 id="pyspark-10-merge">Merge</h2>
@@ -2211,7 +2229,7 @@ if total and qtd_orfas / total &gt; 0.01:
 <section id="pyspark-13" class="cheat-section">
 <h2><span class="sec-num pyspark">PySpark 13</span> Performance, Arquitetura e Testes em PySpark</h2>
 <blockquote>
-<p><strong>Aprenda o conceito:</strong> trilha <a href="trilhas.html#trilha-01">Como o Spark executa seu código</a> — modelo mental, exemplo para prever e erros comuns.</p>
+<p><strong>Aprenda o conceito:</strong> trilhas <a href="trilhas.html#trilha-05">Como o Spark executa seu código</a> · <a href="trilhas.html#trilha-06">Diagnóstico de performance</a> — modelo mental, exemplo para prever e erros comuns.</p>
 </blockquote>
 <h2 id="pyspark-13-diagnostico-antes-da-otimizacao">Diagnóstico antes da otimização</h2>
 <p>Use <code>explain("formatted")</code>, Spark UI e métricas do job para identificar leitura, exchanges, sorts, skew, spill e tarefas lentas. Compare resultado e custo antes e depois de cada mudança.</p>

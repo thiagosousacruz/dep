@@ -1,5 +1,7 @@
 # SCDs: Historizacao de Dimensoes e Chaves Analiticas
 
+> **Aprenda o conceito:** trilha [SCD2 e modelagem dimensional](../../03_trilhas/09_scd2-e-modelagem-dimensional.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que e
 SCDs definem como atributos de dimensoes mudam ao longo do tempo sem comprometer o consumo analitico. O ponto central e decidir o que precisa preservar historico e o que pode simplesmente ser sobrescrito.
 

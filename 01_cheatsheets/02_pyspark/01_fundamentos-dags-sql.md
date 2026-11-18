@@ -1,6 +1,6 @@
 # Fundamentos: Lazy Evaluation, DAGs e Spark SQL (PySpark)
 
-> **Aprenda o conceito:** trilha [Como o Spark executa seu código](../../03_trilhas/01_como-o-spark-executa.md) — modelo mental, exemplo para prever e erros comuns.
+> **Aprenda o conceito:** trilha [Como o Spark executa seu código](../../03_trilhas/05_como-o-spark-executa.md) — modelo mental, exemplo para prever e erros comuns.
 
 ## O que é
 

@@ -48,6 +48,20 @@ Antes de rodar: quantas linhas e qual a receita? A receita real é 230.
 
 Resultado: **5 linhas e receita 380**. `P1` tem duas categorias, então as vendas 1 e 2 aparecem duas vezes cada (+150). A tabela `categorias` não é única em `produto`: o join é N:M para `P1`.
 
+O mesmo diagnóstico em PySpark: prove a chave e compare as contagens antes e depois do join.
+
+```python
+from pyspark.sql import functions as F
+
+vendas, categorias = spark.table("vendas"), spark.table("categorias")
+
+categorias.groupBy("produto").count().filter("count > 1").show()   # P1 aparece: não é única
+
+cruzado = vendas.join(categorias, "produto")
+print(vendas.count(), cruzado.count())                                    # 3 → 5: o grão mudou
+cruzado.agg(F.countDistinct("id_venda"), F.sum("receita")).show()         # 3 vendas, receita 380
+```
+
 ## Quebre de propósito
 
 1. **Prove a chave.** Rode o teste de unicidade em `categorias` por `produto` e veja `P1` com `n = 2`. Esse teste deveria vir *antes* do join.

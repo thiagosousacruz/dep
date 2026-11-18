@@ -1,5 +1,7 @@
 # Leitura e Escrita de Dados (PySpark I/O)
 
+> **Aprenda o conceito:** trilha [Cargas full, incremental e CDC](../../03_trilhas/08_cargas-incrementais-e-cdc.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que é
 
 `spark.read` e `DataFrame.write` conectam o pipeline a arquivos, tabelas e bancos externos. As opções escolhidas definem custo de leitura, paralelismo, tratamento de registros inválidos e layout físico do resultado.

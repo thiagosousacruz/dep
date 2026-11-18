@@ -1,5 +1,7 @@
 # Nulos e Condicionais (SQL)
 
+> **Aprenda o conceito:** trilha [NULL e lógica de três valores](../../03_trilhas/02_null-e-logica-de-tres-valores.md) — modelo mental, exemplo para prever e erros comuns.
+
 ## O que é
 
 `NULL` representa ausência de valor: não é string vazia (`''`) nem zero. Comparações com `NULL` resultam em `NULL` (desconhecido), o que afeta filtros, joins e agregações de forma silenciosa.
